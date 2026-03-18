@@ -17,7 +17,6 @@ export default function SettingsPage() {
     storeCity: 'New Delhi',
     currency: '₹',
     taxRate: '18',
-    theme: 'light',
   });
 
   useEffect(() => {
@@ -26,22 +25,10 @@ export default function SettingsPage() {
     if (saved) {
       setSettings(JSON.parse(saved));
     }
-    
-    // Theme preference
-    const savedTheme = localStorage.getItem('cleanflow_theme');
-    if (savedTheme) setSettings(s => ({...s, theme: savedTheme}));
   }, []);
 
   const handleSave = () => {
     localStorage.setItem('cleanflow_settings', JSON.stringify(settings));
-    if (settings.theme === 'dark' || settings.theme === 'light') {
-      localStorage.setItem('cleanflow_theme', settings.theme);
-      if (settings.theme === 'dark') {
-        document.documentElement.classList.add('dark-theme');
-      } else {
-        document.documentElement.classList.remove('dark-theme');
-      }
-    }
     
     setMessage(t('settings_saved'));
     setTimeout(() => setMessage(''), 3000);
@@ -162,28 +149,7 @@ export default function SettingsPage() {
           {activeTab === 'appearance' && (
             <div>
               <h2 style={{ fontSize: '18px', marginBottom: '8px' }}>{t('appearance')}</h2>
-              <p className="text-muted" style={{ marginBottom: '24px' }}>{t('customize_appearance')}</p>
-              
-              <div className="form-group" style={{ maxWidth: '300px' }}>
-                <label className="form-label">{t('theme')}</label>
-                <select 
-                  className="form-select" 
-                  value={settings.theme} 
-                  onChange={e => {
-                    const newTheme = e.target.value;
-                    setSettings({...settings, theme: newTheme});
-                    if (newTheme === 'dark') {
-                      document.documentElement.classList.add('dark-theme');
-                    } else {
-                      document.documentElement.classList.remove('dark-theme');
-                    }
-                  }}
-                >
-                  <option value="light">{t('light')}</option>
-                  <option value="dark">{t('dark')}</option>
-                  <option value="system">{t('system_theme')}</option>
-                </select>
-              </div>
+              <p className="text-muted" style={{ marginBottom: '24px' }}>Manage your system's visual identity.</p>
 
               <div style={{ borderTop: '1px solid var(--border-light)', marginTop: '24px', paddingTop: '24px' }}>
                 <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>System Branding</h3>

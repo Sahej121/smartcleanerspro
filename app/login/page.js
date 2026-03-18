@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       const data = await res.json();
@@ -57,14 +57,14 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className="form-group">
-            <label className="form-label">Email Address</label>
+            <label className="form-label">Email or Phone Number</label>
             <input 
-              type="email" 
+              type="text" 
               className="form-input" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)}
+              value={identifier} 
+              onChange={e => setIdentifier(e.target.value)}
               required 
-              placeholder="admin@cleanflow.com"
+              placeholder="Email or Phone"
             />
           </div>
           

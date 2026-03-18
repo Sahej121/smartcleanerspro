@@ -5,14 +5,15 @@ import { cookies } from 'next/headers';
 
 export async function POST(req) {
   try {
-    const { email, password } = await req.json();
+    const { identifier, password, email } = await req.json();
+    const loginUser = identifier || email;
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    if (!loginUser || !password) {
+      return NextResponse.json({ error: 'Email/Phone and password are required' }, { status: 400 });
     }
 
     const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = db.prepare('SELECT * FROM users WHERE email = ? OR phone = ?').get(loginUser, loginUser);
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
