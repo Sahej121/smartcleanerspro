@@ -46,7 +46,7 @@ const navSections = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { t } = useLanguage();
-  const { role } = useUser();
+  const { role, user } = useUser();
   const { systemName, systemLogo } = useBranding();
 
   function isActive(href) {
@@ -75,21 +75,49 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {filteredSections.map((section) => (
-        <div key={section.titleKey} className="sidebar-section">
-          <div className="sidebar-section-title">{t(section.titleKey)}</div>
-          {section.links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`sidebar-link ${isActive(link.href) ? 'active' : ''}`}
-              style={{ paddingLeft: '16px' }}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {filteredSections.map((section) => (
+          <div key={section.titleKey} className="sidebar-section">
+            <div className="sidebar-section-title">{t(section.titleKey)}</div>
+            {section.links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`sidebar-link ${isActive(link.href) ? 'active' : ''}`}
+                style={{ paddingLeft: '16px' }}
+              >
+                <span>{t(link.labelKey)}</span>
+              </Link>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: '16px', borderTop: '1px solid var(--border-light)' }}>
+        {user?.impersonatedBy && (
+          <div style={{ marginBottom: '12px', padding: '10px', background: 'var(--amber-50)', border: '1px solid var(--amber-200)', borderRadius: '10px', fontSize: '12px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--amber-700)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>⚠️</span> Impersonating Store Admin
+            </div>
+            <div style={{ fontSize: '10px', color: 'var(--amber-600)', marginBottom: '8px' }}>
+              Logged in as {user.name}
+            </div>
+            <button 
+              className="btn btn-primary btn-sm" 
+              style={{ width: '100%', fontSize: '11px', padding: '6px' }}
+              onClick={async () => {
+                document.cookie = 'cleanflow_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+                window.location.href = '/login';
+              }}
             >
-              <span>{t(link.labelKey)}</span>
-            </Link>
-          ))}
+              End Session
+            </button>
+          </div>
+        )}
+        <div className="sidebar-footer-brand">
+          powered by <span style={{ color: 'var(--primary-600)', fontWeight: 600 }}>smartcleanerspro</span>
         </div>
-      ))}
+      </div>
     </nav>
   );
 }

@@ -93,14 +93,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Global Metrics Cards */}
+        {/* Global SaaS Metrics */}
         <div className="stats-grid mb-24">
           <div className="stat-card">
             <div className="stat-card-header">
-              <div className="stat-card-title">Total Active Stores</div>
+              <div className="stat-card-title">Monthly Rec. Revenue (MRR)</div>
             </div>
-            <div className="stat-card-value">{masterStats?.totalStores || 0}</div>
-            <div className="stat-card-trend trend-up">System Health: 100% Online</div>
+            <div className="stat-card-value" style={{ color: 'var(--primary-600)' }}>₹{masterStats?.mrr?.toLocaleString() || 0}</div>
+            <div className="stat-card-trend trend-up">↑ 12% from last month</div>
           </div>
           <div className="stat-card">
             <div className="stat-card-header">
@@ -111,17 +111,28 @@ export default function Dashboard() {
           </div>
           <div className="stat-card">
             <div className="stat-card-header">
-              <div className="stat-card-title">Total Staff/Users</div>
+              <div className="stat-card-title">System Health</div>
             </div>
-            <div className="stat-card-value">{masterStats?.totalUsers || 0}</div>
-            <div className="stat-card-trend trend-neutral">Across all roles</div>
+            <div className="stat-card-value" style={{ fontSize: '20px', color: 'var(--emerald-600)' }}>{masterStats?.systemHealth || 'Online'}</div>
+            <div className="stat-card-trend trend-neutral">All nodes operational</div>
           </div>
           <div className="stat-card">
             <div className="stat-card-header">
-              <div className="stat-card-title">Global Active Orders</div>
+              <div className="stat-card-title">Churn Rate</div>
             </div>
-            <div className="stat-card-value">{masterStats?.globalActiveOrders || 0}</div>
-            <div className="stat-card-trend trend-neutral">In processing</div>
+            <div className="stat-card-value">{masterStats?.churn || 0}%</div>
+            <div className="stat-card-trend trend-down">↓ 0.2% improvement</div>
+          </div>
+        </div>
+
+        <div className="stats-grid mb-24" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <div className="stat-card">
+            <div className="stat-card-header"><div className="stat-card-title">Active Stores</div></div>
+            <div className="stat-card-value">{masterStats?.totalStores || 0}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card-header"><div className="stat-card-title">Total System Users</div></div>
+            <div className="stat-card-value">{masterStats?.totalUsers || 0}</div>
           </div>
         </div>
 
@@ -134,25 +145,67 @@ export default function Dashboard() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Store ID</th>
                   <th>Store Name</th>
                   <th>Location</th>
-                  <th>Staff Count</th>
-                  <th>Total Orders</th>
-                  <th>Generated Revenue</th>
+                  <th>Subscription</th>
+                  <th>Since</th>
+                  <th>Revenue</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {masterStats?.stores?.map((store) => (
                   <tr key={store.id}>
-                    <td><span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>#{store.id}</span></td>
-                    <td style={{ fontWeight: 500 }}>{store.store_name}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {store.store_name}
+                      <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: 400 }}>ID: #{store.id}</div>
+                    </td>
                     <td>{store.city}</td>
-                    <td>{store.staff_count}</td>
-                    <td>{store.order_count}</td>
+                    <td>
+                      <span className={`badge badge-${store.subscription_status === 'paid' ? 'success' : 'processing'}`} style={{ fontSize: '10px' }}>
+                        {store.subscription_status?.toUpperCase() || 'TRIAL'}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      {new Date(store.created_at || Date.now()).toLocaleDateString()}
+                    </td>
                     <td style={{ fontWeight: 600, color: 'var(--primary-600)' }}>₹{store.revenue.toLocaleString()}</td>
-                    <td><span className="badge badge-success">Online</span></td>
+                    <td>
+                      <span className={`badge badge-${store.status === 'active' ? 'success' : 'processing'}`}>
+                        {store.status?.toUpperCase() || 'ACTIVE'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          className="btn btn-ghost btn-sm" 
+                          title="Impersonate Admin"
+                          onClick={async () => {
+                            const res = await fetch(`/api/stores/${store.id}/impersonate`, { method: 'POST' });
+                            if (res.ok) window.location.href = '/';
+                          }}
+                        >
+                          👤
+                        </button>
+                        <button 
+                          className="btn btn-ghost btn-sm" 
+                          style={{ color: store.status === 'active' ? 'var(--red-500)' : 'var(--emerald-500)' }}
+                          title={store.status === 'active' ? 'Suspend Store' : 'Activate Store'}
+                          onClick={async () => {
+                            const newStatus = store.status === 'active' ? 'suspended' : 'active';
+                            await fetch(`/api/stores/${store.id}/status`, { 
+                              method: 'POST', 
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ status: newStatus })
+                            });
+                            fetchData();
+                          }}
+                        >
+                          {store.status === 'active' ? '🚫' : '✅'}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

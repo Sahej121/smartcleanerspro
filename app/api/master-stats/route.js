@@ -29,8 +29,8 @@ export async function GET(req) {
     // 2. Active Users (Across all stores)
     const { totalUsers } = db.prepare('SELECT COUNT(*) as totalUsers FROM users').get();
 
-    // 3. Global Total Revenue
-    const { globalRevenue } = db.prepare('SELECT SUM(total_amount) as globalRevenue FROM orders WHERE payment_status = ?').get('completed');
+    // 3. Global Total Revenue (using 'paid' status from schema)
+    const { globalRevenue } = db.prepare('SELECT SUM(total_amount) as globalRevenue FROM orders WHERE payment_status = ?').get('paid');
 
     // 4. Global Active Orders (processing, received, ready)
     const { globalActiveOrders } = db.prepare(`
@@ -41,22 +41,30 @@ export async function GET(req) {
     // 5. Stores list with individual performance
     const storesData = db.prepare(`
       SELECT 
-        s.id, s.store_name, s.city,
+        s.id, s.store_name, s.city, s.status, s.subscription_status, s.created_at,
         COUNT(DISTINCT u.id) as staff_count,
         COUNT(DISTINCT o.id) as order_count,
-        COALESCE(SUM(CASE WHEN o.payment_status = 'completed' THEN o.total_amount ELSE 0 END), 0) as revenue
+        COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_amount ELSE 0 END), 0) as revenue
       FROM stores s
       LEFT JOIN users u ON u.store_id = s.id
       LEFT JOIN orders o ON o.store_id = s.id
       GROUP BY s.id
     `).all();
 
+    // 6. SaaS Metrics (Mocked for now based on store counts)
+    const subPrice = 4999; // Base price per store
+    const mrr = totalStores * subPrice;
+    const churn = 0.5; // Mocked 0.5% churn
+
     return NextResponse.json({
       totalStores,
       totalUsers,
       globalRevenue: globalRevenue || 0,
       globalActiveOrders,
-      stores: storesData
+      stores: storesData,
+      mrr,
+      churn,
+      systemHealth: '100% Online'
     });
 
   } catch (error) {

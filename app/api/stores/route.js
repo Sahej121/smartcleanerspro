@@ -66,7 +66,8 @@ export async function POST(req) {
     const createTenant = db.transaction(() => {
       // 1. Create the store
       const storeInsert = db.prepare(`
-        INSERT INTO stores (store_name, city, owner_id) VALUES (?, ?, ?)
+        INSERT INTO stores (store_name, city, owner_id, status, subscription_status, last_activity) 
+        VALUES (?, ?, ?, 'active', 'trial', CURRENT_TIMESTAMP)
       `).run(store_name, city, payload.id);
       
       const newStoreId = storeInsert.lastInsertRowid;
