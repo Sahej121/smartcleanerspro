@@ -18,6 +18,8 @@ export default function NewOrder() {
   const [submitting, setSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(null);
   const [showAllItems, setShowAllItems] = useState(false);
+  const [discount, setDiscount] = useState(0);
+  const [showDiscountInput, setShowDiscountInput] = useState(false);
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(setCustomers);
@@ -50,6 +52,7 @@ export default function NewOrder() {
 
   const removeFromCart = (index) => {
     setCart(cart.filter((_, i) => i !== index));
+    if (cart.length <= 1) setDiscount(0); // Reset discount if cart becomes empty
   };
 
   const updateQuantity = (index, qty) => {
@@ -58,8 +61,8 @@ export default function NewOrder() {
   };
 
   const subtotal = cart.reduce((s, c) => s + c.price * c.quantity, 0);
-  const tax = Math.round(subtotal * 0.18 * 100) / 100;
-  const total = subtotal + tax;
+  const tax = Math.max(0, Math.round((subtotal - discount) * 0.18 * 100) / 100);
+  const total = Math.max(0, subtotal - discount + tax);
 
   const filteredCustomers = customers.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -89,6 +92,7 @@ export default function NewOrder() {
           customer_id: selectedCustomer?.id,
           items: cart,
           payment_method: paymentMethod,
+          discount: discount,
         }),
       });
       const order = await res.json();
@@ -378,6 +382,50 @@ export default function NewOrder() {
                 <span>Subtotal</span>
                 <span>₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
+              
+              <div style={{ padding: '8px 0', borderTop: '1px dashed var(--slate-100)', marginBottom: '4px' }}>
+                {!showDiscountInput && discount === 0 ? (
+                  <button 
+                    className="btn btn-ghost btn-sm" 
+                    onClick={() => setShowDiscountInput(true)}
+                    style={{ color: 'var(--primary-600)', fontSize: '12px', padding: 0 }}
+                  >
+                    + Add Discount
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Discount</span>
+                      {showDiscountInput ? (
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px' }}>₹</span>
+                          <input 
+                            type="number" 
+                            className="form-input" 
+                            value={discount} 
+                            onChange={e => setDiscount(Number(e.target.value))}
+                            style={{ width: '70px', height: '28px', fontSize: '12px', padding: '4px' }}
+                            autoFocus
+                          />
+                          <button className="btn btn-ghost btn-sm" onClick={() => setShowDiscountInput(false)} style={{ padding: '2px 4px' }}>✓</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--red-600)' }}>−₹{discount.toLocaleString('en-IN')}</span>
+                          <button 
+                            className="btn btn-ghost btn-sm" 
+                            onClick={() => setShowDiscountInput(true)} 
+                            style={{ fontSize: '10px', color: 'var(--primary-600)', padding: 0 }}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
                 <span>GST (18%)</span>
                 <span>₹{tax.toLocaleString('en-IN')}</span>
