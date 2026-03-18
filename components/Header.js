@@ -11,7 +11,7 @@ export default function Header() {
       <div className="header-left">
         <div className="header-search">
           <span className="header-search-icon"></span>
-          <input type="text" placeholder={t('search_orders') || 'Search orders, customers...'} />
+          <input type="text" placeholder={t('search_orders') || 'Search everything...'} style={{ background: 'var(--slate-100)', border: '1px solid transparent' }} />
         </div>
       </div>
 

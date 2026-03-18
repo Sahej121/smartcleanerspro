@@ -66,12 +66,12 @@ export default function Sidebar() {
   return (
     <nav className="sidebar" id="sidebar">
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">{systemLogo}</div>
+        <div className="sidebar-logo-icon" style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)' }}>
+          {systemLogo || 'C'}
+        </div>
         <div className="sidebar-logo-text">
-          <h1>{systemName}</h1>
-          <p style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '-2px' }}>
-            powered by <span style={{ color: 'var(--primary-600)', fontWeight: 600 }}>smartcleanerspro</span>
-          </p>
+          <h1 style={{ letterSpacing: '-0.02em' }}>{systemName || 'CleanFlow'}</h1>
+          <p style={{ fontWeight: 600, color: 'var(--primary-600)' }}>Smart Solutions</p>
         </div>
       </div>
 
