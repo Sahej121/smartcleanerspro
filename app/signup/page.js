@@ -1,4 +1,5 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, ROLES } from '@/lib/UserContext';
@@ -31,95 +32,119 @@ export default function SignupPage() {
         await fetchUser();
         router.push('/');
       } else {
-        setError(data.error || 'Signup failed');
+        setError(data.error || 'Identity creation failed');
       }
     } catch (err) {
-      setError('An error occurred during signup');
+      setError('A secure connection error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', padding: '20px' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '32px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ width: '56px', height: '56px', background: 'var(--primary-600)', color: 'white', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold', margin: '0 auto 16px' }}>
-            C
-          </div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Create an Account</h1>
-          <p className="text-muted">Join CleanFlow POS System</p>
-        </div>
+    <div className="min-h-screen bg-[#F8FAF9] flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Decorative Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 blur-[120px] rounded-full"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full"></div>
 
-        {error && (
-          <div style={{ padding: '12px', background: '#fef2f2', color: '#ef4444', borderRadius: '8px', fontSize: '14px', marginBottom: '20px', border: '1px solid #fca5a5' }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="form-group">
-            <label className="form-label">Full Name</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              value={name} 
-              onChange={e => setName(e.target.value)}
-              required 
-              placeholder="John Doe"
-            />
+      <div className="w-full max-w-lg relative z-10 animate-in fade-in zoom-in-95 duration-700">
+        <div className="glass-panel p-10 rounded-[3.5rem] border border-white bg-white/40 shadow-[0_32px_64px_-16px_rgba(11,28,48,0.1)]">
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 rounded-[1.5rem] primary-gradient flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-emerald-900/20 mx-auto mb-6 transition-transform hover:scale-110">
+              C
+            </div>
+            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">Join CleanFlow</h1>
+            <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">Create Atelier Profile</p>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <input 
-              type="email" 
-              className="form-input" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)}
-              required 
-              placeholder="john@example.com"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input 
-              type="password" 
-              className="form-input" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)}
-              required 
-              placeholder="••••••••"
-              minLength={6}
-            />
-          </div>
+          {error && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 animate-in slide-in-from-top-2">
+              <span className="material-symbols-outlined text-lg">error</span>
+              <p className="text-[11px] font-black uppercase tracking-tight">{error}</p>
+            </div>
+          )}
 
-          <div className="form-group">
-            <label className="form-label">Account Role</label>
-            <select 
-              className="form-select" 
-              value={role} 
-              onChange={e => setRole(e.target.value)}
+          <form onSubmit={handleSignup} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Full Name</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">person</span>
+                <input 
+                  type="text" 
+                  className="w-full bg-white/80 border-none rounded-2xl py-4 pl-12 pr-6 text-sm font-bold shadow-inner focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-200"
+                  value={name} 
+                  onChange={e => setName(e.target.value)}
+                  required 
+                  placeholder="Christian Dior"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Digital Identity</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">mail</span>
+                <input 
+                  type="email" 
+                  className="w-full bg-white/80 border-none rounded-2xl py-4 pl-12 pr-6 text-sm font-bold shadow-inner focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-200"
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)}
+                  required 
+                  placeholder="dior@atelier.io"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Security Key</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">lock</span>
+                <input 
+                  type="password" 
+                  className="w-full bg-white/80 border-none rounded-2xl py-4 pl-12 pr-6 text-sm font-bold shadow-inner focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-200"
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)}
+                  required 
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Workspace Role</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">admin_panel_settings</span>
+                <select 
+                  className="w-full bg-white/80 border-none rounded-2xl py-4 pl-12 pr-6 text-sm font-bold shadow-inner focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                  value={role} 
+                  onChange={e => setRole(e.target.value)}
+                >
+                  <option value={ROLES.ADMIN}>Atelier Manager (Admin)</option>
+                  <option value={ROLES.WORKER}>Floor Specialist (Staff)</option>
+                </select>
+                <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className="w-full primary-gradient text-white py-5 rounded-[2.5rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group"
+              disabled={loading}
             >
-              <option value={ROLES.ADMIN}>Admin (Manager)</option>
-              <option value={ROLES.WORKER}>Worker (Staff/Operations)</option>
-            </select>
+              <span className="relative z-10">{loading ? 'CREATING IDENTITY...' : 'INITIALIZE PROFILE'}</span>
+              <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500 skew-x-12"></div>
+            </button>
+          </form>
+
+          <div className="text-center mt-10">
+            <p className="text-[11px] font-bold text-slate-400">
+              Already have a profile? <button onClick={() => router.push('/login')} className="text-primary font-black hover:underline ml-1">SIGN IN</button>
+            </p>
           </div>
-
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%', padding: '12px', marginTop: '8px' }}
-            disabled={loading}
-          >
-            {loading ? 'Creating Account...' : 'Sign Up'}
-          </button>
-        </form>
-
-        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-          Already have an account? <a href="/login" style={{ color: 'var(--primary-600)', fontWeight: 600, textDecoration: 'none' }}>Sign In</a>
         </div>
+        
+        <p className="text-center mt-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Pristine Atelier v2.4.0</p>
       </div>
     </div>
   );

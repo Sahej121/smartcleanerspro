@@ -11,7 +11,8 @@ export async function middleware(request) {
     pathname.startsWith('/icons/') ||
     pathname === '/manifest.json' ||
     pathname === '/favicon.ico' ||
-    pathname === '/sw.js'
+    pathname === '/sw.js' ||
+    pathname === '/suspended'
   ) {
     return NextResponse.next();
   }

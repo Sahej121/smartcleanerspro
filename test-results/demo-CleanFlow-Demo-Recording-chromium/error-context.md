@@ -1,0 +1,107 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - navigation [ref=e7]:
+            - button "previous" [disabled] [ref=e8]:
+              - img "previous" [ref=e9]
+            - generic [ref=e11]:
+              - generic [ref=e12]: 1/
+              - text: "1"
+            - button "next" [disabled] [ref=e13]:
+              - img "next" [ref=e14]
+          - img
+        - generic [ref=e16]:
+          - link "Next.js 16.1.6 (stale) Turbopack" [ref=e17] [cursor=pointer]:
+            - /url: https://nextjs.org/docs/messages/version-staleness
+            - img [ref=e18]
+            - generic "There is a newer version (16.2.1) available, upgrade recommended!" [ref=e20]: Next.js 16.1.6 (stale)
+            - generic [ref=e21]: Turbopack
+          - img
+      - dialog "Build Error" [ref=e23]:
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - generic [ref=e30]: Build Error
+              - generic [ref=e31]:
+                - button "Copy Error Info" [ref=e32] [cursor=pointer]:
+                  - img [ref=e33]
+                - link "Go to related documentation" [ref=e35] [cursor=pointer]:
+                  - /url: https://nextjs.org/docs/messages/module-not-found
+                  - img [ref=e36]
+                - button "Attach Node.js inspector" [ref=e38] [cursor=pointer]:
+                  - img [ref=e39]
+            - generic [ref=e48]: "Module not found: Can't resolve '@/lib/db'"
+          - generic [ref=e50]:
+            - generic [ref=e52]:
+              - img [ref=e54]
+              - generic [ref=e56]: ./app/api/orders/[id]/items/[itemId]/route.js (1:1)
+              - button "Open in editor" [ref=e57] [cursor=pointer]:
+                - img [ref=e59]
+            - generic [ref=e62]:
+              - generic [ref=e63]: Module not found
+              - generic [ref=e64]: ": Can't resolve"
+              - text: "'@/lib/db' >"
+              - generic [ref=e65]: 1 |
+              - text: import
+              - generic [ref=e66]: "{ client }"
+              - text: from '@/lib/db';
+              - generic [ref=e67]: "|"
+              - text: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              - generic [ref=e68]: 2 |
+              - text: import
+              - generic [ref=e69]: "{ requireRole }"
+              - text: from '@/lib/auth';
+              - generic [ref=e70]: 3 |
+              - text: import
+              - generic [ref=e71]: "{"
+              - text: NextResponse
+              - generic [ref=e72]: "}"
+              - text: from 'next/server';
+              - generic [ref=e73]: 4 |
+              - generic [ref=e74]:
+                - text: "Import map: aliased to relative './lib/db' inside of [project]/"
+                - link "https://nextjs.org/docs/messages/module-not-found" [ref=e75] [cursor=pointer]:
+                  - /url: https://nextjs.org/docs/messages/module-not-found
+        - generic [ref=e76]: "1"
+        - generic [ref=e77]: "2"
+    - generic [ref=e82] [cursor=pointer]:
+      - button "Open Next.js Dev Tools" [ref=e83]:
+        - img [ref=e84]
+      - button "Open issues overlay" [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]: "0"
+          - generic [ref=e91]: "1"
+        - generic [ref=e92]: Issue
+  - alert [ref=e93]
+  - main [ref=e94]:
+    - generic [ref=e99]:
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e102]: C
+          - heading "CleanFlow" [level=1] [ref=e103]
+          - paragraph [ref=e104]: Atelier Management
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - text: System Identity
+            - generic [ref=e107]:
+              - generic [ref=e108]: person
+              - textbox "Email or phone reference" [ref=e109]: priya@cleanflow.com
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - generic [ref=e112]: Access Key
+              - button "Forgot?" [ref=e113]
+            - generic [ref=e114]:
+              - generic [ref=e115]: lock
+              - textbox "••••••••" [active] [ref=e116]: staff1234
+          - button "AUTHORIZE ACCESS" [ref=e117]:
+            - generic [ref=e118]: AUTHORIZE ACCESS
+        - paragraph [ref=e120]:
+          - text: New to the Atelier?
+          - button "REGISTER" [ref=e121]
+      - paragraph [ref=e122]: Pristine v2.4.0-stable
+```

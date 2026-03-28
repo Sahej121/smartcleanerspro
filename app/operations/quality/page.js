@@ -30,7 +30,7 @@ export default function QualityControlPage() {
   if (loading) return <div className="loading-spinner"></div>;
 
   return (
-    <div id="quality-page">
+    <div id="quality-page" className="p-4 lg:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="page-header">
         <div>
           <h1>Quality Control</h1>

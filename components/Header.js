@@ -1,86 +1,113 @@
-import { useState } from 'react';
+'use client';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { useUser, ROLES } from '@/lib/UserContext';
+import { useUser } from '@/lib/UserContext';
 import { useNotifications } from '@/lib/NotificationContext';
 import Link from 'next/link';
 
-export default function Header() {
+export default function Header({ setMobileMenuOpen }) {
   const { t } = useLanguage();
-  const { user, role, logout } = useUser();
+  const { user, role } = useUser();
   const { notifications, unreadCount, markAllAsRead } = useNotifications();
   const [showNotifs, setShowNotifs] = useState(false);
+  const [bellShake, setBellShake] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  // Trigger bell shake when unread count changes
+  useEffect(() => {
+    if (unreadCount > 0) {
+      setBellShake(true);
+      const timer = setTimeout(() => setBellShake(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [unreadCount]);
 
   return (
-    <header className="header" id="app-header">
-      <div className="header-left">
-        <div className="header-search">
-          <span className="header-search-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          </span>
-          <input type="text" placeholder={t('search_orders') || 'Search everything...'} style={{ background: 'var(--slate-100)', border: '1px solid transparent' }} />
+    <header className="sticky top-0 z-40 flex items-center justify-between px-4 lg:px-8 h-16 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-emerald-100/20 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+      <div className="flex items-center gap-3 lg:gap-4 flex-1">
+        <button 
+          className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors shrink-0"
+          onClick={() => setMobileMenuOpen?.(true)}
+        >
+          <span className="material-symbols-outlined">menu_open</span>
+        </button>
+        <div className={`relative w-full max-w-md transition-all duration-500 ${searchFocused ? 'max-w-lg' : ''}`}>
+          <span className={`material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-sm transition-colors duration-300 ${searchFocused ? 'text-primary' : 'text-slate-400'}`}>search</span>
+          <input 
+            className={`w-full bg-surface-container-low border rounded-full py-2.5 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition-all duration-300 ${
+              searchFocused 
+                ? 'border-primary/30 ring-4 ring-primary/10 shadow-lg shadow-primary/5 bg-white' 
+                : 'border-transparent focus:ring-2 focus:ring-primary/20'
+            }`}
+            placeholder={t('search_orders') || "Search orders, customers, or items..."} 
+            type="text"
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+          />
         </div>
       </div>
 
-      <div className="header-right">
-        {user && (
+      <div className="flex items-center gap-3">
+        {/* Notifications */}
+        <div className="relative">
           <button 
-            className="btn btn-ghost btn-sm" 
-            onClick={logout}
-            style={{ marginRight: '8px', color: 'var(--text-secondary)' }}
-          >
-            Logout
-          </button>
-        )}
-
-        <div style={{ position: 'relative' }}>
-          <button 
-            className="header-icon-btn" 
-            title="Notifications" 
-            id="notifications-btn"
+            className={`p-2.5 text-slate-500 hover:bg-emerald-50/50 hover:text-emerald-700 rounded-full transition-all relative ${bellShake ? 'bell-shake' : ''}`}
             onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) markAllAsRead(); }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            {unreadCount > 0 && <span className="notification-dot"></span>}
+            <span className="material-symbols-outlined">notifications</span>
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-error rounded-full border-2 border-white status-dot-pulse"></span>
+            )}
           </button>
 
           {showNotifs && (
-            <div className="card" style={{ 
-              position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '320px', 
-              zIndex: 1000, padding: '12px', maxHeight: '400px', overflowY: 'auto' 
-            }}>
-              <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                Notifications
-                <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: 400 }}>{notifications.length} total</span>
+            <div className="absolute top-full right-0 mt-2 w-80 glass-panel p-5 rounded-2xl shadow-xl z-50 border border-outline-variant/10 animate-fade-in-down">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-black text-sm text-on-surface">Notifications</h3>
+                <span className="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded-full">{notifications.length} total</span>
               </div>
-              {notifications.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-tertiary)', fontSize: '13px' }}>No new alerts</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {notifications.map(n => (
-                    <div key={n.id} style={{ padding: '8px', borderRadius: '8px', background: n.read ? 'transparent' : 'var(--primary-50)', border: '1px solid rgba(0,0,0,0.03)' }}>
-                      <div style={{ fontWeight: 600, fontSize: '12px', color: 'var(--text-primary)' }}>{n.title}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>{n.message}</div>
-                      <div style={{ fontSize: '9px', color: 'var(--text-tertiary)' }}>{new Date(n.time).toLocaleTimeString()}</div>
+              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto no-scrollbar">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-6">
+                    <span className="material-symbols-outlined text-3xl text-slate-200 mb-2 block">notifications_off</span>
+                    <p className="text-xs text-slate-400 font-medium">No new alerts</p>
+                  </div>
+                ) : (
+                  notifications.map((n, i) => (
+                    <div key={n.id} className={`p-3 bg-white/60 rounded-xl border border-slate-100/50 hover:bg-white hover:shadow-sm transition-all cursor-pointer animate-fade-in-up stagger-${i + 1}`}>
+                      <p className="text-xs font-bold text-on-surface">{n.title}</p>
+                      <p className="text-[10px] text-on-surface-variant mb-1 leading-relaxed">{n.message}</p>
+                      <p className="text-[9px] text-slate-400 font-medium">{new Date(n.time).toLocaleTimeString()}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  ))
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        <Link href="/admin/settings" className="header-icon-btn" title={t('settings') || "Settings"} id="settings-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        {/* Help */}
+        <Link href="/support" className="p-2.5 text-slate-500 hover:bg-emerald-50/50 hover:text-emerald-700 rounded-full transition-all">
+          <span className="material-symbols-outlined">help</span>
         </Link>
-        <button className="header-user" id="user-menu-btn">
-          <div className="header-avatar">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</div>
-          <div className="header-user-info">
-            <div className="header-user-name">{user?.name || 'User'}</div>
-            <div className="header-user-role" style={{ textTransform: 'capitalize' }}>
-              {t(role) || role || 'Worker'}
+
+        <div className="h-8 w-[1px] bg-slate-200/60 mx-1"></div>
+
+        {/* User Profile */}
+        <div className="flex items-center gap-3 pl-2 group cursor-pointer hover:bg-emerald-50/30 rounded-2xl px-3 py-1.5 transition-all">
+          <div className="text-right hidden lg:block">
+            <p className="text-xs font-bold text-on-surface leading-none">{user?.name || 'Guest'}</p>
+            <p className="text-[10px] text-emerald-600 font-semibold capitalize mt-1 flex items-center justify-end gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+              {t(role) || role || 'User'}
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-full border-2 border-primary/20 p-0.5 group-hover:border-primary/40 transition-colors">
+            <div className="w-full h-full rounded-full premium-gradient flex items-center justify-center text-white font-bold text-sm shadow-inner">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
           </div>
-        </button>
+        </div>
       </div>
     </header>
   );

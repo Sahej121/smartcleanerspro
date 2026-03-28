@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { hashPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -15,35 +15,31 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Owner accounts cannot be created via signup.' }, { status: 403 });
     }
 
-    const db = getDb();
-
     // Default to store 1 for MVP
     const store_id = 1;
 
     // Check if user exists
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existing) {
+    const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
     }
 
     const hashedPassword = await hashPassword(password);
 
     // Map frontend roles to db roles
-    // 'owner', 'admin' -> 'manager' or 'owner'
-    // 'worker' -> 'staff'
     let dbRole = 'staff';
     if (role === 'owner') dbRole = 'owner';
     else if (role === 'admin') dbRole = 'manager';
     else if (role === 'worker') dbRole = 'staff';
 
-    const info = db.prepare(`
-      INSERT INTO users (name, email, password_hash, role, store_id)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(name, email, hashedPassword, dbRole, store_id);
+    const info = await query(
+      `INSERT INTO users (name, email, password_hash, role, store_id) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [name, email, hashedPassword, dbRole, store_id]
+    );
 
     // Create session
     const userPayload = {
-      id: info.lastInsertRowid,
+      id: info.rows[0].id,
       name,
       email,
       role: dbRole,

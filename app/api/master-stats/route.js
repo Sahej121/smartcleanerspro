@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -19,27 +19,29 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
     }
 
-    const db = getDb();
-
     // Aggregate data across ALL stores
     
     // 1. Total Stores
-    const { totalStores } = db.prepare('SELECT COUNT(*) as totalStores FROM stores').get();
+    const storesRes = await query('SELECT COUNT(*) as totalstores FROM stores');
+    const totalStores = parseInt(storesRes.rows[0].totalstores);
 
     // 2. Active Users (Across all stores)
-    const { totalUsers } = db.prepare('SELECT COUNT(*) as totalUsers FROM users').get();
+    const usersRes = await query('SELECT COUNT(*) as totalusers FROM users');
+    const totalUsers = parseInt(usersRes.rows[0].totalusers);
 
     // 3. Global Total Revenue (using 'paid' status from schema)
-    const { globalRevenue } = db.prepare('SELECT SUM(total_amount) as globalRevenue FROM orders WHERE payment_status = ?').get('paid');
+    const revenueRes = await query("SELECT COALESCE(SUM(total_amount), 0) as globalrevenue FROM orders WHERE payment_status = $1", ['paid']);
+    const globalRevenue = parseFloat(revenueRes.rows[0].globalrevenue);
 
     // 4. Global Active Orders (processing, received, ready)
-    const { globalActiveOrders } = db.prepare(`
-      SELECT COUNT(*) as globalActiveOrders FROM orders 
+    const activeRes = await query(`
+      SELECT COUNT(*) as globalactiveorders FROM orders 
       WHERE status IN ('received', 'processing', 'ready')
-    `).get();
+    `);
+    const globalActiveOrders = parseInt(activeRes.rows[0].globalactiveorders);
 
     // 5. Stores list with individual performance
-    const storesData = db.prepare(`
+    const storesData = await query(`
       SELECT 
         s.id, s.store_name, s.city, s.status, s.subscription_status, s.created_at,
         COUNT(DISTINCT u.id) as staff_count,
@@ -49,7 +51,7 @@ export async function GET(req) {
       LEFT JOIN users u ON u.store_id = s.id
       LEFT JOIN orders o ON o.store_id = s.id
       GROUP BY s.id
-    `).all();
+    `);
 
     // 6. SaaS Metrics (Mocked for now based on store counts)
     const subPrice = 4999; // Base price per store
@@ -59,9 +61,9 @@ export async function GET(req) {
     return NextResponse.json({
       totalStores,
       totalUsers,
-      globalRevenue: globalRevenue || 0,
+      globalRevenue,
       globalActiveOrders,
-      stores: storesData,
+      stores: storesData.rows,
       mrr,
       churn,
       systemHealth: '100% Online'

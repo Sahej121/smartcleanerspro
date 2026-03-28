@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db/db';
+import { query, logSystemEvent } from '@/lib/db/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -22,12 +22,23 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
     }
 
-    if (!['active', 'suspended'].includes(status)) {
+    if (!['active', 'suspended', 'idle'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status.' }, { status: 400 });
     }
 
-    const db = getDb();
-    db.prepare('UPDATE stores SET status = ? WHERE id = ?').run(status, id);
+    // Get store name for logging
+    const storeRes = await query('SELECT store_name FROM stores WHERE id = $1', [id]);
+    const storeName = storeRes.rows[0]?.store_name || `Store #${id}`;
+
+    await query('UPDATE stores SET status = $1 WHERE id = $2', [status, id]);
+
+    // Log the event
+    await logSystemEvent(
+      'SERVICE_CONTROL',
+      `Store '${storeName}' status changed to ${status.toUpperCase()} by Administrator`,
+      status === 'suspended' ? 'warning' : 'info',
+      id
+    );
 
     return NextResponse.json({ success: true, status });
 

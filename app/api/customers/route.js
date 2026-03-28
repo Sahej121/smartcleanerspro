@@ -1,13 +1,14 @@
-import { getDb } from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
+import { requireRole } from '@/lib/auth';
+import { sanitizeText } from '@/lib/sanitize';
 
 export async function GET(request) {
   try {
-    const db = getDb();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
 
-    let query = `
+    let sql = `
       SELECT c.*, 
         (SELECT COUNT(*) FROM orders WHERE customer_id = c.id) as order_count,
         (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE customer_id = c.id AND payment_status = 'paid') as total_spent
@@ -16,32 +17,44 @@ export async function GET(request) {
     const params = [];
 
     if (search) {
-      query += ' WHERE c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ?';
+      sql += ' WHERE c.name ILIKE $1 OR c.phone ILIKE $2 OR c.email ILIKE $3';
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    query += ' ORDER BY c.created_at DESC';
+    sql += ' ORDER BY c.created_at DESC';
 
-    const customers = db.prepare(query).all(...params);
-    return NextResponse.json(customers);
+    const res = await query(sql, params);
+    return NextResponse.json(res.rows);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function POST(request) {
+  const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
   try {
-    const db = getDb();
     const body = await request.json();
     const { name, phone, email, address, notes } = body;
 
-    const result = db.prepare(`
-      INSERT INTO customers (name, phone, email, address, notes) VALUES (?, ?, ?, ?, ?)
-    `).run(name, phone || '', email || '', address || '', notes || '');
+    const safeName = sanitizeText(name) || '';
+    const safeAddress = sanitizeText(address) || '';
+    const safeNotes = sanitizeText(notes) || '';
 
-    const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(result.lastInsertRowid);
-    return NextResponse.json(customer, { status: 201 });
+    const res = await query(
+      `INSERT INTO customers (name, phone, email, address, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [safeName, phone || '', email || '', safeAddress, safeNotes]
+    );
+
+    return NextResponse.json(res.rows[0], { status: 201 });
   } catch (error) {
+    if (error.code === '23505') {
+      return NextResponse.json({ 
+        error: 'A customer with this phone number already exists.',
+        code: 'DUPLICATE_PHONE'
+      }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

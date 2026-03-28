@@ -57,7 +57,7 @@ export default function StaffPage() {
   if (loading) return <div className="loading-spinner"></div>;
 
   return (
-    <div id="staff-page">
+    <div id="staff-page" className="p-4 lg:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="page-header">
         <div>
           <h1>Staff Management</h1>
@@ -68,7 +68,7 @@ export default function StaffPage() {
         </button>
       </div>
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: '24px' }}>
+      <div className="stats-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         {ROLES.map(role => {
           const count = staff.filter(s => s.role === role).length;
           return (
@@ -81,8 +81,8 @@ export default function StaffPage() {
       </div>
 
       <div className="card" style={{ padding: 0 }}>
-        <div className="table-container" style={{ border: 'none' }}>
-          <table className="table">
+        <div className="table-container overflow-x-auto" style={{ border: 'none' }}>
+          <table className="table min-w-[600px]">
             <thead>
               <tr>
                 <th>Name</th>

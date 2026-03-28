@@ -52,7 +52,7 @@ export default function ScannerPage() {
   };
 
   return (
-    <div id="scanner-page">
+    <div id="scanner-page" className="p-4 lg:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="page-header">
         <div>
           <h1>Garment Scanner</h1>
@@ -61,7 +61,7 @@ export default function ScannerPage() {
       </div>
 
       <div className="card" style={{ maxWidth: '700px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <input
             className="form-input"
             placeholder="Enter order number (e.g., CF-1001) or scan barcode..."
@@ -70,7 +70,7 @@ export default function ScannerPage() {
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
             style={{ flex: 1, fontSize: '16px', padding: '14px 18px' }}
           />
-          <button className="btn btn-primary btn-lg" onClick={handleSearch} disabled={loading}>
+          <button className="btn btn-primary btn-lg whitespace-nowrap" onClick={handleSearch} disabled={loading}>
             {loading ? '...' : '🔍 Search'}
           </button>
         </div>

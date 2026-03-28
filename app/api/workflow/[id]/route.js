@@ -1,19 +1,19 @@
-import { getDb } from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
 const STAGE_ORDER = ['received', 'sorting', 'washing', 'dry_cleaning', 'drying', 'ironing', 'quality_check', 'ready'];
 
 export async function PUT(request, { params }) {
   try {
-    const db = getDb();
     const { id } = await params;
     const body = await request.json();
     const { action } = body; // 'advance' or 'reject'
 
-    const item = db.prepare('SELECT * FROM order_items WHERE id = ?').get(id);
-    if (!item) {
+    const itemRes = await query('SELECT * FROM order_items WHERE id = $1', [id]);
+    if (itemRes.rows.length === 0) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
+    const item = itemRes.rows[0];
 
     let newStage;
     if (action === 'reject') {
@@ -27,23 +27,25 @@ export async function PUT(request, { params }) {
       newStage = STAGE_ORDER[currentIndex + 1];
     }
 
-    db.prepare('UPDATE order_items SET status = ? WHERE id = ?').run(newStage, id);
+    await query('UPDATE order_items SET status = $1 WHERE id = $2', [newStage, id]);
 
     // Add workflow entry
-    db.prepare(`INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES (?, ?, 1)`)
-      .run(id, newStage);
+    await query(
+      `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, $2, 1)`,
+      [id, newStage]
+    );
 
     // Update order status based on items
-    const order = db.prepare('SELECT id FROM orders WHERE id = ?').get(item.order_id);
-    const allItems = db.prepare('SELECT status FROM order_items WHERE order_id = ?').all(item.order_id);
+    const allItemsRes = await query('SELECT status FROM order_items WHERE order_id = $1', [item.order_id]);
+    const allItems = allItemsRes.rows;
 
     const allReady = allItems.every(i => i.status === 'ready' || i.status === 'delivered');
     const anyProcessing = allItems.some(i => !['received', 'ready', 'delivered'].includes(i.status));
 
     if (allReady) {
-      db.prepare('UPDATE orders SET status = ? WHERE id = ?').run('ready', item.order_id);
+      await query('UPDATE orders SET status = $1 WHERE id = $2', ['ready', item.order_id]);
     } else if (anyProcessing) {
-      db.prepare('UPDATE orders SET status = ? WHERE id = ?').run('processing', item.order_id);
+      await query('UPDATE orders SET status = $1 WHERE id = $2', ['processing', item.order_id]);
     }
 
     return NextResponse.json({ success: true, newStage });

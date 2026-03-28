@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { verifyToken, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -20,16 +20,17 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
     }
 
-    const db = getDb();
-    
     // Find a manager user for this store to impersonate
-    const targetUser = db.prepare(`
-      SELECT * FROM users WHERE store_id = ? AND role = 'manager' LIMIT 1
-    `).get(id);
+    const res = await query(
+      `SELECT * FROM users WHERE store_id = $1 AND role = 'manager' LIMIT 1`,
+      [id]
+    );
 
-    if (!targetUser) {
+    if (res.rows.length === 0) {
       return NextResponse.json({ error: 'No admin user found for this store to impersonate.' }, { status: 404 });
     }
+
+    const targetUser = res.rows[0];
 
     const impersonatedPayload = {
       id: targetUser.id,

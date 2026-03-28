@@ -1,14 +1,15 @@
-import { getDb } from '@/lib/db/db';
+import { query, getClient } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
+import { requireRole } from '@/lib/auth';
+import { sanitizeText } from '@/lib/sanitize';
 
 export async function GET(request) {
   try {
-    const db = getDb();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const search = searchParams.get('search');
 
-    let query = `
+    let sql = `
       SELECT o.*, c.name as customer_name, c.phone as customer_phone,
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
       FROM orders o
@@ -16,100 +17,212 @@ export async function GET(request) {
     `;
     const conditions = [];
     const params = [];
+    let paramIndex = 1;
 
     if (status && status !== 'all') {
-      conditions.push('o.status = ?');
+      conditions.push(`o.status = $${paramIndex++}`);
       params.push(status);
     }
 
     if (search) {
-      conditions.push('(o.order_number LIKE ? OR c.name LIKE ? OR c.phone LIKE ?)');
+      conditions.push(`(o.order_number ILIKE $${paramIndex} OR c.name ILIKE $${paramIndex + 1} OR c.phone ILIKE $${paramIndex + 2})`);
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      paramIndex += 3;
     }
 
     if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
+      sql += ' WHERE ' + conditions.join(' AND ');
     }
 
-    query += ' ORDER BY o.created_at DESC';
+    sql += ' ORDER BY o.created_at DESC';
 
-    const orders = db.prepare(query).all(...params);
-    return NextResponse.json(orders);
+    const res = await query(sql, params);
+    return NextResponse.json(res.rows);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function POST(request) {
+  const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+  if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+  const idempotencyKey = request.headers.get('Idempotency-Key');
+  const client = await getClient();
   try {
-    const db = getDb();
     const body = await request.json();
-    const { customer_id, items, payment_method, discount, notes } = body;
+    const { customer_id, items, payment_method, notes, schedule, force, coupon_id, redeemedPoints: bodyRedeemedPoints } = body;
+    
+    // Duplicate Order Detection (Last 5 mins)
+    if (!force) {
+      const recentOrderRes = await client.query(
+        `SELECT id FROM orders 
+         WHERE customer_id = $1 
+         AND created_at > NOW() - INTERVAL '5 minutes'
+         AND total_amount IS NOT NULL`, // simplified check for recently active customer
+        [customer_id]
+      );
+      
+      if (recentOrderRes.rows.length > 0) {
+        // More specific check: same items/total
+        // We'll return a 409 Conflict if there's any recent order, let frontend handle 'force'
+        return NextResponse.json({ 
+          error: 'Possible duplicate order detected.', 
+          code: 'DUPLICATE_DETECTED',
+          recent_order_id: recentOrderRes.rows[0].id 
+        }, { status: 409 });
+      }
+    }
+    
+    // Sanitize free-text fields
+    const safeNotes = sanitizeText(notes) || '';
+
+    await client.query('BEGIN');
 
     // Generate order number
-    const lastOrder = db.prepare('SELECT order_number FROM orders ORDER BY id DESC LIMIT 1').get();
+    const lastOrderRes = await client.query('SELECT order_number FROM orders ORDER BY id DESC LIMIT 1');
     let nextNum = 1007;
-    if (lastOrder) {
-      const num = parseInt(lastOrder.order_number.replace('CF-', ''));
+    if (lastOrderRes.rows.length > 0) {
+      const num = parseInt(lastOrderRes.rows[0].order_number.replace('CF-', ''));
       nextNum = num + 1;
     }
     const orderNumber = `CF-${nextNum}`;
 
+    // Calculate volume discount
+    let totalItems = 0;
+    for (const item of items) totalItems += (item.quantity || 1);
+    
+    const volDiscountRes = await client.query(
+      'SELECT discount_percent FROM volume_discounts WHERE is_active = TRUE AND min_quantity <= $1 ORDER BY min_quantity DESC LIMIT 1',
+      [totalItems]
+    );
+    const volDiscountPercent = volDiscountRes.rows.length > 0 ? parseFloat(volDiscountRes.rows[0].discount_percent) : 0;
+    
     // Calculate total
     let subtotal = 0;
     for (const item of items) {
       subtotal += item.price * (item.quantity || 1);
     }
-    const discountAmount = discount || 0;
-    const tax = Math.round((subtotal - discountAmount) * 0.18 * 100) / 100;
-    const totalAmount = subtotal - discountAmount + tax;
+    
+    const volumeDiscountAmount = Math.round(subtotal * (volDiscountPercent / 100) * 100) / 100;
+    
+    // Calculate Coupon Discount
+    let couponDiscountAmount = 0;
+    if (coupon_id) {
+      const couponRes = await client.query(
+        'SELECT * FROM coupons WHERE id = $1 AND is_active = TRUE AND (expiry_date IS NULL OR expiry_date > NOW())',
+        [coupon_id]
+      );
+      if (couponRes.rows.length > 0) {
+        const coupon = couponRes.rows[0];
+        if (subtotal >= parseFloat(coupon.min_order_value)) {
+          if (coupon.discount_type === 'percent') {
+            couponDiscountAmount = Math.round(subtotal * (parseFloat(coupon.discount_value) / 100) * 100) / 100;
+          } else {
+            couponDiscountAmount = parseFloat(coupon.discount_value);
+          }
+        }
+      }
+    }
+
+    const redeemedPoints = bodyRedeemedPoints || 0;
+    const totalDiscount = volumeDiscountAmount + couponDiscountAmount + redeemedPoints;
+    const tax = Math.round((subtotal - totalDiscount) * 0.18 * 100) / 100;
+    const totalAmount = Math.max(0, subtotal - totalDiscount + tax);
+
+    // Build pickup/delivery dates from schedule
+    let pickupDate = null;
+    let deliveryDate = null;
+    if (schedule) {
+      if (schedule.pickupDate) {
+        pickupDate = schedule.pickupTime ? `${schedule.pickupDate} ${schedule.pickupTime}` : schedule.pickupDate;
+      }
+      if (schedule.deliveryDate) {
+        deliveryDate = schedule.deliveryTime ? `${schedule.deliveryDate} ${schedule.deliveryTime}` : schedule.deliveryDate;
+      }
+    }
 
     // Insert order
-    const orderResult = db.prepare(`
-      INSERT INTO orders (order_number, customer_id, status, total_amount, discount, tax, payment_status, payment_method, notes)
-      VALUES (?, ?, 'received', ?, ?, ?, ?, ?, ?)
-    `).run(orderNumber, customer_id, totalAmount, discountAmount, tax, 
-           payment_method ? 'paid' : 'pending', payment_method || 'cash', notes || '');
-
-    const orderId = orderResult.lastInsertRowid;
+    const orderRes = await client.query(
+      `INSERT INTO orders (order_number, customer_id, status, total_amount, discount, tax, payment_status, notes, pickup_date, delivery_date, coupon_id)
+       VALUES ($1, $2, 'received', $3, $4, $5, 'pending', $6, $7, $8, $9) RETURNING id`,
+      [orderNumber, customer_id, totalAmount, totalDiscount, tax, safeNotes, pickupDate, deliveryDate, coupon_id || null]
+    );
+    const orderId = orderRes.rows[0].id;
 
     // Insert items
-    const insertItem = db.prepare(`
-      INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status)
-      VALUES (?, ?, ?, ?, ?, 'received')
-    `);
-    const insertWorkflow = db.prepare(`
-      INSERT INTO garment_workflow (order_item_id, stage, updated_by)
-      VALUES (?, 'received', 1)
-    `);
-
     for (const item of items) {
-      const itemResult = insertItem.run(orderId, item.garment_type, item.service_type, item.quantity || 1, item.price);
-      insertWorkflow.run(itemResult.lastInsertRowid);
+      const itemRes = await client.query(
+        `INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status, notes, tag_id, bag_id)
+         VALUES ($1, $2, $3, $4, $5, 'received', $6, $7, $8) RETURNING id`,
+        [orderId, item.garment_type, item.service_type, item.quantity || 1, item.price, item.notes || null, item.tag_id || null, item.bag_id || null]
+      );
+      await client.query(
+        `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, 'received', 1)`,
+        [itemRes.rows[0].id]
+      );
     }
 
-    // Insert payment if paid
-    if (payment_method) {
-      db.prepare(`
-        INSERT INTO payments (order_id, amount, payment_method, payment_status)
-        VALUES (?, ?, ?, 'completed')
-      `).run(orderId, totalAmount, payment_method);
+    // Insert payments (handles split / multiple initial payments)
+    // body.payments should be an array like [{ method: 'cash', amount: 500, tendered: 600 }]
+    const initialPayments = body.payments || [];
+    let totalPaid = 0;
+    
+    for (const p of initialPayments) {
+      const pAmount = parseFloat(p.amount || 0);
+      if (pAmount > 0) {
+        totalPaid += pAmount;
+        await client.query(
+          `INSERT INTO payments (order_id, amount, payment_method, payment_status, idempotency_key) VALUES ($1, $2, $3, 'completed', $4)`,
+          [orderId, pAmount, p.method || 'cash', idempotencyKey ? `${idempotencyKey}_${p.method}` : null]
+        );
+      }
     }
 
-    // Update customer loyalty points
-    if (customer_id) {
-      db.prepare(`UPDATE customers SET loyalty_points = loyalty_points + ? WHERE id = ?`)
-        .run(Math.floor(totalAmount / 10), customer_id);
+    // Update payment status based on total paid
+    let finalPaymentStatus = 'pending';
+    if (totalPaid >= totalAmount) {
+      finalPaymentStatus = 'paid';
+    } else if (totalPaid > 0) {
+      finalPaymentStatus = 'partial';
     }
 
-    const order = db.prepare(`
-      SELECT o.*, c.name as customer_name 
-      FROM orders o LEFT JOIN customers c ON o.customer_id = c.id 
-      WHERE o.id = ?
-    `).get(orderId);
+    await client.query(
+      'UPDATE orders SET payment_status = $1, payment_method = $2 WHERE id = $3',
+      [finalPaymentStatus, initialPayments[0]?.method || 'cash', orderId]
+    );
 
-    return NextResponse.json(order, { status: 201 });
+    // Update customer loyalty points (Earning: 1 point per ₹100 paid)
+    if (customer_id && totalPaid > 0) {
+      await client.query(
+        `UPDATE customers SET loyalty_points = loyalty_points + $1 WHERE id = $2`,
+        [Math.floor(totalPaid / 100), customer_id]
+      );
+    }
+
+    // Handle Point Redemption (Redeeming: 1 point = ₹1 discount)
+    const pointsToRedeem = parseInt(body.redeemedPoints || 0);
+    if (customer_id && pointsToRedeem > 0) {
+      await client.query(
+        `UPDATE customers SET loyalty_points = loyalty_points - $1 WHERE id = $2 AND loyalty_points >= $1`,
+        [pointsToRedeem, customer_id]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    const orderResult = await query(
+      `SELECT o.*, c.name as customer_name 
+       FROM orders o LEFT JOIN customers c ON o.customer_id = c.id 
+       WHERE o.id = $1`,
+      [orderId]
+    );
+
+    return NextResponse.json(orderResult.rows[0], { status: 201 });
   } catch (error) {
+    await client.query('ROLLBACK');
     return NextResponse.json({ error: error.message }, { status: 500 });
+  } finally {
+    client.release();
   }
 }

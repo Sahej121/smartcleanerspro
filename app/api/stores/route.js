@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db/db';
+import { query, getClient } from '@/lib/db/db';
 import { verifyToken, hashPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { canCreateStore } from '@/lib/tier-config';
 
 function generatePassword(length = 8) {
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -49,6 +50,20 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
     }
 
+    // --- Tier Limit Enforcement ---
+    const ownerStoreRes = await query(
+      `SELECT s.subscription_tier, (SELECT count(*) FROM stores WHERE owner_id = $1) as store_count FROM stores s WHERE s.owner_id = $1 LIMIT 1`,
+      [payload.id]
+    );
+    const ownerTier = ownerStoreRes.rows[0]?.subscription_tier || 'starter';
+    const currentStoreCount = parseInt(ownerStoreRes.rows[0]?.store_count || '0', 10);
+
+    const check = canCreateStore(ownerTier, currentStoreCount);
+    if (!check.allowed) {
+      return NextResponse.json({ error: check.reason }, { status: 403 });
+    }
+    // --- End Tier Limit Enforcement ---
+
     const body = await req.json();
     const { store_name, city, admin_name, admin_email, admin_phone } = body;
 
@@ -60,49 +75,96 @@ export async function POST(req) {
     const tempPassword = generatePassword();
     const hashedPassword = await hashPassword(tempPassword);
 
-    const db = getDb();
+    const client = await getClient();
     
-    // Execute tenant creation inside a transaction
-    const createTenant = db.transaction(() => {
+    try {
+      await client.query('BEGIN');
+
       // 1. Create the store
-      const storeInsert = db.prepare(`
-        INSERT INTO stores (store_name, city, owner_id, status, subscription_status, last_activity) 
-        VALUES (?, ?, ?, 'active', 'trial', CURRENT_TIMESTAMP)
-      `).run(store_name, city, payload.id);
-      
-      const newStoreId = storeInsert.lastInsertRowid;
+      const storeRes = await client.query(
+        `INSERT INTO stores (store_name, city, owner_id, status, subscription_status, last_activity) 
+         VALUES ($1, $2, $3, 'active', 'trial', NOW()) RETURNING id`,
+        [store_name, city, payload.id]
+      );
+      const newStoreId = storeRes.rows[0].id;
 
       // 2. Create the Admin/Manager user for this store
-      db.prepare(`
-        INSERT INTO users (name, email, phone, password_hash, role, store_id) VALUES (?, ?, ?, ?, ?, ?)
-      `).run(admin_name, admin_email, admin_phone || '', hashedPassword, 'manager', newStoreId);
+      await client.query(
+        `INSERT INTO users (name, email, phone, password_hash, role, store_id) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [admin_name, admin_email, admin_phone || '', hashedPassword, 'manager', newStoreId]
+      );
 
       // 3. Populate default pricing templates for the new store
-      const insertPricing = db.prepare(`INSERT INTO pricing (garment_type, service_type, price, store_id) VALUES (?, ?, ?, ?)`);
-      defaultPricing.forEach(p => insertPricing.run(p[0], p[1], p[2], newStoreId));
+      for (const p of defaultPricing) {
+        await client.query(
+          `INSERT INTO pricing (garment_type, service_type, price, store_id) VALUES ($1, $2, $3, $4)`,
+          [p[0], p[1], p[2], newStoreId]
+        );
+      }
 
       // 4. Populate default inventory templates for the new store
-      const insertInventory = db.prepare(`INSERT INTO inventory (item_name, quantity, unit, reorder_level, store_id) VALUES (?, ?, ?, ?, ?)`);
-      defaultInventory.forEach(inv => insertInventory.run(inv[0], inv[1], inv[2], inv[3], newStoreId));
+      for (const inv of defaultInventory) {
+        await client.query(
+          `INSERT INTO inventory (item_name, quantity, unit, reorder_level, store_id) VALUES ($1, $2, $3, $4, $5)`,
+          [inv[0], inv[1], inv[2], inv[3], newStoreId]
+        );
+      }
 
-      return { store_id: newStoreId };
-    });
+      await client.query('COMMIT');
 
-    const result = createTenant();
+      return NextResponse.json({
+        success: true,
+        store_id: newStoreId,
+        store_name,
+        admin_email,
+        tempPassword
+      }, { status: 201 });
 
-    return NextResponse.json({
-      success: true,
-      store_id: result.store_id,
-      store_name,
-      admin_email,
-      tempPassword
-    }, { status: 201 });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
 
   } catch (error) {
     console.error('API Error:', error);
-    if (error.message.includes('UNIQUE constraint failed: users.email')) {
+    if (error.message && error.message.includes('unique constraint')) {
       return NextResponse.json({ error: 'That email is already registered.' }, { status: 400 });
     }
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('cleanflow_session')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const payload = await verifyToken(token);
+
+    // Only owners can list all stores
+    if (!payload || payload.role !== 'owner') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Join with users to get manager email if needed, or just basic store info
+    const res = await query(`
+      SELECT s.*, 
+             (SELECT count(*) FROM orders WHERE store_id = s.id) as order_count,
+             (SELECT sum(total_amount) FROM orders WHERE store_id = s.id) as total_revenue
+      FROM stores s 
+      ORDER BY s.created_at DESC
+    `);
+
+    return NextResponse.json(res.rows);
+
+  } catch (error) {
+    console.error('API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

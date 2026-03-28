@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db/db';
+import { query } from '@/lib/db/db';
 import { verifyPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -12,14 +12,26 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Email/Phone and password are required' }, { status: 400 });
     }
 
-    const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE email = ? OR phone = ?').get(loginUser, loginUser);
+    console.log('[LOGIN] Attempting login for:', loginUser);
+    const res = await query('SELECT * FROM users WHERE email = $1 OR phone = $2', [loginUser, loginUser]);
+    const user = res.rows[0];
 
     if (!user) {
+      console.log('[LOGIN] User not found:', loginUser);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    const isValid = await verifyPassword(password, user.password_hash);
+    let isValid = false;
+    if (user.password_hash) {
+      isValid = await verifyPassword(password, user.password_hash);
+    }
+
+    // Fallback to PIN check if password fails and a pin is provided
+    if (!isValid && user.pin_hash && password.length === 4) {
+      isValid = await verifyPassword(password, user.pin_hash);
+    }
+
+    console.log('[LOGIN] Auth valid:', isValid);
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
@@ -34,10 +46,10 @@ export async function POST(req) {
 
     const token = await createToken(userPayload);
 
-    // Map db role to frontend role
-    let feRole = 'worker';
-    if (user.role === 'owner') feRole = 'owner';
+    // Map db role to frontend role (preserve specialized roles)
+    let feRole = user.role;
     if (user.role === 'manager') feRole = 'admin';
+    // Note: frontdesk, driver, staff, owner remain as-is
 
     const cookieStore = await cookies();
     cookieStore.set({

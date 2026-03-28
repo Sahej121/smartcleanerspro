@@ -65,7 +65,7 @@ export default function PricingPage() {
   if (loading) return <div className="loading-spinner"></div>;
 
   return (
-    <div id="pricing-page">
+    <div id="pricing-page" className="p-4 lg:p-8 max-w-7xl mx-auto min-h-screen">
       <div className="page-header">
         <div>
           <h1>Pricing Management</h1>
