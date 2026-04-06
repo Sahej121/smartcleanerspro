@@ -5,6 +5,9 @@ import { sanitizeText } from '@/lib/sanitize';
 
 export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
 
@@ -13,11 +16,12 @@ export async function GET(request) {
         (SELECT COUNT(*) FROM orders WHERE customer_id = c.id) as order_count,
         (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE customer_id = c.id AND payment_status = 'paid') as total_spent
       FROM customers c
+      WHERE c.store_id = $1
     `;
-    const params = [];
+    const params = [auth.user.store_id];
 
     if (search) {
-      sql += ' WHERE c.name ILIKE $1 OR c.phone ILIKE $2 OR c.email ILIKE $3';
+      sql += ' AND (c.name ILIKE $2 OR c.phone ILIKE $3 OR c.email ILIKE $4)';
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
@@ -43,8 +47,8 @@ export async function POST(request) {
     const safeNotes = sanitizeText(notes) || '';
 
     const res = await query(
-      `INSERT INTO customers (name, phone, email, address, notes) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [safeName, phone || '', email || '', safeAddress, safeNotes]
+      `INSERT INTO customers (name, phone, email, address, notes, store_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [safeName, phone || '', email || '', safeAddress, safeNotes, auth.user.store_id]
     );
 
     return NextResponse.json(res.rows[0], { status: 201 });

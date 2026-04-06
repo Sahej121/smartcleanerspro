@@ -14,7 +14,7 @@ test('CleanFlow Demo Recording', async ({ page }) => {
   await page.click('button[type="submit"]');
   
   // Wait for navigation to dashboard
-  await page.waitForURL('**/admin/dashboard', { timeout: 30000 });
+  await page.waitForURL('**/', { timeout: 30000 });
   await page.waitForTimeout(8000);
 
   // 2. Settings -> Language (Showcase Māori)

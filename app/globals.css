@@ -94,35 +94,68 @@
 }
 
 /* ═══════════════════════════════════════════════
+   THEME VARIABLES
+   ═══════════════════════════════════════════════ */
+
+:root {
+  --theme-bg: #f8f9ff;
+  --theme-surface: #ffffff;
+  --theme-surface-container: #eff4ff;
+  --theme-border: rgba(188, 203, 185, 0.15);
+  --theme-text: #0b1c30;
+  --theme-text-muted: #64748b;
+  --theme-accent: #006e2f;
+  --theme-shadow: 0 12px 40px -8px rgba(11, 28, 48, 0.06);
+}
+
+.theme-enterprise {
+  --theme-bg: #020617; /* bg-slate-950 */
+  --theme-surface: #0f172a; /* bg-slate-900 */
+  --theme-surface-container: #1e293b; /* bg-slate-800 */
+  --theme-border: rgba(30, 41, 59, 0.5); /* border-slate-800 */
+  --theme-text: #f1f5f9; /* text-slate-100 */
+  --theme-text-muted: #94a3b8; /* text-slate-400 */
+  --theme-accent: #10b981; /* emerald-500 */
+  --theme-shadow: 0 12px 48px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* ═══════════════════════════════════════════════
    BASE STYLES
    ═══════════════════════════════════════════════ */
 
 @layer base {
   body {
-    @apply bg-surface text-on-surface min-h-screen selection:bg-primary-container selection:text-on-primary-container;
+    background-color: var(--theme-bg);
+    color: var(--theme-text);
+    @apply min-h-screen selection:bg-primary-container selection:text-on-primary-container;
     font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
 /* ═══════════════════════════════════════════════
    COMPONENT CLASSES
-   ═══════════════════════════════════════════════ */
+   ═════════════════════════════════════════ */
 
 @layer components {
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-[16px] border border-outline-variant/15 transition-all duration-300;
+    background-color: var(--theme-surface);
+    backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: 
-      0 1px 2px rgba(0, 0, 0, 0.02),
-      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--theme-border);
+    box-shadow: var(--theme-shadow);
+    transition: all 0.3s ease;
   }
 
   .glass-sidebar {
-    @apply bg-surface/85 backdrop-blur-[24px] border-r border-outline-variant/10 transition-all duration-300;
+    background-color: var(--theme-surface);
+    backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    box-shadow: 4px 0 24px -6px rgba(11, 28, 48, 0.04);
+    border-right: 1px solid var(--theme-border);
+    box-shadow: var(--theme-shadow);
+    transition: all 0.3s ease;
   }
 
   .forest-gradient {
@@ -166,6 +199,7 @@
   }
 
   .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     display: inline-block;
     line-height: 1;

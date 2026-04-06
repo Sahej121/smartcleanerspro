@@ -72,10 +72,10 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">System Identity</label>
               <div className="relative group">
-                <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${identifier ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>person</span>
+                <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${identifier ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>person</span>
                 <input 
                   type="text" 
-                  className="w-full bg-white/80 border border-transparent rounded-2xl py-4 pl-12 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
+                  className="w-full bg-white/100 border border-transparent rounded-2xl py-4 pl-14 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
                   value={identifier} 
                   onChange={e => setIdentifier(e.target.value)}
                   required 
@@ -90,10 +90,10 @@ export default function LoginPage() {
                 <button type="button" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Forgot?</button>
               </div>
               <div className="relative group">
-                <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${password ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>lock</span>
+                <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${password ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>lock</span>
                 <input 
                   type="password" 
-                  className="w-full bg-white/80 border border-transparent rounded-2xl py-4 pl-12 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
+                  className="w-full bg-white/100 border border-transparent rounded-2xl py-4 pl-14 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
                   value={password} 
                   onChange={e => setPassword(e.target.value)}
                   required 

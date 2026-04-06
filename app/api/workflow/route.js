@@ -1,8 +1,13 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+import { requireRole } from '@/lib/auth';
+
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const stages = ['received', 'sorting', 'washing', 'dry_cleaning', 'drying', 'ironing', 'quality_check', 'ready'];
     const result = {};
 
@@ -12,9 +17,9 @@ export async function GET() {
         FROM order_items oi
         JOIN orders o ON oi.order_id = o.id
         LEFT JOIN customers c ON o.customer_id = c.id
-        WHERE oi.status = $1
+        WHERE oi.status = $1 AND o.store_id = $2
         ORDER BY oi.created_at ASC
-      `, [stage]);
+      `, [stage, auth.user.store_id]);
       result[stage] = res.rows;
     }
 
@@ -24,12 +29,18 @@ export async function GET() {
   }
 }
 
-export async function POST(req) {
+export async function POST(request) {
   try {
-    const { itemId } = await req.json();
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+    const { itemId } = await request.json();
     
     // 1. Get current item
-    const itemRes = await query('SELECT * FROM order_items WHERE id = $1', [itemId]);
+    const itemRes = await query(
+      'SELECT oi.*, o.store_id FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.id = $1 AND o.store_id = $2', 
+      [itemId, auth.user.store_id]
+    );
     const item = itemRes.rows[0];
     if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 });
 
@@ -60,8 +71,8 @@ export async function POST(req) {
     
     // 4. Log the transition
     await query(
-      'INSERT INTO garment_workflow (order_item_id, stage, timestamp) VALUES ($1, $2, NOW())',
-      [itemId, nextStatus]
+      'INSERT INTO garment_workflow (order_item_id, stage, updated_by, timestamp) VALUES ($1, $2, $3, NOW())',
+      [itemId, nextStatus, auth.user.id]
     );
 
     // 5. Automate Task Updates
@@ -74,14 +85,14 @@ export async function POST(req) {
     );
 
     // Create next task
-    const nextTaskDesc = `Process ${item.garment_type} (Order #${item.order_number}) - Item #${itemId} - Stage: ${nextStatus}`;
+    const nextTaskDesc = `Process ${itemRes.rows[0].garment_type} (Order #${itemRes.rows[0].order_number}) - Item #${itemId} - Stage: ${nextStatus}`;
     await query(
-      `INSERT INTO staff_tasks (user_id, task_description, due_date)
-       SELECT id, $1, NOW() + INTERVAL '2 hours'
+      `INSERT INTO staff_tasks (user_id, task_description, due_date, store_id)
+       SELECT id, $1, NOW() + INTERVAL '2 hours', $2
        FROM users 
-       WHERE role = 'staff' 
+       WHERE role = 'staff' AND store_id = $2
        LIMIT 1`, 
-      [nextTaskDesc]
+      [nextTaskDesc, auth.user.store_id]
     );
 
     return NextResponse.json({ success: true, nextStatus });

@@ -3,11 +3,15 @@ import { test, expect } from '@playwright/test';
 test.describe('3.8 Reporting & Analytics', () => {
 
   test.beforeEach(async ({ page }) => {
+    await page.goto('/login');
+    await page.getByPlaceholder(/Email or phone reference/i).fill('priya@cleanflow.com');
+    await page.getByPlaceholder(/••••••••/i).fill('staff1234');
+    await page.getByRole('button', { name: /AUTHORIZE ACCESS/i }).click();
+    await page.waitForURL('**/');
     await page.goto('/reports');
   });
 
   test('54. Daily revenue report', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Correct totals for orders, revenue, payments
     await page.getByText('Daily Summary').click();
     await page.getByRole('button', { name: /Today/i }).click();
@@ -17,7 +21,6 @@ test.describe('3.8 Reporting & Analytics', () => {
   });
 
   test('55. Order status summary', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Counts per status match live order data
     await page.getByText('Orders by Status').click();
     
@@ -26,7 +29,6 @@ test.describe('3.8 Reporting & Analytics', () => {
   });
 
   test('56. Staff performance report', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Orders per staff, revenue attributed correctly
     await page.getByText('Staff Performance').click();
     await page.getByLabel(/Date Range/i).fill('Last 7 Days');
@@ -37,7 +39,6 @@ test.describe('3.8 Reporting & Analytics', () => {
   });
 
   test('57. Export to CSV', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: File downloads with all columns, no data corruption
     await page.getByText('Daily Summary').click();
     
@@ -49,7 +50,6 @@ test.describe('3.8 Reporting & Analytics', () => {
   });
 
   test('58. Export to PDF', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Formatted PDF with header, page numbers, totals
     await page.getByText('Daily Summary').click();
     
@@ -61,7 +61,6 @@ test.describe('3.8 Reporting & Analytics', () => {
   });
 
   test('59. Custom date range report', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Only data within range included
     await page.getByText('Daily Summary').click();
     await page.getByPlaceholder(/Start Date/i).fill('2026-03-01');

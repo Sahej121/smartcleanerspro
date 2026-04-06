@@ -36,14 +36,22 @@ export default function StoreAdmin({ user }) {
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [newStaff, setNewStaff] = useState({ name: '', role: 'Front Desk', email: '', pin: '' });
   const [staffCredentials, setStaffCredentials] = useState(null);
+  const [activeBroadcast, setActiveBroadcast] = useState(null);
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/stats');
-      const data = await res.json();
-      setStats(data);
+      const [statsRes, broadcastRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/system/broadcast/active')
+      ]);
+      const [statsData, broadcastData] = await Promise.all([
+        statsRes.json(),
+        broadcastRes.json().catch(() => null)
+      ]);
+      setStats(statsData);
+      setActiveBroadcast(broadcastData);
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      console.error('Failed to fetch store dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -79,6 +87,30 @@ export default function StoreAdmin({ user }) {
 
   return (
     <div className="p-4 lg:p-8 space-y-4 lg:space-y-8">
+      {/* Broadcast Banner */}
+      {activeBroadcast && (
+        <div className={`p-4 rounded-xl shadow-lg border animate-fade-in flex items-center gap-4 ${
+          activeBroadcast.severity === 'error' ? 'bg-red-600 text-white border-red-700 shadow-red-900/20' :
+          activeBroadcast.severity === 'warning' ? 'bg-amber-500 text-white border-amber-600 shadow-amber-900/20' :
+          'bg-emerald-600 text-white border-emerald-700 shadow-emerald-900/20'
+        }`}>
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>
+               {activeBroadcast.severity === 'error' ? 'emergency_home' : 'campaign'}
+            </span>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">
+               {activeBroadcast.severity === 'error' ? 'Global Emergency Transmit' : 'System Broadcast'} • {new Date(activeBroadcast.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </h4>
+            <p className="font-bold text-sm tracking-tight leading-snug">{activeBroadcast.description.replace(/^Admin Broadcast:\s*/i, '')}</p>
+          </div>
+          <button onClick={() => setActiveBroadcast(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+      )}
+
       {/* Greeting Section */}
       <div className="flex justify-between items-start animate-fade-in-up">
         <div>

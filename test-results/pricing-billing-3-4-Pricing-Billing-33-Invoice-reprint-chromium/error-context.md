@@ -1,0 +1,235 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [active]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - navigation [ref=e7]:
+            - button "previous" [disabled] [ref=e8]:
+              - img "previous" [ref=e9]
+            - generic [ref=e11]:
+              - generic [ref=e12]: 1/
+              - text: "1"
+            - button "next" [disabled] [ref=e13]:
+              - img "next" [ref=e14]
+          - img
+        - generic [ref=e16]:
+          - link "Next.js 16.1.6 (stale) Turbopack" [ref=e17] [cursor=pointer]:
+            - /url: https://nextjs.org/docs/messages/version-staleness
+            - img [ref=e18]
+            - generic "There is a newer version (16.2.2) available, upgrade recommended!" [ref=e20]: Next.js 16.1.6 (stale)
+            - generic [ref=e21]: Turbopack
+          - img
+      - dialog "Build Error" [ref=e23]:
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - generic [ref=e30]: Build Error
+              - generic [ref=e31]:
+                - button "Copy Error Info" [ref=e32] [cursor=pointer]:
+                  - img [ref=e33]
+                - button "No related documentation found" [disabled] [ref=e35]:
+                  - img [ref=e36]
+                - button "Attach Node.js inspector" [ref=e38] [cursor=pointer]:
+                  - img [ref=e39]
+            - generic [ref=e48]: Parsing ecmascript source code failed
+          - generic [ref=e50]:
+            - generic [ref=e52]:
+              - img [ref=e54]
+              - generic [ref=e56]: ./app/reports/page.js (274:1)
+              - button "Open in editor" [ref=e57] [cursor=pointer]:
+                - img [ref=e59]
+            - generic [ref=e62]:
+              - generic [ref=e63]: Parsing ecmascript source code failed
+              - generic [ref=e64]: 272 |
+              - generic [ref=e65]: );
+              - generic [ref=e66]: 273 |
+              - text: "} >"
+              - generic [ref=e67]: 274 |
+              - generic [ref=e68]: "|"
+              - text: ^
+              - generic [ref=e69]: Expected '</', got '<eof>'
+        - generic [ref=e70]: "1"
+        - generic [ref=e71]: "2"
+    - generic [ref=e76] [cursor=pointer]:
+      - button "Open Next.js Dev Tools" [ref=e77]:
+        - img [ref=e78]
+      - button "Open issues overlay" [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e84]: "0"
+          - generic [ref=e85]: "1"
+        - generic [ref=e86]: Issue
+  - alert [ref=e87]
+  - generic [ref=e88]:
+    - complementary [ref=e89]:
+      - generic [ref=e90]:
+        - generic [ref=e93]: eco
+        - generic [ref=e95]:
+          - heading "CleanFlow" [level=1] [ref=e96]
+          - paragraph [ref=e97]: Pristine Atelier POS
+      - navigation [ref=e98]
+      - generic [ref=e99]:
+        - link "contact_support Support" [ref=e100] [cursor=pointer]:
+          - /url: /support
+          - generic [ref=e101]: contact_support
+          - generic [ref=e102]: Support
+        - button "logout Log Out" [ref=e103]:
+          - generic [ref=e104]: logout
+          - generic [ref=e105]: Log Out
+    - generic [ref=e106]:
+      - banner [ref=e107]:
+        - generic [ref=e109]:
+          - generic [ref=e110]: search
+          - 'textbox "Search by order #, customer name, or phone..." [ref=e111]'
+        - generic [ref=e112]:
+          - button "notifications" [ref=e114]:
+            - generic [ref=e115]: notifications
+          - link "help" [ref=e117] [cursor=pointer]:
+            - /url: /support
+            - generic [ref=e118]: help
+          - generic [ref=e120] [cursor=pointer]:
+            - generic [ref=e121]:
+              - paragraph [ref=e122]: Guest
+              - paragraph [ref=e123]: User
+            - generic [ref=e126]: U
+      - main [ref=e127]:
+        - generic [ref=e128]:
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - heading "Afternoon, Atelier" [level=1] [ref=e131]
+              - paragraph [ref=e132]: Here's how your shop is performing today.
+            - generic [ref=e133]:
+              - link "add New Pickup" [ref=e134] [cursor=pointer]:
+                - /url: /orders/new?type=pickup
+                - generic [ref=e135]: add
+                - text: New Pickup
+              - button "calendar_today Last 24 Hours" [ref=e136]:
+                - generic [ref=e137]: calendar_today
+                - text: Last 24 Hours
+              - button "download Report" [ref=e138]:
+                - generic [ref=e139]: download
+                - text: Report
+          - generic [ref=e140]:
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e147]: payments
+                - heading "Daily Revenue" [level=3] [ref=e148]
+                - paragraph [ref=e149]: ₹0
+              - generic [ref=e150]:
+                - generic [ref=e151]: trending_up
+                - text: +12.4%
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - generic [ref=e164]: shopping_basket
+                - generic [ref=e165]: Same as yesterday
+              - generic [ref=e166]:
+                - heading "Total Orders" [level=3] [ref=e167]
+                - paragraph [ref=e168]: "0"
+            - generic [ref=e169]:
+              - generic [ref=e173]: notifications_active
+              - generic [ref=e174]:
+                - heading "Ready for Pickup" [level=3] [ref=e175]
+                - paragraph [ref=e176]: "0"
+              - button "Notify Customers chevron_right" [ref=e177]:
+                - text: Notify Customers
+                - generic [ref=e178]: chevron_right
+            - generic [ref=e179]:
+              - generic [ref=e182]: timer
+              - generic [ref=e183]:
+                - heading "Avg. Turnaround" [level=3] [ref=e184]
+                - paragraph [ref=e185]: 18.2 hrs
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - generic [ref=e188]:
+                - heading "Recent Orders" [level=2] [ref=e189]
+                - link "View All Records arrow_forward" [ref=e190] [cursor=pointer]:
+                  - /url: /orders
+                  - text: View All Records
+                  - generic [ref=e191]: arrow_forward
+              - table [ref=e193]:
+                - rowgroup [ref=e194]:
+                  - row "Order ID Customer Garment Type Status Amount" [ref=e195]:
+                    - columnheader "Order ID" [ref=e196]
+                    - columnheader "Customer" [ref=e197]
+                    - columnheader "Garment Type" [ref=e198]
+                    - columnheader "Status" [ref=e199]
+                    - columnheader "Amount" [ref=e200]
+                - rowgroup
+            - generic [ref=e201]:
+              - generic [ref=e202]:
+                - generic [ref=e203]:
+                  - heading "Staff Leaderboard" [level=2] [ref=e204]
+                  - button "person_add Add Staff" [ref=e205]:
+                    - generic [ref=e206]: person_add
+                    - text: Add Staff
+                - generic [ref=e207]:
+                  - generic [ref=e208]:
+                    - generic [ref=e209]: S
+                    - generic [ref=e210]:
+                      - paragraph [ref=e211]: Sarah Connor
+                      - paragraph [ref=e212]: Head Presser
+                    - generic [ref=e213]:
+                      - paragraph [ref=e214]: 98%
+                      - paragraph [ref=e215]: Efficiency
+                  - generic [ref=e216]:
+                    - generic [ref=e217]: D
+                    - generic [ref=e218]:
+                      - paragraph [ref=e219]: David Chen
+                      - paragraph [ref=e220]: Quality Control
+                    - generic [ref=e221]:
+                      - paragraph [ref=e222]: 94%
+                      - paragraph [ref=e223]: Efficiency
+                  - generic [ref=e224]:
+                    - generic [ref=e225]: E
+                    - generic [ref=e226]:
+                      - paragraph [ref=e227]: Elena Rodriguez
+                      - paragraph [ref=e228]: Front Desk
+                    - generic [ref=e229]:
+                      - paragraph [ref=e230]: 92%
+                      - paragraph [ref=e231]: Efficiency
+              - generic [ref=e233]:
+                - generic [ref=e234]:
+                  - paragraph [ref=e235]: Daily Order Goal
+                  - generic [ref=e236]: 71%
+                - paragraph [ref=e239]: 0/200 Orders processed today. Keep pushing!
+              - generic [ref=e241]:
+                - generic [ref=e242]:
+                  - paragraph [ref=e243]: Stock Integrity
+                  - generic [ref=e244]: 0%
+                - paragraph [ref=e246]:
+                  - generic [ref=e247]: check_circle
+                  - text: All stock levels healthy.
+          - generic [ref=e248]:
+            - generic [ref=e249]:
+              - generic [ref=e250]:
+                - generic [ref=e252]: water_drop
+                - heading "Solvent Levels" [level=3] [ref=e253]
+              - generic [ref=e255]:
+                - paragraph [ref=e256]: 32%
+                - paragraph [ref=e257]: Refill Soon
+            - generic [ref=e262]:
+              - generic [ref=e263]:
+                - generic [ref=e265]: inventory_2
+                - heading "Packaging Stock" [level=3] [ref=e266]
+              - generic [ref=e267]:
+                - generic [ref=e268]:
+                  - paragraph [ref=e269]: High
+                  - paragraph [ref=e270]: Next delivery 14 Oct
+                - generic [ref=e272]: check_circle
+            - generic [ref=e273]:
+              - generic [ref=e274]:
+                - generic [ref=e276]: bolt
+                - heading "Energy Efficiency" [level=3] [ref=e277]
+              - generic [ref=e279]:
+                - paragraph [ref=e280]: A+
+                - paragraph [ref=e281]: Eco-mode active
+          - generic [ref=e286]:
+            - paragraph [ref=e287]: © 2024 CleanFlow Enterprise. All systems operational.
+            - generic [ref=e288]:
+              - link "Privacy" [ref=e289] [cursor=pointer]:
+                - /url: "#"
+              - link "API Docs" [ref=e290] [cursor=pointer]:
+                - /url: "#"
+```

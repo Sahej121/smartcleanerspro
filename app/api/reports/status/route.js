@@ -14,9 +14,9 @@ export async function GET(request) {
     const statusRes = await query(
       `SELECT status, COUNT(*) as count 
        FROM orders 
-       WHERE created_at >= $1 AND created_at <= $2
+       WHERE created_at >= $1 AND created_at <= $2 AND store_id = $3
        GROUP BY status`,
-      [start || '1970-01-01', end || '2100-01-01']
+      [start || '1970-01-01', end || '2100-01-01', auth.user.store_id]
     );
 
     return NextResponse.json(statusRes.rows);

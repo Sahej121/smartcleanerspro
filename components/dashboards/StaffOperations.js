@@ -7,17 +7,22 @@ export default function StaffOperations({ user }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingItem, setUpdatingItem] = useState(null);
+  const [activeBroadcast, setActiveBroadcast] = useState(null);
 
   const fetchData = async () => {
     try {
-      const [wfRes, tasksRes] = await Promise.all([
+      const [wfRes, tasksRes, broadcastRes] = await Promise.all([
         fetch('/api/workflow'),
-        fetch('/api/tasks')
+        fetch('/api/tasks'),
+        fetch('/api/system/broadcast/active')
       ]);
       const wfData = await wfRes.json();
       const tasksData = await tasksRes.json();
+      const broadcastData = await broadcastRes.json().catch(() => null);
+      
       setWorkflow(wfData);
       setTasks(Array.isArray(tasksData) ? tasksData : []);
+      setActiveBroadcast(broadcastData);
     } catch (err) {
       console.error('Failed to fetch data:', err);
     } finally {
@@ -74,7 +79,31 @@ export default function StaffOperations({ user }) {
   const isFullAccess = ['owner', 'admin', 'manager'].includes(user?.role);
 
   return (
-    <div className="p-4 lg:p-8">
+    <div className="p-4 lg:p-8 space-y-6">
+      {/* Broadcast Banner */}
+      {activeBroadcast && (
+        <div className={`p-4 rounded-xl shadow-lg border animate-fade-in flex items-center gap-4 ${
+          activeBroadcast.severity === 'error' ? 'bg-red-600 text-white border-red-700 shadow-red-900/20' :
+          activeBroadcast.severity === 'warning' ? 'bg-amber-500 text-white border-amber-600 shadow-amber-900/20' :
+          'bg-emerald-600 text-white border-emerald-700 shadow-emerald-900/20'
+        }`}>
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>
+               {activeBroadcast.severity === 'error' ? 'emergency_home' : 'campaign'}
+            </span>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">
+               {activeBroadcast.severity === 'error' ? 'Global Emergency Transmit' : 'System Broadcast'} • {new Date(activeBroadcast.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </h4>
+            <p className="font-bold text-sm tracking-tight leading-snug">{activeBroadcast.description.replace(/^Admin Broadcast:\s*/i, '')}</p>
+          </div>
+          <button onClick={() => setActiveBroadcast(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="mb-10 flex justify-between items-end animate-fade-in-up">
         <div>

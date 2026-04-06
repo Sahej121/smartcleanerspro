@@ -10,23 +10,25 @@ export async function GET(request) {
   const start = searchParams.get('start');
   const end = searchParams.get('end');
 
-  try {
-    let whereClause = "WHERE p.created_at >= $1 AND p.created_at <= $2";
-    let params = [start || '1970-01-01', end || '2100-01-01'];
+    try {
+    let whereClause = "WHERE p.created_at >= $1 AND p.created_at <= $2 AND o.store_id = $3";
+    let params = [start || '1970-01-01', end || '2100-01-01', auth.user.store_id];
 
     const revenueRes = await query(
-      `SELECT method, SUM(amount) as total 
+      `SELECT payment_method as method, SUM(amount) as total 
        FROM payments p
+       JOIN orders o ON p.order_id = o.id
        ${whereClause}
-       GROUP BY method`,
+       GROUP BY payment_method`,
       params
     );
 
     const dailyRes = await query(
-      `SELECT DATE(created_at) as date, SUM(amount) as total
+      `SELECT DATE(p.created_at) as date, SUM(amount) as total
        FROM payments p
+       JOIN orders o ON p.order_id = o.id
        ${whereClause}
-       GROUP BY DATE(created_at)
+       GROUP BY DATE(p.created_at)
        ORDER BY date`,
       params
     );

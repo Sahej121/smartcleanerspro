@@ -50,22 +50,26 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
     }
 
-    // --- Tier Limit Enforcement ---
-    const ownerStoreRes = await query(
-      `SELECT s.subscription_tier, (SELECT count(*) FROM stores WHERE owner_id = $1) as store_count FROM stores s WHERE s.owner_id = $1 LIMIT 1`,
-      [payload.id]
-    );
-    const ownerTier = ownerStoreRes.rows[0]?.subscription_tier || 'starter';
-    const currentStoreCount = parseInt(ownerStoreRes.rows[0]?.store_count || '0', 10);
+    const body = await req.json();
+    const { store_name, city, admin_name, admin_email, admin_phone, subscription_tier } = body;
 
-    const check = canCreateStore(ownerTier, currentStoreCount);
-    if (!check.allowed) {
-      return NextResponse.json({ error: check.reason }, { status: 403 });
+    // --- Tier Limit Enforcement ---
+    const bypassTierCheck = payload.id === 1;
+
+    if (!bypassTierCheck) {
+      const ownerStoreRes = await query(
+        `SELECT s.subscription_tier, (SELECT count(*) FROM stores WHERE owner_id = $1) as store_count FROM stores s WHERE s.owner_id = $1 LIMIT 1`,
+        [payload.id]
+      );
+      const ownerTier = ownerStoreRes.rows[0]?.subscription_tier || 'starter';
+      const currentStoreCount = parseInt(ownerStoreRes.rows[0]?.store_count || '0', 10);
+
+      const check = canCreateStore(ownerTier, currentStoreCount);
+      if (!check.allowed) {
+        return NextResponse.json({ error: check.reason }, { status: 403 });
+      }
     }
     // --- End Tier Limit Enforcement ---
-
-    const body = await req.json();
-    const { store_name, city, admin_name, admin_email, admin_phone } = body;
 
     if (!store_name || !city || !admin_name || !admin_email) {
       return NextResponse.json({ error: 'Missing required configuration fields.' }, { status: 400 });
@@ -82,9 +86,9 @@ export async function POST(req) {
 
       // 1. Create the store
       const storeRes = await client.query(
-        `INSERT INTO stores (store_name, city, owner_id, status, subscription_status, last_activity) 
-         VALUES ($1, $2, $3, 'active', 'trial', NOW()) RETURNING id`,
-        [store_name, city, payload.id]
+        `INSERT INTO stores (store_name, city, owner_id, status, subscription_tier, subscription_status, last_activity) 
+         VALUES ($1, $2, $3, 'active', $4, 'trial', NOW()) RETURNING id`,
+        [store_name, city, payload.id, subscription_tier || 'starter']
       );
       const newStoreId = storeRes.rows[0].id;
 

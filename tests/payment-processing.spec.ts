@@ -7,7 +7,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('34. Cash payment — exact', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     await page.getByRole('button', { name: /Payment/i }).click();
     await page.getByRole('button', { name: /Cash/i }).click();
     
@@ -20,7 +19,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('35. Cash payment — overpaid', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Change amount displayed correctly
     await page.getByRole('button', { name: /Payment/i }).click();
     await page.getByRole('button', { name: /Cash/i }).click();
@@ -31,7 +29,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('36. Cash payment — underpaid', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Error: 'Insufficient amount'
     await page.getByRole('button', { name: /Payment/i }).click();
     await page.getByRole('button', { name: /Cash/i }).click();
@@ -43,7 +40,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('37. Card payment', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Payment confirmed, order status = PAID
     await page.getByRole('button', { name: /Payment/i }).click();
     await page.getByRole('button', { name: /Card/i }).click();
@@ -54,7 +50,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('38. Split payment', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Both amounts recorded, receipt shows split
     await page.getByRole('button', { name: /Payment/i }).click();
     await page.getByRole('button', { name: /Split Payment/i }).click();
@@ -67,7 +62,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('39. Refund — full', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Amount returned, order status = REFUNDED
     await page.goto('/orders/1001'); // Assuming paid order
     await page.getByRole('button', { name: /Refund/i }).click();
@@ -78,7 +72,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('40. Refund — partial', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Partial amount refunded, order updated
     await page.goto('/orders/1001');
     await page.getByRole('button', { name: /Refund/i }).click();
@@ -91,7 +84,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('41. Void transaction', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Transaction removed from daily report
     await page.goto('/orders/1002');
     await page.getByRole('button', { name: /Void Payment/i }).click();
@@ -100,7 +92,6 @@ test.describe('3.5 Payment Processing', () => {
   });
 
   test('42. Payment on collection', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Payment recorded, garment released
     await page.goto('/orders/pickup');
     await page.getByPlaceholder(/Order ID/i).fill('CF-1003'); // unpaid order

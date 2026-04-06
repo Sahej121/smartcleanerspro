@@ -1,8 +1,13 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+import { requireRole } from '@/lib/auth';
+
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const res = await query(`
       SELECT *, 
         CASE 
@@ -15,10 +20,11 @@ export async function GET() {
           ELSE NULL
         END as runway_days
       FROM inventory 
+      WHERE store_id = $1
       ORDER BY 
         CASE WHEN quantity <= reorder_level THEN 0 ELSE 1 END,
         item_name
-    `);
+    `, [auth.user.store_id]);
     return NextResponse.json(res.rows);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -27,6 +33,9 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const body = await request.json();
     const { item_name, quantity, unit, reorder_level } = body;
 
@@ -35,9 +44,9 @@ export async function POST(request) {
     }
 
     const res = await query(
-      `INSERT INTO inventory (item_name, quantity, unit, reorder_level) 
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [item_name, quantity || 0, unit || 'units', reorder_level || 10]
+      `INSERT INTO inventory (item_name, quantity, unit, reorder_level, store_id) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [item_name, quantity || 0, unit || 'units', reorder_level || 10, auth.user.store_id]
     );
 
     return NextResponse.json(res.rows[0], { status: 201 });
@@ -48,6 +57,9 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const body = await request.json();
     const { id, quantity, action } = body;
 
@@ -59,12 +71,12 @@ export async function PUT(request) {
     if (action === 'receive' && quantity) {
       // Add to existing stock
       res = await query(
-        `UPDATE inventory SET quantity = quantity + $1, last_updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
-        [quantity, id]
+        `UPDATE inventory SET quantity = quantity + $1, last_updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND store_id = $3 RETURNING *`,
+        [quantity, id, auth.user.store_id]
       );
     } else if (quantity !== undefined) {
       // Get current data to calculate burn rate if it's a reduction
-      const currentRes = await query('SELECT quantity, last_updated_at, historical_daily_burn FROM inventory WHERE id = $1', [id]);
+      const currentRes = await query('SELECT quantity, last_updated_at, historical_daily_burn FROM inventory WHERE id = $1 AND store_id = $2', [id, auth.user.store_id]);
       if (currentRes.rows.length === 0) {
         return NextResponse.json({ error: 'Item not found' }, { status: 404 });
       }
@@ -93,8 +105,8 @@ export async function PUT(request) {
 
       // Set absolute quantity
       res = await query(
-        `UPDATE inventory SET quantity = $1, last_updated_at = CURRENT_TIMESTAMP, historical_daily_burn = $2 WHERE id = $3 RETURNING *`,
-        [quantity, newBurnRate, id]
+        `UPDATE inventory SET quantity = $1, last_updated_at = CURRENT_TIMESTAMP, historical_daily_burn = $2 WHERE id = $3 AND store_id = $4 RETURNING *`,
+        [quantity, newBurnRate, id, auth.user.store_id]
       );
     } else {
       return NextResponse.json({ error: 'Quantity is required' }, { status: 400 });

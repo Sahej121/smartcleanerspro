@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import { QRCodeSVG } from 'qrcode.react';
 
 const STAGE_LABELS = {
   received: 'Received', sorting: 'Sorting', washing: 'Washing',
@@ -226,7 +227,7 @@ export default function OrderDetail({ params }) {
 
   if (!order) return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] p-8">
-      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
+      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-theme-text">
         <span className="material-symbols-outlined text-4xl">search_off</span>
       </div>
       <h3 className="text-xl font-bold text-on-surface">Order Not Found</h3>
@@ -239,7 +240,7 @@ export default function OrderDetail({ params }) {
     if (status === 'ready') return 'bg-emerald-100 text-emerald-800 border-emerald-200';
     if (status === 'processing' || status === 'washing' || status === 'dry_cleaning') return 'bg-blue-100 text-blue-800 border-blue-200';
     if (status === 'damaged') return 'bg-red-100 text-red-800 border-red-200';
-    if (status === 'lost') return 'bg-slate-900 text-white border-slate-700';
+    if (status === 'lost') return 'bg-surface text-theme-text border-slate-700';
     return 'bg-amber-100 text-amber-800 border-amber-200';
   };
 
@@ -258,7 +259,7 @@ export default function OrderDetail({ params }) {
               {order.status}
             </span>
           </div>
-          <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+          <p className="text-theme-text-muted font-medium text-sm flex items-center gap-2">
             <span className="material-symbols-outlined text-[16px]">calendar_today</span>
             Created {formatDate(order.created_at)}
           </p>
@@ -268,7 +269,7 @@ export default function OrderDetail({ params }) {
           {order.status === 'received' && (
             <>
               <button 
-                className="px-6 py-3 primary-gradient text-white rounded-2xl font-black text-sm shadow-lg shadow-emerald-900/10 active:scale-95 transition-all shimmer-btn flex items-center gap-2" 
+                className="px-6 py-3 primary-gradient text-theme-text rounded-2xl font-black text-sm shadow-lg shadow-emerald-900/10 active:scale-95 transition-all shimmer-btn flex items-center gap-2" 
                 onClick={() => updateStatus('processing')}
               >
                 <span className="material-symbols-outlined text-[18px]">play_arrow</span>
@@ -292,7 +293,7 @@ export default function OrderDetail({ params }) {
           )}
           {order.status === 'ready' && (
             <button 
-              className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 hover:bg-indigo-700" 
+              className="px-6 py-3 bg-indigo-600 text-theme-text rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 hover:bg-indigo-700" 
               onClick={() => updateStatus('delivered')}
             >
               <span className="material-symbols-outlined text-[18px]">local_shipping</span>
@@ -424,13 +425,13 @@ export default function OrderDetail({ params }) {
                             {item.tag_id ? (
                               <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-black tracking-widest uppercase">Tag: {item.tag_id}</span>
                             ) : (
-                              <span className="text-[9px] text-slate-300 font-bold italic uppercase">No Tag</span>
+                              <span className="text-[9px] text-theme-text font-bold italic uppercase">No Tag</span>
                             )}
                             {item.bag_id && (
                               <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black tracking-widest uppercase">Bag: {item.bag_id}</span>
                             )}
                             {item.incident_status !== 'none' && (
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase ${item.incident_status === 'damaged' ? 'bg-red-50 text-red-600' : 'bg-slate-900 text-white'}`}>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest uppercase ${item.incident_status === 'damaged' ? 'bg-red-50 text-red-600' : 'bg-surface text-theme-text'}`}>
                                 {item.incident_status}
                               </span>
                             )}
@@ -443,22 +444,75 @@ export default function OrderDetail({ params }) {
                         <span className="text-sm font-bold text-on-surface">₹{item.price?.toLocaleString('en-IN')}</span>
                       </td>
                       <td className="py-4 pl-6 text-right">
-                        <button 
-                          onClick={() => {
-                            setSelectedItem(item);
-                            setTrackingData({
-                              tag_id: item.tag_id || '',
-                              bag_id: item.bag_id || '',
-                              incident_status: item.incident_status || 'none',
-                              incident_notes: item.incident_notes || '',
-                              status: item.status || ''
-                            });
-                            setShowTrackingModal(true);
-                          }}
-                          className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors flex items-center justify-center"
-                        >
-                          <span className="material-symbols-outlined text-lg">barcode_scanner</span>
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={(e) => {
+                               e.stopPropagation();
+                               const win = window.open('', '_blank');
+                               win.document.write(`
+                                 <html>
+                                   <head>
+                                      <title>Print Label - ${item.tag_id}</title>
+                                      <style>
+                                        body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+                                        .label { text-align: center; border: 2px solid #000; padding: 20px; border-radius: 12px; }
+                                        h1 { margin: 0 0 10px 0; font-size: 24px; }
+                                        p { margin: 5px 0; font-size: 14px; font-weight: bold; }
+                                        .qr-container { margin: 15px 0; display: flex; justify-content: center; }
+                                      </style>
+                                   </head>
+                                   <body>
+                                      <div class="label">
+                                        <h1>${item.garment_type}</h1>
+                                        <p>${order.order_number} | ${order.customer_name || 'Walk-in'}</p>
+                                        <div class="qr-container" id="qr-target"></div>
+                                        <p>${item.tag_id}</p>
+                                        <p style="font-size: 12px; color: #666; font-weight: normal;">${item.service_type}</p>
+                                      </div>
+                                      <script>
+                                        // Wait a tiny bit for the image to load on the parent side before printing
+                                        setTimeout(() => { window.print(); }, 500);
+                                      </script>
+                                   </body>
+                                 </html>
+                               `);
+                               setTimeout(() => {
+                                 const svgElement = document.getElementById('qr-' + item.id).cloneNode(true);
+                                 win.document.getElementById('qr-target').appendChild(svgElement);
+                               }, 100);
+                            }}
+                            className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-100 transition-colors flex items-center justify-center relative group/qr"
+                          >
+                             <span className="material-symbols-outlined text-lg">print</span>
+                             <div className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden">
+                                <QRCodeSVG 
+                                  id={"qr-" + item.id}
+                                  value={item.tag_id || item.id.toString()} 
+                                  size={120} 
+                                  level={"H"} 
+                                />
+                             </div>
+                             <div className="absolute bottom-full mb-2 bg-surface text-theme-text text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/qr:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                Print Tag Label
+                             </div>
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setTrackingData({
+                                tag_id: item.tag_id || '',
+                                bag_id: item.bag_id || '',
+                                incident_status: item.incident_status || 'none',
+                                incident_notes: item.incident_notes || '',
+                                status: item.status || ''
+                              });
+                              setShowTrackingModal(true);
+                            }}
+                            className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors flex items-center justify-center"
+                          >
+                            <span className="material-symbols-outlined text-lg">barcode_scanner</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -496,7 +550,7 @@ export default function OrderDetail({ params }) {
                        <div className="flex justify-between relative z-10 w-full">
                          {history.map((h, i) => (
                            <div key={i} className="flex flex-col items-center gap-2 group/node">
-                             <div className="w-8 h-8 rounded-full bg-emerald-500 ring-4 ring-white flex items-center justify-center text-white shadow-sm transition-transform group-hover/node:scale-110">
+                             <div className="w-8 h-8 rounded-full bg-emerald-500 ring-4 ring-white flex items-center justify-center text-theme-text shadow-sm transition-transform group-hover/node:scale-110">
                                <span className="material-symbols-outlined text-[14px]">{getStageIcon(h.stage)}</span>
                              </div>
                              <div className="text-center">
@@ -548,13 +602,13 @@ export default function OrderDetail({ params }) {
               <div className="space-y-4 pt-4 border-t border-slate-50 relative z-10">
                 {order.customer_email && (
                   <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-slate-300 text-[18px]">mail</span>
+                    <span className="material-symbols-outlined text-theme-text text-[18px]">mail</span>
                     <span className="text-xs font-medium text-slate-600 break-all">{order.customer_email}</span>
                   </div>
                 )}
                 {order.customer_address && (
                   <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-slate-300 text-[18px]">location_on</span>
+                    <span className="material-symbols-outlined text-theme-text text-[18px]">location_on</span>
                     <span className="text-xs font-medium text-slate-600">{order.customer_address}</span>
                   </div>
                 )}
@@ -576,7 +630,7 @@ export default function OrderDetail({ params }) {
             
             <div className="space-y-4 mb-6">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-slate-500">Subtotal</span>
+                <span className="text-xs font-medium text-theme-text-muted">Subtotal</span>
                 <span className="text-sm font-bold text-on-surface">₹{((order.total_amount || 0) - (order.tax || 0)).toLocaleString('en-IN')}</span>
               </div>
               {order.discount > 0 && (
@@ -586,7 +640,7 @@ export default function OrderDetail({ params }) {
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-slate-500">Tax (GST/VAT)</span>
+                <span className="text-xs font-medium text-theme-text-muted">Tax (GST/VAT)</span>
                 <span className="text-sm font-bold text-on-surface">₹{order.tax?.toLocaleString('en-IN')}</span>
               </div>
             </div>
@@ -624,7 +678,7 @@ export default function OrderDetail({ params }) {
                     setPaymentData({ amount: order.total_amount, method: 'cash' });
                     setShowPaymentModal(true);
                   }}
-                  className="w-full py-3 bg-emerald-600 text-white text-xs font-black rounded-xl shadow-lg shadow-emerald-900/10 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-emerald-600 text-theme-text text-xs font-black rounded-xl shadow-lg shadow-emerald-900/10 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[18px]">payments</span>
                   Collect Payment
@@ -705,7 +759,7 @@ export default function OrderDetail({ params }) {
                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all border ${
                          trackingData.incident_status === st 
                            ? (st === 'none' ? 'bg-slate-100 border-slate-300 text-slate-600' : 'bg-red-50 border-red-200 text-red-600') 
-                           : 'bg-white border-slate-100 text-slate-300'
+                           : 'bg-white border-slate-100 text-theme-text'
                        }`}
                      >
                        {st}
@@ -723,7 +777,7 @@ export default function OrderDetail({ params }) {
 
             <button 
               onClick={updateItemTracking}
-              className="w-full py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
+              className="w-full py-4 primary-gradient text-theme-text rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
             >
               Update Record
             </button>
@@ -760,7 +814,7 @@ export default function OrderDetail({ params }) {
             <div className="flex flex-col gap-3">
               <button 
                 onClick={processRefund}
-                className="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-red-900/10 active:scale-95 transition-all"
+                className="w-full py-4 bg-red-600 text-theme-text rounded-2xl font-black text-sm shadow-xl shadow-red-900/10 active:scale-95 transition-all"
               >
                 Confirm Refund
               </button>
@@ -806,7 +860,7 @@ export default function OrderDetail({ params }) {
             <div className="flex flex-col gap-3">
               <button 
                 onClick={processPayment}
-                className="w-full py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
+                className="w-full py-4 primary-gradient text-theme-text rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
               >
                 Post Payment
               </button>
@@ -835,7 +889,7 @@ export default function OrderDetail({ params }) {
                       key={s}
                       onClick={() => setLogisticsStatus(s)}
                       className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                        logisticsStatus === s ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100'
+                        logisticsStatus === s ? 'bg-emerald-600 text-theme-text border-emerald-600 shadow-md' : 'bg-slate-50 text-slate-400 border-transparent hover:bg-slate-100'
                       }`}
                     >
                       {s}
@@ -856,7 +910,7 @@ export default function OrderDetail({ params }) {
             <div className="flex flex-col gap-3">
               <button 
                 onClick={updateLogistics}
-                className="w-full py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
+                className="w-full py-4 primary-gradient text-theme-text rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
               >
                 Update Logistics
               </button>
@@ -894,7 +948,7 @@ export default function OrderDetail({ params }) {
             <div className="flex flex-col gap-3">
               <button 
                 onClick={handleReschedule}
-                className="w-full py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
+                className="w-full py-4 primary-gradient text-theme-text rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
               >
                 Save New Windows
               </button>

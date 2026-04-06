@@ -1,15 +1,23 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 
+import { requireRole } from '@/lib/auth';
+
 const STAGE_ORDER = ['received', 'sorting', 'washing', 'dry_cleaning', 'drying', 'ironing', 'quality_check', 'ready'];
 
 export async function PUT(request, { params }) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const { id } = await params;
     const body = await request.json();
     const { action } = body; // 'advance' or 'reject'
 
-    const itemRes = await query('SELECT * FROM order_items WHERE id = $1', [id]);
+    const itemRes = await query(
+      'SELECT oi.*, o.store_id FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.id = $1 AND o.store_id = $2', 
+      [id, auth.user.store_id]
+    );
     if (itemRes.rows.length === 0) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
@@ -31,8 +39,8 @@ export async function PUT(request, { params }) {
 
     // Add workflow entry
     await query(
-      `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, $2, 1)`,
-      [id, newStage]
+      `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, $2, $3)`,
+      [id, newStage, auth.user.id]
     );
 
     // Update order status based on items

@@ -1,0 +1,200 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e17]: eco
+        - generic [ref=e19]:
+          - heading "CleanFlow" [level=1] [ref=e20]
+          - paragraph [ref=e21]: Pristine Atelier POS
+      - navigation [ref=e22]:
+        - link "dashboard Dashboard" [ref=e23] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e24]: dashboard
+          - generic [ref=e25]: Dashboard
+        - link "add_circle New Order" [ref=e26] [cursor=pointer]:
+          - /url: /orders/new
+          - generic [ref=e27]: add_circle
+          - generic [ref=e28]: New Order
+        - link "receipt_long Orders" [ref=e30] [cursor=pointer]:
+          - /url: /orders
+          - generic [ref=e31]: receipt_long
+          - generic [ref=e32]: Orders
+        - link "group Customers" [ref=e34] [cursor=pointer]:
+          - /url: /customers
+          - generic [ref=e35]: group
+          - generic [ref=e36]: Customers
+        - link "analytics Staff Analytics" [ref=e37] [cursor=pointer]:
+          - /url: /admin/analytics/staff
+          - generic [ref=e38]: analytics
+          - generic [ref=e39]: Staff Analytics
+        - link "inventory_2 Inventory" [ref=e40] [cursor=pointer]:
+          - /url: /inventory
+          - generic [ref=e41]: inventory_2
+          - generic [ref=e42]: Inventory
+        - link "route Assembly" [ref=e43] [cursor=pointer]:
+          - /url: /operations/assembly
+          - generic [ref=e44]: route
+          - generic [ref=e45]: Assembly
+        - link "precision_manufacturing Machine Ops" [ref=e46] [cursor=pointer]:
+          - /url: /operations/machines
+          - generic [ref=e47]: precision_manufacturing
+          - generic [ref=e48]: Machine Ops
+        - link "local_shipping Logistics Driver" [ref=e49] [cursor=pointer]:
+          - /url: /logistics
+          - generic [ref=e50]: local_shipping
+          - generic [ref=e51]: Logistics Driver
+        - link "settings Settings" [ref=e52] [cursor=pointer]:
+          - /url: /admin/settings
+          - generic [ref=e53]: settings
+          - generic [ref=e54]: Settings
+      - generic [ref=e55]:
+        - link "contact_support Support" [ref=e56] [cursor=pointer]:
+          - /url: /support
+          - generic [ref=e57]: contact_support
+          - generic [ref=e58]: Support
+        - button "logout Log Out" [ref=e59]:
+          - generic [ref=e60]: logout
+          - generic [ref=e61]: Log Out
+    - generic [ref=e62]:
+      - banner [ref=e63]:
+        - generic [ref=e65]:
+          - generic [ref=e66]: search
+          - 'textbox "Search by order #, customer name, or phone..." [ref=e67]'
+        - generic [ref=e68]:
+          - button "notifications" [ref=e70]:
+            - generic [ref=e71]: notifications
+          - link "help" [ref=e73] [cursor=pointer]:
+            - /url: /support
+            - generic [ref=e74]: help
+          - generic [ref=e76] [cursor=pointer]:
+            - generic [ref=e77]:
+              - paragraph [ref=e78]: Priya Sharma
+              - paragraph [ref=e79]: admin
+            - generic [ref=e82]: P
+      - main [ref=e83]:
+        - generic [ref=e84]:
+          - generic [ref=e86]:
+            - generic [ref=e88]:
+              - generic [ref=e90]: person
+              - generic [ref=e91]: Customer
+            - generic [ref=e94]:
+              - generic [ref=e96]: dry_cleaning
+              - generic [ref=e97]: Service
+            - generic [ref=e100]:
+              - generic [ref=e102]: schedule
+              - generic [ref=e103]: Schedule
+            - generic [ref=e106]:
+              - generic [ref=e108]: payments
+              - generic [ref=e109]: Payment
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - heading "Categories" [level=3] [ref=e112]
+              - button "grid_view All" [ref=e113]:
+                - generic [ref=e115]: grid_view
+                - generic [ref=e116]: All
+              - button "dry_cleaning Full Package" [ref=e117]:
+                - generic [ref=e119]: dry_cleaning
+                - generic [ref=e120]: Full Package
+              - button "dry_cleaning Blanket" [ref=e121]:
+                - generic [ref=e123]: dry_cleaning
+                - generic [ref=e124]: Blanket
+              - button "dry_cleaning Coat" [ref=e125]:
+                - generic [ref=e127]: dry_cleaning
+                - generic [ref=e128]: Coat
+              - button "dry_cleaning Curtains" [ref=e129]:
+                - generic [ref=e131]: dry_cleaning
+                - generic [ref=e132]: Curtains
+              - button "dry_cleaning Dress" [ref=e133]:
+                - generic [ref=e135]: dry_cleaning
+                - generic [ref=e136]: Dress
+              - button "dry_cleaning Jacket" [ref=e137]:
+                - generic [ref=e139]: dry_cleaning
+                - generic [ref=e140]: Jacket
+              - button "dry_cleaning Saree" [ref=e141]:
+                - generic [ref=e143]: dry_cleaning
+                - generic [ref=e144]: Saree
+              - button "dry_cleaning Shirt" [active] [ref=e145]:
+                - generic [ref=e147]: dry_cleaning
+                - generic [ref=e148]: Shirt
+              - button "dry_cleaning Suit" [ref=e149]:
+                - generic [ref=e151]: dry_cleaning
+                - generic [ref=e152]: Suit
+              - button "dry_cleaning Trousers" [ref=e153]:
+                - generic [ref=e155]: dry_cleaning
+                - generic [ref=e156]: Trousers
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - heading "Select Garments" [level=3] [ref=e159]
+                - generic [ref=e160]:
+                  - button "Popular" [ref=e161]
+                  - button "A-Z" [ref=e162]
+              - generic [ref=e164]:
+                - generic [ref=e165] [cursor=pointer]:
+                  - generic [ref=e167]: ₹80.00
+                  - generic [ref=e169]: checkroom
+                  - heading "Shirt" [level=4] [ref=e170]
+                  - paragraph [ref=e171]: Dry Cleaning
+                - generic [ref=e172] [cursor=pointer]:
+                  - generic [ref=e174]: ₹150.00
+                  - generic [ref=e176]: checkroom
+                  - heading "Shirt" [level=4] [ref=e177]
+                  - paragraph [ref=e178]: Express Service
+                - generic [ref=e179] [cursor=pointer]:
+                  - generic [ref=e181]: ₹25.00
+                  - generic [ref=e183]: checkroom
+                  - heading "Shirt" [level=4] [ref=e184]
+                  - paragraph [ref=e185]: Ironing
+                - generic [ref=e186] [cursor=pointer]:
+                  - generic [ref=e188]: ₹100.00
+                  - generic [ref=e190]: checkroom
+                  - heading "Shirt" [level=4] [ref=e191]
+                  - paragraph [ref=e192]: Stain Removal
+                - generic [ref=e193] [cursor=pointer]:
+                  - generic [ref=e195]: ₹40.00
+                  - generic [ref=e197]: checkroom
+                  - heading "Shirt" [level=4] [ref=e198]
+                  - paragraph [ref=e199]: Washing
+            - generic [ref=e201]:
+              - generic [ref=e202]:
+                - generic [ref=e203]:
+                  - heading "Order Summary" [level=3] [ref=e204]
+                  - generic [ref=e205]: "#R4DF"
+                - generic [ref=e206]:
+                  - generic [ref=e207]: A
+                  - generic [ref=e208]:
+                    - paragraph [ref=e209]: Arjun Mehta
+                    - paragraph [ref=e210]: Premium Member • 120 pts
+                  - button "edit" [ref=e211]:
+                    - generic [ref=e212]: edit
+              - generic [ref=e214]:
+                - generic [ref=e215]: shopping_bag
+                - paragraph [ref=e216]:
+                  - text: Cart is waiting
+                  - text: for orders
+              - generic [ref=e217]:
+                - generic [ref=e218]:
+                  - generic [ref=e219]:
+                    - generic [ref=e220]: Subtotal
+                    - generic [ref=e221]: ₹0
+                  - generic [ref=e222]:
+                    - generic [ref=e223]: Tax (18%)
+                    - generic [ref=e224]: ₹0
+                  - generic [ref=e225]:
+                    - generic [ref=e226]: Member Advantage
+                    - generic [ref=e227]: Applied
+                  - generic [ref=e228]:
+                    - textbox "PROMO CODE" [ref=e229]
+                    - button "Apply" [ref=e230]
+                  - generic [ref=e231]:
+                    - generic [ref=e232]: Total
+                    - generic [ref=e233]: ₹0
+                - button "Proceed to Schedule arrow_forward" [disabled]:
+                  - generic: Proceed to Schedule
+                  - generic: arrow_forward
+```

@@ -5,6 +5,9 @@ import { sanitizeText } from '@/lib/sanitize';
 
 export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const search = searchParams.get('search');
@@ -14,10 +17,11 @@ export async function GET(request) {
         (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
       FROM orders o
       LEFT JOIN customers c ON o.customer_id = c.id
+      WHERE o.store_id = $1
     `;
     const conditions = [];
-    const params = [];
-    let paramIndex = 1;
+    const params = [auth.user.store_id];
+    let paramIndex = 2;
 
     if (status && status !== 'all') {
       conditions.push(`o.status = $${paramIndex++}`);
@@ -31,7 +35,7 @@ export async function GET(request) {
     }
 
     if (conditions.length > 0) {
-      sql += ' WHERE ' + conditions.join(' AND ');
+      sql += ' AND ' + conditions.join(' AND ');
     }
 
     sql += ' ORDER BY o.created_at DESC';
@@ -52,6 +56,17 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { customer_id, items, payment_method, notes, schedule, force, coupon_id, redeemedPoints: bodyRedeemedPoints } = body;
+
+    // Verify customer belongs to this store
+    if (customer_id) {
+      const customerCheck = await client.query(
+        'SELECT id FROM customers WHERE id = $1 AND store_id = $2',
+        [customer_id, auth.user.store_id]
+      );
+      if (customerCheck.rows.length === 0) {
+        return NextResponse.json({ error: 'Invalid customer for this store.' }, { status: 403 });
+      }
+    }
     
     // Duplicate Order Detection (Last 5 mins)
     if (!force) {
@@ -144,22 +159,24 @@ export async function POST(request) {
 
     // Insert order
     const orderRes = await client.query(
-      `INSERT INTO orders (order_number, customer_id, status, total_amount, discount, tax, payment_status, notes, pickup_date, delivery_date, coupon_id)
-       VALUES ($1, $2, 'received', $3, $4, $5, 'pending', $6, $7, $8, $9) RETURNING id`,
-      [orderNumber, customer_id, totalAmount, totalDiscount, tax, safeNotes, pickupDate, deliveryDate, coupon_id || null]
+      `INSERT INTO orders (order_number, customer_id, store_id, status, total_amount, discount, tax, payment_status, notes, pickup_date, delivery_date, pickup_status, delivery_status, logistics_notes, coupon_id)
+       VALUES ($1, $2, $3, 'received', $4, $5, $6, 'pending', $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+      [orderNumber, customer_id, auth.user.store_id, totalAmount, totalDiscount, tax, safeNotes, pickupDate, deliveryDate, body.pickup_status || 'pending', body.delivery_status || 'pending', body.logistics_notes || null, coupon_id || null]
     );
     const orderId = orderRes.rows[0].id;
 
     // Insert items
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const tagId = item.tag_id || `${orderNumber}-${i + 1}`;
       const itemRes = await client.query(
-        `INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status, notes, tag_id, bag_id)
-         VALUES ($1, $2, $3, $4, $5, 'received', $6, $7, $8) RETURNING id`,
-        [orderId, item.garment_type, item.service_type, item.quantity || 1, item.price, item.notes || null, item.tag_id || null, item.bag_id || null]
+        `INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status, notes, tag_id, bag_id, incident_status, incident_notes)
+         VALUES ($1, $2, $3, $4, $5, 'received', $6, $7, $8, $9, $10) RETURNING id`,
+        [orderId, item.garment_type, item.service_type, item.quantity || 1, item.price, item.notes || null, tagId, item.bag_id || null, item.incident_status || 'none', item.incident_notes || null]
       );
       await client.query(
-        `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, 'received', 1)`,
-        [itemRes.rows[0].id]
+        `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, 'received', $2)`,
+        [itemRes.rows[0].id, auth.user.id]
       );
     }
 

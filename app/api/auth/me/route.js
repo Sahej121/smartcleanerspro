@@ -19,13 +19,15 @@ export async function GET() {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
-  // Check Store Suspension (Skip for Owner)
+  // Check Store Status and Tier
   let isSuspended = false;
-  if (payload.role !== 'owner' && payload.store_id) {
-    const res = await query('SELECT status FROM stores WHERE id = $1', [payload.store_id]);
+  let tier = 'starter';
+  if (payload.store_id) {
+    const res = await query('SELECT status, subscription_tier FROM stores WHERE id = $1', [payload.store_id]);
     const store = res.rows[0];
-    if (store && store.status === 'suspended') {
-      isSuspended = true;
+    if (store) {
+      if (store.status === 'suspended') isSuspended = true;
+      tier = store.subscription_tier || 'starter';
     }
   }
 
@@ -35,6 +37,6 @@ export async function GET() {
   // Note: frontdesk, driver, staff remain as is
 
   return NextResponse.json({ 
-    user: { ...payload, role: feRole, suspended: isSuspended } 
+    user: { ...payload, role: feRole, suspended: isSuspended, tier } 
   });
 }

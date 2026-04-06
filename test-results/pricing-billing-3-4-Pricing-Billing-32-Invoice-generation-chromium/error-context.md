@@ -1,0 +1,172 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e17]: eco
+        - generic [ref=e19]:
+          - heading "CleanFlow" [level=1] [ref=e20]
+          - paragraph [ref=e21]: Pristine Atelier POS
+      - navigation [ref=e22]:
+        - link "dashboard Dashboard" [ref=e23] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e24]: dashboard
+          - generic [ref=e25]: Dashboard
+        - link "add_circle New Order" [ref=e26] [cursor=pointer]:
+          - /url: /orders/new
+          - generic [ref=e27]: add_circle
+          - generic [ref=e28]: New Order
+        - link "receipt_long Orders" [ref=e29] [cursor=pointer]:
+          - /url: /orders
+          - generic [ref=e30]: receipt_long
+          - generic [ref=e31]: Orders
+        - link "group Customers" [ref=e33] [cursor=pointer]:
+          - /url: /customers
+          - generic [ref=e34]: group
+          - generic [ref=e35]: Customers
+        - link "analytics Staff Analytics" [ref=e36] [cursor=pointer]:
+          - /url: /admin/analytics/staff
+          - generic [ref=e37]: analytics
+          - generic [ref=e38]: Staff Analytics
+        - link "inventory_2 Inventory" [ref=e39] [cursor=pointer]:
+          - /url: /inventory
+          - generic [ref=e40]: inventory_2
+          - generic [ref=e41]: Inventory
+        - link "route Assembly" [ref=e42] [cursor=pointer]:
+          - /url: /operations/assembly
+          - generic [ref=e43]: route
+          - generic [ref=e44]: Assembly
+        - link "precision_manufacturing Machine Ops" [ref=e45] [cursor=pointer]:
+          - /url: /operations/machines
+          - generic [ref=e46]: precision_manufacturing
+          - generic [ref=e47]: Machine Ops
+        - link "local_shipping Logistics Driver" [ref=e48] [cursor=pointer]:
+          - /url: /logistics
+          - generic [ref=e49]: local_shipping
+          - generic [ref=e50]: Logistics Driver
+        - link "settings Settings" [ref=e51] [cursor=pointer]:
+          - /url: /admin/settings
+          - generic [ref=e52]: settings
+          - generic [ref=e53]: Settings
+      - generic [ref=e54]:
+        - link "contact_support Support" [ref=e55] [cursor=pointer]:
+          - /url: /support
+          - generic [ref=e56]: contact_support
+          - generic [ref=e57]: Support
+        - button "logout Log Out" [ref=e58]:
+          - generic [ref=e59]: logout
+          - generic [ref=e60]: Log Out
+    - generic [ref=e61]:
+      - banner [ref=e62]:
+        - generic [ref=e64]:
+          - generic [ref=e65]: search
+          - 'textbox "Search by order #, customer name, or phone..." [ref=e66]'
+        - generic [ref=e67]:
+          - button "notifications" [ref=e69]:
+            - generic [ref=e70]: notifications
+          - link "help" [ref=e72] [cursor=pointer]:
+            - /url: /support
+            - generic [ref=e73]: help
+          - generic [ref=e75] [cursor=pointer]:
+            - generic [ref=e76]:
+              - paragraph [ref=e77]: Priya Sharma
+              - paragraph [ref=e78]: admin
+            - generic [ref=e81]: P
+      - main [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - link "arrow_back Back to Orders" [ref=e86] [cursor=pointer]:
+                - /url: /orders
+                - generic [ref=e87]: arrow_back
+                - text: Back to Orders
+              - 'heading "Order #" [level=1] [ref=e89]'
+              - paragraph [ref=e91]:
+                - generic [ref=e92]: calendar_today
+                - text: Created —
+            - generic [ref=e93]:
+              - button "print" [ref=e94]:
+                - generic [ref=e95]: print
+              - button "event_repeat Reschedule" [ref=e96]:
+                - generic [ref=e97]: event_repeat
+                - text: Reschedule
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]:
+                - generic [ref=e101]:
+                  - heading "local_shipping Logistics Snapshot" [level=3] [ref=e102]:
+                    - generic [ref=e103]: local_shipping
+                    - text: Logistics Snapshot
+                  - generic [ref=e104]:
+                    - generic [ref=e105]:
+                      - paragraph [ref=e106]: Pickup
+                      - paragraph [ref=e107]: —
+                      - generic [ref=e108]:
+                        - generic [ref=e109]: pending
+                        - button "Update" [ref=e110]
+                    - generic [ref=e111]:
+                      - paragraph [ref=e112]: Delivery
+                      - paragraph [ref=e113]: —
+                      - generic [ref=e114]:
+                        - generic [ref=e115]: pending
+                        - button "Update" [ref=e116]
+                - generic [ref=e117]:
+                  - heading "Address Information" [level=4] [ref=e118]
+                  - paragraph
+                  - paragraph [ref=e119]: No address provided
+                  - button "map View on Map" [ref=e120]:
+                    - generic [ref=e121]: map
+                    - text: View on Map
+              - generic [ref=e122]:
+                - heading "checkroom Order Items" [level=3] [ref=e123]:
+                  - generic [ref=e124]: checkroom
+                  - text: Order Items
+                - table [ref=e126]:
+                  - rowgroup [ref=e127]:
+                    - row "Garment & Service Tracking Info Quantity Price" [ref=e128]:
+                      - columnheader "Garment & Service" [ref=e129]
+                      - columnheader "Tracking Info" [ref=e130]
+                      - columnheader "Quantity" [ref=e131]
+                      - columnheader "Price" [ref=e132]
+                      - columnheader [ref=e133]
+                  - rowgroup
+              - heading "route Garment Assembly Workflow" [level=3] [ref=e135]:
+                - generic [ref=e136]: route
+                - text: Garment Assembly Workflow
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - heading "account_circle Client Profile" [level=3] [ref=e140]:
+                  - generic [ref=e141]: account_circle
+                  - text: Client Profile
+                - generic [ref=e142]:
+                  - generic [ref=e143]: W
+                  - generic [ref=e144]:
+                    - heading "Walk-in Customer" [level=4] [ref=e145]
+                    - paragraph [ref=e146]: No phone provided
+                - link "View Full Profile arrow_forward" [ref=e147] [cursor=pointer]:
+                  - /url: /customers/undefined
+                  - text: View Full Profile
+                  - generic [ref=e148]: arrow_forward
+              - generic [ref=e149]:
+                - heading "payments Financial Summary" [level=3] [ref=e150]:
+                  - generic [ref=e151]: payments
+                  - text: Financial Summary
+                - generic [ref=e152]:
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: Subtotal
+                    - generic [ref=e155]: ₹0
+                  - generic [ref=e156]:
+                    - generic [ref=e157]: Tax (GST/VAT)
+                    - generic [ref=e158]: ₹
+                - generic [ref=e159]:
+                  - generic [ref=e160]: Total
+                  - generic [ref=e161]: ₹
+                - generic [ref=e162]:
+                  - generic [ref=e164]: Payment Method
+                  - generic [ref=e167]: Status
+```

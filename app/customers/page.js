@@ -40,182 +40,186 @@ export default function CustomersPage() {
   };
 
   const getTier = (points) => {
-    if (points > 1000) return { name: 'GOLD', color: 'bg-emerald-800 text-white border-white' };
-    if (points > 500) return { name: 'SILVER', color: 'bg-slate-400 text-white border-white' };
-    return { name: 'NEW', color: 'bg-slate-200 text-slate-700 border-white' };
+    if (points > 1000) return { name: 'GOLD', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
+    if (points > 500) return { name: 'SILVER', color: 'bg-slate-500/10 text-theme-text border-slate-500/20' };
+    return { name: 'NEW', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' };
   };
 
-  // Mock avatars for demonstration to match reference design
+  // Mock avatars
   const getAvatarStyle = (index, name) => {
     const avatars = [
-      'bg-emerald-700', // Helena
-      'bg-emerald-600', // Marcus
-      'bg-emerald-900', // Sophia
-      'bg-emerald-50', // Julian (initials)
-      'bg-emerald-800', // David
-      'bg-emerald-600', // Elena
+      'bg-indigo-500/20 text-indigo-400',
+      'bg-emerald-500/20 text-emerald-400',
+      'bg-blue-500/20 text-blue-400',
+      'bg-purple-500/20 text-purple-400',
+      'bg-rose-500/20 text-rose-400',
+      'bg-amber-500/20 text-amber-400',
     ];
     return avatars[index % avatars.length];
   };
 
   return (
-    <div className="p-4 lg:p-8 space-y-6 lg:space-y-10 max-w-7xl mx-auto min-h-[calc(100vh-120px)] flex flex-col">
-      {/* Page Header */}
-      <div className="flex justify-between items-end animate-fade-in-up">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2 font-headline">Customer Registry</h1>
-          <p className="text-on-surface-variant font-medium text-lg">Manage your atelier's elite clientele and loyalty memberships.</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background text-theme-text p-4 lg:p-8 font-sans selection:bg-emerald-500/30">
+      <div className="max-w-7xl mx-auto space-y-8 animate-fade-in-up">
+        
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-surface/40 border border-theme-border p-8 rounded-[3rem] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
-      {/* Action Bar */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between animate-fade-in-up stagger-1">
-        <div className="relative w-full max-w-md group">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-          <input
-            className="w-full bg-white border border-slate-200 rounded-2xl py-3 pl-12 pr-6 text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 hover:border-slate-300 transition-all outline-none shadow-sm"
-            placeholder="Search by name, email or garment"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-4">
-          <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-on-surface shadow-sm hover:bg-slate-50 transition-all">
-            <span className="material-symbols-outlined text-[18px]">filter_list</span>
-            Segment
-          </button>
-          <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-on-surface shadow-sm hover:bg-slate-50 transition-all">
-            <span className="material-symbols-outlined text-[18px]">sort</span>
-            Sort
-          </button>
-          <button 
-            onClick={() => setShowModal(true)}
-            className="px-6 py-3 rounded-2xl bg-emerald-600 text-white font-bold text-sm shadow-md shadow-emerald-900/10 hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-[18px]">person_add</span>
-            Add Customer
-          </button>
-        </div>
-      </div>
-
-      {/* Customer Registry Grid */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
-             <div className="w-12 h-12 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin"></div>
-             <p className="text-sm font-bold text-slate-400 animate-pulse uppercase tracking-widest">Accessing Registry...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {customers.map((c, i) => {
-              const tier = getTier(c.loyalty_points);
-              const avatarBg = getAvatarStyle(i, c.name);
-              const useInitials = avatarBg === 'bg-emerald-50';
-              
-              return (
-                <div key={c.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col items-center text-center animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
-                  {/* Avatar & Badge */}
-                  <div className="relative mb-6 mt-4">
-                    <div className={`w-24 h-24 rounded-[1.75rem] ${avatarBg} text-emerald-800 flex items-center justify-center text-3xl font-black shadow-inner overflow-hidden`}>
-                       {useInitials ? c.name.charAt(0) : <span className="material-symbols-outlined text-white/50 text-5xl">person</span>}
-                    </div>
-                    <div className={`absolute -bottom-2 -right-3 px-3 py-1 rounded-full text-[9px] font-black tracking-widest border-2 ${tier.color}`}>
-                       {tier.name}
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <h3 className="text-lg font-bold text-on-surface mb-1">{c.name}</h3>
-                  <p className="text-xs text-slate-500 mb-6">{c.email || `${c.name.split(' ')[0].toLowerCase()}@atelier.io`}</p>
-
-                  {/* Stats */}
-                  <div className="flex gap-4 w-full mb-6">
-                    <div className="flex-1 bg-slate-50 rounded-2xl py-3 px-2">
-                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Orders</p>
-                       <p className="text-xl font-bold text-emerald-900">{c.order_count || Math.floor(Math.random() * 50) + 1}</p>
-                    </div>
-                    <div className="flex-1 bg-slate-50 rounded-2xl py-3 px-2">
-                       <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Points</p>
-                       <p className="text-xl font-bold text-emerald-900">{c.loyalty_points || Math.floor(Math.random() * 2000)}</p>
-                    </div>
-                  </div>
-
-                  {/* Action */}
-                  <Link href={c.id ? `/customers/${c.id}` : '#'} className="w-full py-3 bg-indigo-50/50 hover:bg-emerald-50 text-emerald-700 font-bold text-sm rounded-xl transition-colors mt-auto block">
-                    View Profile
-                  </Link>
+          <div className="flex items-center gap-6 relative z-10 w-full md:w-auto">
+             <div className="w-16 h-16 rounded-3xl bg-slate-800 border-2 border-emerald-500/20 text-emerald-500 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform shrink-0">
+               <span className="material-symbols-outlined text-3xl">groups</span>
+             </div>
+             <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">Clientele</span>
                 </div>
-              );
-            })}
-
-            {/* Register New Client Stub */}
-            <div 
-              onClick={() => setShowModal(true)}
-              className="rounded-3xl p-6 border-2 border-dashed border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition-all cursor-pointer flex flex-col items-center justify-center text-center group min-h-[340px]"
-            >
-              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">person_add</span>
-              </div>
-              <h3 className="text-base font-bold text-emerald-900 mb-1">Register New Client</h3>
-              <p className="text-xs text-slate-500">Grow your atelier base</p>
-            </div>
+                <h1 className="text-4xl font-black text-theme-text tracking-tighter">Customer Registry</h1>
+                <p className="text-theme-text-muted font-medium text-sm mt-1">Manage your atelier's elite clientele and loyalty memberships.</p>
+             </div>
           </div>
-        )}
-      </div>
+          
+          <div className="flex gap-3 relative z-10 w-full md:w-auto">
+             <div className="bg-background px-6 py-4 rounded-3xl border border-theme-border text-center flex-1 md:flex-none">
+                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Total Users</p>
+                <p className="text-2xl font-black text-theme-text leading-none">
+                  {customers.length || '—'}
+                </p>
+             </div>
+          </div>
+        </div>
 
-      {/* Pagination Container */}
-      {!loading && customers.length > 0 && (
-        <div className="pt-4 border-t border-slate-100 flex justify-between items-center animate-fade-in-up stagger-4">
-          <p className="text-sm font-medium text-slate-500">
-            Showing <span className="font-bold text-on-surface">6</span> of <span className="font-bold text-on-surface">1,248</span> customers
-          </p>
-          <div className="flex gap-2">
-            <button className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-colors">
-              <span className="material-symbols-outlined text-sm">chevron_left</span>
+        {/* Action Bar */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full max-w-md group">
+            <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-theme-text-muted group-focus-within:text-emerald-500 transition-colors">search</span>
+            <input
+              className="w-full bg-surface border border-theme-border rounded-[1.5rem] py-4 pl-14 pr-6 text-sm font-bold text-theme-text placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 transition-all shadow-sm"
+              placeholder="Search by name, email or garment"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-4 w-full md:w-auto overflow-x-auto no-scrollbar py-1">
+            <button className="flex items-center gap-2 px-6 py-4 bg-surface border border-theme-border rounded-[1.5rem] text-sm font-bold text-theme-text shadow-sm hover:bg-slate-800 hover:text-theme-text transition-all whitespace-nowrap">
+              <span className="material-symbols-outlined text-[18px]">filter_list</span>
+              Segment
             </button>
-            <button className="w-10 h-10 rounded-xl bg-emerald-700 text-white font-bold text-sm shadow-md">1</button>
-            <button className="w-10 h-10 rounded-xl border border-slate-200 font-bold text-sm hover:bg-slate-50 transition-colors">2</button>
-            <button className="w-10 h-10 rounded-xl border border-slate-200 font-bold text-sm hover:bg-slate-50 transition-colors">3</button>
-            <span className="flex items-center justify-center w-8 text-slate-400 font-bold">...</span>
-            <button className="w-10 h-10 rounded-xl border border-slate-200 font-bold text-sm hover:bg-slate-50 transition-colors">42</button>
-            <button className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors">
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
+            <button className="flex items-center gap-2 px-6 py-4 bg-surface border border-theme-border rounded-[1.5rem] text-sm font-bold text-theme-text shadow-sm hover:bg-slate-800 hover:text-theme-text transition-all whitespace-nowrap">
+              <span className="material-symbols-outlined text-[18px]">sort</span>
+              Sort
+            </button>
+            <button 
+              onClick={() => setShowModal(true)}
+              className="px-6 py-4 rounded-[1.5rem] bg-emerald-600 hover:bg-emerald-500 text-theme-text font-black text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.2)] active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-[18px]">person_add</span>
+              Add Client
             </button>
           </div>
         </div>
-      )}
+
+        {/* Customer Registry Grid */}
+        <div className="min-h-[400px]">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+               <div className="w-12 h-12 rounded-full border-4 border-theme-border border-t-emerald-500 animate-spin"></div>
+               <p className="text-[10px] font-black text-theme-text-muted animate-pulse uppercase tracking-widest">Accessing Matrix...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {customers.map((c, i) => {
+                const tier = getTier(c.loyalty_points);
+                const avatarStyle = getAvatarStyle(i, c.name);
+                
+                return (
+                  <div key={c.id} className="bg-surface rounded-[2.5rem] p-6 border border-theme-border hover:border-slate-700 transition-all duration-300 flex flex-col items-center text-center animate-scale-in group" style={{ animationDelay: (i * 50) + 'ms' }}>
+                    {/* Avatar & Badge */}
+                    <div className="relative mb-6 mt-4">
+                      <div className={`w-24 h-24 rounded-[1.75rem] ${avatarStyle} flex items-center justify-center text-3xl font-black shadow-inner overflow-hidden group-hover:scale-105 transition-transform`}>
+                         {c.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] font-black tracking-[0.2em] border backdrop-blur-md whitespace-nowrap z-10 ${tier.color}`}>
+                         {tier.name}
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <h3 className="text-xl font-black text-theme-text mb-1 tracking-tight">{c.name}</h3>
+                    <p className="text-[10px] uppercase tracking-widest text-theme-text-muted mb-6 truncate max-w-full">
+                      {c.email || `${c.name.split(' ')[0].toLowerCase()}@atelier.io`}
+                    </p>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-3 w-full mb-6">
+                      <div className="bg-background rounded-2xl py-3 border border-theme-border/50 text-center">
+                         <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">Orders</p>
+                         <p className="text-lg font-black text-theme-text">{c.order_count || Math.floor(Math.random() * 50) + 1}</p>
+                      </div>
+                      <div className="bg-background rounded-2xl py-3 border border-theme-border/50 text-center">
+                         <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">Points</p>
+                         <p className="text-lg font-black text-emerald-400">{c.loyalty_points || Math.floor(Math.random() * 2000)}</p>
+                      </div>
+                    </div>
+
+                    {/* Action */}
+                    <Link href={c.id ? `/customers/${c.id}` : '#'} className="w-full py-4 mt-auto bg-slate-800/50 hover:bg-emerald-500/10 text-theme-text hover:text-emerald-400 border border-slate-700/50 hover:border-emerald-500/30 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all block">
+                      View Profile
+                    </Link>
+                  </div>
+                );
+              })}
+
+              {/* Register New Client Stub */}
+              <button 
+                onClick={() => setShowModal(true)}
+                className="rounded-[2.5rem] p-6 border-2 border-dashed border-theme-border bg-surface/30 hover:bg-slate-800/50 transition-all cursor-pointer flex flex-col items-center justify-center text-center group min-h-[340px]"
+              >
+                <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-emerald-500 bg-emerald-500/10 mb-4 group-hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-2xl">person_add</span>
+                </div>
+                <h3 className="text-sm font-black text-theme-text mb-2 uppercase tracking-widest">Register New Client</h3>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Grow your atelier base</p>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* High-Fidelity Creation Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-on-surface/40 backdrop-blur-xl animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2rem] lg:rounded-[3.5rem] w-[95%] sm:w-full max-w-2xl shadow-[0_64px_128px_-24px_rgba(11,28,48,0.4)] border border-outline-variant/10 animate-in zoom-in-95 duration-500 overflow-hidden">
-            <div className="p-12 border-b border-slate-50 relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-surface rounded-[3rem] w-[95%] sm:w-full max-w-2xl border border-theme-border shadow-[0_0_100px_rgba(0,0,0,0.5)] animate-scale-in overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <div className="p-8 md:p-10 border-b border-theme-border/50 relative shrink-0">
                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 rounded-[1.25rem] bg-emerald-50 text-primary flex items-center justify-center">
-                     <span className="material-symbols-outlined text-3xl">person_add_alt</span>
+                  <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
+                     <span className="material-symbols-outlined text-3xl">person_add</span>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-on-surface font-headline leading-tight">Identity Registration</h2>
-                    <p className="text-[10px] text-on-surface-variant font-black mt-2 uppercase tracking-[0.3em] leading-none">New Atelier Profile Creation</p>
+                    <h2 className="text-3xl font-black text-theme-text tracking-tighter">Identity Registration</h2>
+                    <p className="text-[10px] text-emerald-500 font-black mt-2 uppercase tracking-[0.3em]">New Atelier Profile</p>
                   </div>
                </div>
-               <button onClick={() => setShowModal(false)} className="absolute top-12 right-12 p-3 hover:bg-slate-50 rounded-full transition-colors text-slate-300 hover:text-on-surface">
-                  <span className="material-symbols-outlined text-2xl">close</span>
+               <button onClick={() => setShowModal(false)} className="absolute top-10 right-10 w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors text-slate-400 hover:text-theme-text flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[18px]">close</span>
                </button>
             </div>
             
-            <div className="p-6 md:p-12 space-y-8 max-h-[60vh] overflow-y-auto no-scrollbar">
+            <div className="p-8 md:p-10 space-y-8 overflow-y-auto no-scrollbar shrink">
               {error && (
-                <div className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-2xl text-xs font-bold animate-shake">
+                <div className="bg-red-500/10 border border-red-500/30 text-red-500 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
                   {error}
                 </div>
               )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                 <div className="md:col-span-2 space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Client Full Identity</label>
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Client Full Identity</label>
                   <input 
                     autoFocus
-                    className="w-full bg-surface-container-low border-none rounded-2xl py-5 px-6 text-sm font-bold focus:ring-2 focus:ring-primary/20 placeholder:text-slate-200" 
+                    className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
                     value={newCustomer.name} 
                     onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })} 
                     placeholder="Christian Dior" 
@@ -223,39 +227,60 @@ export default function CustomersPage() {
                 </div>
                 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Telecommunication</label>
-                  <input className="w-full bg-surface-container-low border-none rounded-2xl py-5 px-6 text-sm font-bold placeholder:text-slate-200" value={newCustomer.phone} onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })} placeholder="+91" />
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Telecommunication</label>
+                  <input 
+                    className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
+                    value={newCustomer.phone} 
+                    onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })} 
+                    placeholder="+91" 
+                  />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Digital Identity </label>
-                  <input className="w-full bg-surface-container-low border-none rounded-2xl py-5 px-6 text-sm font-bold placeholder:text-slate-200" value={newCustomer.email} onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })} placeholder="dior@atelier.io" />
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Digital Identity</label>
+                  <input 
+                    className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
+                    value={newCustomer.email} 
+                    onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })} 
+                    placeholder="dior@atelier.io" 
+                  />
                 </div>
 
                 <div className="md:col-span-2 space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Residential Reference</label>
-                  <input className="w-full bg-surface-container-low border-none rounded-2xl py-5 px-6 text-sm font-bold placeholder:text-slate-200" value={newCustomer.address} onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })} placeholder="Bungalow #..." />
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Residential Reference</label>
+                  <input 
+                    className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
+                    value={newCustomer.address} 
+                    onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })} 
+                    placeholder="Bungalow #..." 
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="p-12 bg-slate-50/50 border-t border-slate-100 flex gap-6">
+            <div className="p-8 md:p-10 bg-background/50 border-t border-theme-border/50 flex gap-4 shrink-0 mt-auto">
               <button 
                 onClick={() => setShowModal(false)}
-                className="flex-1 py-5 border border-slate-200 rounded-3xl font-black text-slate-400 text-xs uppercase tracking-widest hover:text-on-surface hover:bg-white transition-all"
+                className="flex-[1] py-5 bg-surface border border-theme-border rounded-[1.5rem] font-black text-slate-400 text-[10px] uppercase tracking-[0.2em] hover:bg-slate-800 transition-all"
               >
                 Discard
               </button>
               <button 
                 onClick={handleCreate} 
                 disabled={!newCustomer.name}
-                className="flex-[2] py-5 primary-gradient text-white rounded-3xl font-black text-sm shadow-2xl shadow-emerald-900/20 active:scale-95 transition-all disabled:opacity-30 uppercase tracking-widest"
+                className="flex-[2] py-5 bg-emerald-600 border border-emerald-500 text-theme-text rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-50 disabled:hover:bg-emerald-600"
               >
                 Launch Profile
               </button>
             </div>
+
           </div>
         </div>
       )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+      `}} />
     </div>
   );
 }

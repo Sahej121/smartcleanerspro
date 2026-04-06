@@ -38,7 +38,7 @@ export default function MasterControl({ user }) {
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newStore, setNewStore] = useState({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '' });
+  const [newStore, setNewStore] = useState({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'starter' });
   const [credentialsModal, setCredentialsModal] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -123,7 +123,7 @@ export default function MasterControl({ user }) {
       if (res.ok) {
         const data = await res.json();
         setShowCreateModal(false);
-        setNewStore({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '' });
+        setNewStore({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'starter' });
         setCredentialsModal({ storeName: data.store_name, email: data.admin_email, password: data.tempPassword });
         fetchData();
       } else {
@@ -397,9 +397,12 @@ export default function MasterControl({ user }) {
                          </div>
                       </td>
                       <td className="py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">{store.city}</td>
-                      <td className="py-6">
-                         <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${store.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                      <td className="py-6 flex flex-col items-start gap-1">
+                         <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${store.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                             {store.status === 'active' ? 'Operational' : 'Suspended'}
+                         </span>
+                         <span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-slate-800 text-white shadow-sm">
+                            {store.subscription_tier === 'pro' ? 'Pro' : store.subscription_tier === 'growth' ? 'Growth' : 'Starter'} Plan
                          </span>
                       </td>
                       <td className="py-6 text-right font-black text-sm text-on-surface">{formatCurrency(store.total_revenue)}</td>
@@ -717,15 +720,29 @@ export default function MasterControl({ user }) {
                          onChange={(e) => setNewStore({...newStore, store_name: e.target.value})}
                        />
                     </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Geo-Location Index</label>
-                       <input 
-                         type="text" 
-                         placeholder="e.g. London, UK" 
-                         className="w-full bg-slate-50 border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
-                         value={newStore.city}
-                         onChange={(e) => setNewStore({...newStore, city: e.target.value})}
-                       />
+                    <div className="grid grid-cols-2 gap-6">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Geo-Location Index</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. London, UK" 
+                            className="w-full bg-slate-50 border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                            value={newStore.city}
+                            onChange={(e) => setNewStore({...newStore, city: e.target.value})}
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Subscription Tier</label>
+                          <select 
+                            className="w-full bg-slate-50 border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none appearance-none cursor-pointer"
+                            value={newStore.subscription_tier}
+                            onChange={(e) => setNewStore({...newStore, subscription_tier: e.target.value})}
+                          >
+                            <option value="starter">Starter Plan (₹999/mo)</option>
+                            <option value="growth">Growth Plan (₹1,999/mo)</option>
+                            <option value="pro">Pro Plan (₹3,500/mo)</option>
+                          </select>
+                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-6">
                        <div className="space-y-2">

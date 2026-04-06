@@ -12,13 +12,13 @@ export async function GET(request) {
 
   try {
     const staffRes = await query(
-      `SELECT u.username, COUNT(o.id) as orders_created, SUM(o.total_amount) as total_value
+      `SELECT u.name, COUNT(o.id) as orders_created, COALESCE(SUM(o.total_amount), 0) as total_value
        FROM users u
-       LEFT JOIN orders o ON u.id = o.created_by
-       WHERE o.created_at >= $1 AND o.created_at <= $2 OR o.id IS NULL
-       GROUP BY u.id, u.username
+       LEFT JOIN orders o ON u.id = o.created_by AND o.created_at >= $1 AND o.created_at <= $2 AND o.store_id = $3
+       WHERE u.store_id = $3
+       GROUP BY u.id, u.name
        ORDER BY orders_created DESC`,
-      [start || '1970-01-01', end || '2100-01-01']
+      [start || '1970-01-01', end || '2100-01-01', auth.user.store_id]
     );
 
     return NextResponse.json(staffRes.rows);

@@ -7,7 +7,6 @@ test.describe('3.6 Pickup & Delivery', () => {
   });
 
   test('43. Schedule pickup', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Slot saved, confirmation sent, calendar updated
     await page.getByRole('button', { name: /Schedule Pickup/i }).click();
     await page.getByPlaceholder(/Select Customer/i).fill('Arjun Mehta');
@@ -20,7 +19,6 @@ test.describe('3.6 Pickup & Delivery', () => {
   });
 
   test('44. Schedule delivery', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Delivery created, assigned to driver
     await page.getByRole('button', { name: /Schedule Delivery/i }).click();
     await page.getByPlaceholder(/Order ID/i).fill('CF-1004');
@@ -32,7 +30,6 @@ test.describe('3.6 Pickup & Delivery', () => {
   });
 
   test('45. Reschedule pickup', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Old slot freed, new slot confirmed, notification sent
     await page.locator('.calendar-event', { hasText: 'Arjun Mehta' }).first().click();
     await page.getByRole('button', { name: /Reschedule/i }).click();
@@ -43,7 +40,6 @@ test.describe('3.6 Pickup & Delivery', () => {
   });
 
   test('46. Mark delivered', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Order status = DELIVERED, timestamp logged
     await page.getByText('CF-1004').click();
     await page.getByRole('button', { name: /Mark Delivered/i }).click();
@@ -52,7 +48,6 @@ test.describe('3.6 Pickup & Delivery', () => {
   });
 
   test('47. Failed delivery', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Status = DELIVERY_FAILED, retry scheduled
     await page.goto('/deliveries/active');
     await page.getByText('CF-1005').click();
@@ -64,7 +59,6 @@ test.describe('3.6 Pickup & Delivery', () => {
   });
 
   test('48. Address validation', async ({ page }) => {
-    test.skip(); // UI undergoing polish MVP
     // Expected: Warning shown, GPS lookup attempted
     await page.getByRole('button', { name: /Schedule Delivery/i }).click();
     await page.getByPlaceholder(/Address/i).fill('123 Unknown St');

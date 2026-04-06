@@ -45,12 +45,6 @@ export async function POST(req) {
     };
 
     const token = await createToken(userPayload);
-
-    // Map db role to frontend role (preserve specialized roles)
-    let feRole = user.role;
-    if (user.role === 'manager') feRole = 'admin';
-    // Note: frontdesk, driver, staff, owner remain as-is
-
     const cookieStore = await cookies();
     cookieStore.set({
       name: 'cleanflow_session',
@@ -63,7 +57,7 @@ export async function POST(req) {
 
     return NextResponse.json({ 
       success: true, 
-      user: { ...userPayload, role: feRole } 
+      user: userPayload
     });
 
   } catch (error) {

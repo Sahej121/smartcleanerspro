@@ -447,6 +447,9 @@ export default function SettingsPage() {
                               store.status === 'suspended' ? 'bg-red-100 text-red-700' :
                               'bg-slate-100 text-slate-500'
                             }`}>{store.status}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-800 text-white shadow-sm">
+                              {TIERS[store.subscription_tier]?.label || 'Starter'} Plan
+                            </span>
                             {i === 0 && <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Primary</span>}
                           </div>
                         </div>

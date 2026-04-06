@@ -1,0 +1,169 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e17]: eco
+        - generic [ref=e19]:
+          - heading "CleanFlow" [level=1] [ref=e20]
+          - paragraph [ref=e21]: Pristine Atelier POS
+      - navigation [ref=e22]:
+        - link "grid_view Dashboard" [ref=e23] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e24]: grid_view
+          - generic [ref=e25]: Dashboard
+        - link "dns Manage Nodes" [ref=e27] [cursor=pointer]:
+          - /url: /master/nodes
+          - generic [ref=e28]: dns
+          - generic [ref=e29]: Manage Nodes
+        - link "query_stats System Insights" [ref=e30] [cursor=pointer]:
+          - /url: /master/insights
+          - generic [ref=e31]: query_stats
+          - generic [ref=e32]: System Insights
+        - link "terminal Global Logs" [ref=e33] [cursor=pointer]:
+          - /url: /master/logs
+          - generic [ref=e34]: terminal
+          - generic [ref=e35]: Global Logs
+        - link "health_and_safety Security & Health" [ref=e36] [cursor=pointer]:
+          - /url: /master/security
+          - generic [ref=e37]: health_and_safety
+          - generic [ref=e38]: Security & Health
+        - link "settings Settings" [ref=e39] [cursor=pointer]:
+          - /url: /admin/settings
+          - generic [ref=e40]: settings
+          - generic [ref=e41]: Settings
+      - generic [ref=e42]:
+        - link "contact_support Support" [ref=e43] [cursor=pointer]:
+          - /url: /support
+          - generic [ref=e44]: contact_support
+          - generic [ref=e45]: Support
+        - button "logout Log Out" [ref=e46]:
+          - generic [ref=e47]: logout
+          - generic [ref=e48]: Log Out
+    - generic [ref=e49]:
+      - banner [ref=e50]:
+        - generic [ref=e52]:
+          - generic [ref=e53]: search
+          - 'textbox "Search by order #, customer name, or phone..." [ref=e54]'
+        - generic [ref=e55]:
+          - button "notifications" [ref=e57]:
+            - generic [ref=e58]: notifications
+          - link "help" [ref=e60] [cursor=pointer]:
+            - /url: /support
+            - generic [ref=e61]: help
+          - generic [ref=e63] [cursor=pointer]:
+            - generic [ref=e64]:
+              - paragraph [ref=e65]: Sahej (Owner)
+              - paragraph [ref=e66]: Owner
+            - generic [ref=e69]: S
+      - main [ref=e70]:
+        - generic [ref=e71]:
+          - generic [ref=e72]:
+            - generic [ref=e73] [cursor=pointer]:
+              - generic [ref=e75]: terminal
+              - generic [ref=e76]:
+                - generic [ref=e77]: _
+                - text: Execute global command cluster search...
+                - generic [ref=e78]:
+                  - generic [ref=e79]: Ctrl
+                  - generic [ref=e80]: K
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - paragraph [ref=e83]: Identity Protocol
+                - paragraph [ref=e84]: "Root Admin: Sahej"
+              - button "grid_view" [ref=e85]:
+                - generic [ref=e86]: grid_view
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]:
+                - heading "Global Oversight" [level=1] [ref=e91]
+                - paragraph [ref=e92]: "Master Instance: 2 Nodes Online"
+              - generic [ref=e93]:
+                - button "add Provision Node" [ref=e94]:
+                  - generic [ref=e95]: add
+                  - text: Provision Node
+                - button "sync Sync System" [ref=e96]:
+                  - generic [ref=e97]: sync
+                  - text: Sync System
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - generic [ref=e100]: campaign
+                - generic [ref=e101]: Global Broadcast
+              - generic [ref=e102]:
+                - combobox [ref=e103]:
+                  - option "INFO" [selected]
+                  - option "WARNING"
+                  - option "CRITICAL"
+                - textbox "Announce system maintenance or updates to all nodes..." [ref=e104]
+                - button "Transmit" [disabled] [ref=e105]
+            - generic [ref=e106]:
+              - generic [ref=e108]:
+                - generic [ref=e109]:
+                  - generic [ref=e110]: Total Global Revenue
+                  - generic [ref=e111]:
+                    - generic [ref=e112]: trending_up
+                    - text: +12%
+                - heading "$1,42,850" [level=2] [ref=e113]
+              - generic [ref=e124]:
+                - generic [ref=e125]: dns
+                - generic [ref=e126]:
+                  - paragraph [ref=e127]: Active Nodes
+                  - heading "2" [level=2] [ref=e128]
+              - generic [ref=e129]:
+                - generic [ref=e130]: shield_heart
+                - generic [ref=e131]:
+                  - paragraph [ref=e132]: SLA Uptime
+                  - heading "99.99%" [level=2] [ref=e133]
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]:
+                  - heading "Recent Store Activity" [level=3] [ref=e137]
+                  - table [ref=e139]:
+                    - rowgroup [ref=e140]:
+                      - row "Node Identify Status Revenue" [ref=e141]:
+                        - columnheader "Node Identify" [ref=e142]
+                        - columnheader "Status" [ref=e143]
+                        - columnheader "Revenue" [ref=e144]
+                    - rowgroup [ref=e145]:
+                      - row "London DryCleaners active $0" [ref=e146]:
+                        - cell "London DryCleaners" [ref=e147]
+                        - cell "active" [ref=e148]
+                        - cell "$0" [ref=e149]
+                      - row "CleanFlow Main active $32,490" [ref=e150]:
+                        - cell "CleanFlow Main" [ref=e151]
+                        - cell "active" [ref=e152]
+                        - cell "$32,490" [ref=e153]
+                  - button "Enter Cluster Management →" [ref=e154]
+                - heading "query_stats Packet Latency Spectrum" [level=4] [ref=e157]:
+                  - generic [ref=e158]: query_stats
+                  - text: Packet Latency Spectrum
+              - generic [ref=e161]:
+                - heading "terminal Security Audit" [level=3] [ref=e162]:
+                  - generic [ref=e163]: terminal
+                  - text: Security Audit
+                - generic [ref=e164]:
+                  - generic [ref=e167]:
+                    - paragraph [ref=e168]: PRODUCTION_BOTTLENECK
+                    - paragraph [ref=e169]: "Item CF-1013-1 (Full Package) is stuck in Stage received for 694m (Limit: 120m)"
+                  - generic [ref=e172]:
+                    - paragraph [ref=e173]: PRODUCTION_BOTTLENECK
+                    - paragraph [ref=e174]: "Item CF-1013-2 (Coat) is stuck in Stage received for 694m (Limit: 120m)"
+                  - generic [ref=e177]:
+                    - paragraph [ref=e178]: PRODUCTION_BOTTLENECK
+                    - paragraph [ref=e179]: "Item CF-1013-4 (Full Package) is stuck in Stage received for 694m (Limit: 120m)"
+                  - generic [ref=e182]:
+                    - paragraph [ref=e183]: PRODUCTION_BOTTLENECK
+                    - paragraph [ref=e184]: "Item CF-1013-3 (Coat) is stuck in Stage received for 694m (Limit: 120m)"
+                  - generic [ref=e187]:
+                    - paragraph [ref=e188]: PRODUCTION_BOTTLENECK
+                    - paragraph [ref=e189]: "Item 1012 (Blanket) is stuck in Stage dry_cleaning for 1375m (Limit: 240m)"
+                  - generic [ref=e192]:
+                    - paragraph [ref=e193]: PRODUCTION_BOTTLENECK
+                    - paragraph [ref=e194]: "Item null (Blanket) is stuck in Stage washing for 1375m (Limit: 180m)"
+                - button "Comprehensive Log Stream" [ref=e196]
+```

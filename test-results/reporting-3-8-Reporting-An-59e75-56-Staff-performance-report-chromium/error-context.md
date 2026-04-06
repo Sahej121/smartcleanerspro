@@ -1,0 +1,91 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - navigation [ref=e7]:
+            - button "previous" [disabled] [ref=e8]:
+              - img "previous" [ref=e9]
+            - generic [ref=e11]:
+              - generic [ref=e12]: 1/
+              - text: "1"
+            - button "next" [disabled] [ref=e13]:
+              - img "next" [ref=e14]
+          - img
+        - generic [ref=e16]:
+          - link "Next.js 16.1.6 (stale) Turbopack" [ref=e17] [cursor=pointer]:
+            - /url: https://nextjs.org/docs/messages/version-staleness
+            - img [ref=e18]
+            - generic "There is a newer version (16.2.2) available, upgrade recommended!" [ref=e20]: Next.js 16.1.6 (stale)
+            - generic [ref=e21]: Turbopack
+          - img
+      - dialog "Build Error" [ref=e23]:
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - generic [ref=e30]: Build Error
+              - generic [ref=e31]:
+                - button "Copy Error Info" [ref=e32] [cursor=pointer]:
+                  - img [ref=e33]
+                - button "No related documentation found" [disabled] [ref=e35]:
+                  - img [ref=e36]
+                - button "Attach Node.js inspector" [ref=e38] [cursor=pointer]:
+                  - img [ref=e39]
+            - generic [ref=e48]: Parsing ecmascript source code failed
+          - generic [ref=e50]:
+            - generic [ref=e52]:
+              - img [ref=e54]
+              - generic [ref=e56]: ./app/reports/page.js (274:1)
+              - button "Open in editor" [ref=e57] [cursor=pointer]:
+                - img [ref=e59]
+            - generic [ref=e62]:
+              - generic [ref=e63]: Parsing ecmascript source code failed
+              - generic [ref=e64]: 272 |
+              - generic [ref=e65]: );
+              - generic [ref=e66]: 273 |
+              - text: "} >"
+              - generic [ref=e67]: 274 |
+              - generic [ref=e68]: "|"
+              - text: ^
+              - generic [ref=e69]: Expected '</', got '<eof>'
+        - generic [ref=e70]: "1"
+        - generic [ref=e71]: "2"
+    - generic [ref=e76] [cursor=pointer]:
+      - button "Open Next.js Dev Tools" [ref=e77]:
+        - img [ref=e78]
+      - button "Open issues overlay" [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e84]: "0"
+          - generic [ref=e85]: "1"
+        - generic [ref=e86]: Issue
+  - alert [ref=e87]
+  - main [ref=e88]:
+    - generic [ref=e93]:
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - generic [ref=e96]: C
+          - heading "CleanFlow" [level=1] [ref=e97]
+          - paragraph [ref=e98]: Atelier Management
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - text: System Identity
+            - generic [ref=e101]:
+              - generic [ref=e102]: person
+              - textbox "Email or phone reference" [ref=e103]: priya@cleanflow.com
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - generic [ref=e106]: Access Key
+              - button "Forgot?" [ref=e107]
+            - generic [ref=e108]:
+              - generic [ref=e109]: lock
+              - textbox "••••••••" [active] [ref=e110]: staff1234
+          - button "AUTHORIZE ACCESS" [ref=e111]:
+            - generic [ref=e112]: AUTHORIZE ACCESS
+        - paragraph [ref=e114]:
+          - text: New to the Atelier?
+          - button "REGISTER" [ref=e115]
+      - paragraph [ref=e116]: Pristine v2.4.0-stable
+```

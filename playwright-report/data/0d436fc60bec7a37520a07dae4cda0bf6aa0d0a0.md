@@ -1,0 +1,448 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e17]: eco
+        - generic [ref=e19]:
+          - heading "CleanFlow" [level=1] [ref=e20]
+          - paragraph [ref=e21]: Pristine Atelier POS
+      - navigation [ref=e22]:
+        - link "dashboard Dashboard" [ref=e23] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e24]: dashboard
+          - generic [ref=e25]: Dashboard
+        - link "add_circle New Order" [ref=e26] [cursor=pointer]:
+          - /url: /orders/new
+          - generic [ref=e27]: add_circle
+          - generic [ref=e28]: New Order
+        - link "receipt_long Orders" [ref=e30] [cursor=pointer]:
+          - /url: /orders
+          - generic [ref=e31]: receipt_long
+          - generic [ref=e32]: Orders
+        - link "group Customers" [ref=e34] [cursor=pointer]:
+          - /url: /customers
+          - generic [ref=e35]: group
+          - generic [ref=e36]: Customers
+        - link "analytics Staff Analytics" [ref=e37] [cursor=pointer]:
+          - /url: /admin/analytics/staff
+          - generic [ref=e38]: analytics
+          - generic [ref=e39]: Staff Analytics
+        - link "inventory_2 Inventory" [ref=e40] [cursor=pointer]:
+          - /url: /inventory
+          - generic [ref=e41]: inventory_2
+          - generic [ref=e42]: Inventory
+        - link "route Assembly" [ref=e43] [cursor=pointer]:
+          - /url: /operations/assembly
+          - generic [ref=e44]: route
+          - generic [ref=e45]: Assembly
+        - link "precision_manufacturing Machine Ops" [ref=e46] [cursor=pointer]:
+          - /url: /operations/machines
+          - generic [ref=e47]: precision_manufacturing
+          - generic [ref=e48]: Machine Ops
+        - link "local_shipping Logistics Driver" [ref=e49] [cursor=pointer]:
+          - /url: /logistics
+          - generic [ref=e50]: local_shipping
+          - generic [ref=e51]: Logistics Driver
+        - link "settings Settings" [ref=e52] [cursor=pointer]:
+          - /url: /admin/settings
+          - generic [ref=e53]: settings
+          - generic [ref=e54]: Settings
+      - generic [ref=e55]:
+        - link "contact_support Support" [ref=e56] [cursor=pointer]:
+          - /url: /support
+          - generic [ref=e57]: contact_support
+          - generic [ref=e58]: Support
+        - button "logout Log Out" [ref=e59]:
+          - generic [ref=e60]: logout
+          - generic [ref=e61]: Log Out
+    - generic [ref=e62]:
+      - banner [ref=e63]:
+        - generic [ref=e65]:
+          - generic [ref=e66]: search
+          - 'textbox "Search by order #, customer name, or phone..." [ref=e67]'
+        - generic [ref=e68]:
+          - button "notifications" [ref=e70]:
+            - generic [ref=e71]: notifications
+          - link "help" [ref=e73] [cursor=pointer]:
+            - /url: /support
+            - generic [ref=e74]: help
+          - generic [ref=e76] [cursor=pointer]:
+            - generic [ref=e77]:
+              - paragraph [ref=e78]: Priya Sharma
+              - paragraph [ref=e79]: admin
+            - generic [ref=e82]: P
+      - main [ref=e83]:
+        - generic [ref=e84]:
+          - generic [ref=e86]:
+            - generic [ref=e88]:
+              - generic [ref=e90]: person
+              - generic [ref=e91]: Customer
+            - generic [ref=e94]:
+              - generic [ref=e96]: dry_cleaning
+              - generic [ref=e97]: Service
+            - generic [ref=e100]:
+              - generic [ref=e102]: schedule
+              - generic [ref=e103]: Schedule
+            - generic [ref=e106]:
+              - generic [ref=e108]: payments
+              - generic [ref=e109]: Payment
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - heading "Categories" [level=3] [ref=e112]
+              - button "grid_view All" [ref=e113]:
+                - generic [ref=e115]: grid_view
+                - generic [ref=e116]: All
+              - button "dry_cleaning Full Package" [ref=e117]:
+                - generic [ref=e119]: dry_cleaning
+                - generic [ref=e120]: Full Package
+              - button "dry_cleaning Blanket" [ref=e121]:
+                - generic [ref=e123]: dry_cleaning
+                - generic [ref=e124]: Blanket
+              - button "dry_cleaning Coat" [ref=e125]:
+                - generic [ref=e127]: dry_cleaning
+                - generic [ref=e128]: Coat
+              - button "dry_cleaning Curtains" [ref=e129]:
+                - generic [ref=e131]: dry_cleaning
+                - generic [ref=e132]: Curtains
+              - button "dry_cleaning Dress" [ref=e133]:
+                - generic [ref=e135]: dry_cleaning
+                - generic [ref=e136]: Dress
+              - button "dry_cleaning Jacket" [ref=e137]:
+                - generic [ref=e139]: dry_cleaning
+                - generic [ref=e140]: Jacket
+              - button "dry_cleaning Saree" [ref=e141]:
+                - generic [ref=e143]: dry_cleaning
+                - generic [ref=e144]: Saree
+              - button "dry_cleaning Shirt" [ref=e145]:
+                - generic [ref=e147]: dry_cleaning
+                - generic [ref=e148]: Shirt
+              - button "dry_cleaning Suit" [ref=e149]:
+                - generic [ref=e151]: dry_cleaning
+                - generic [ref=e152]: Suit
+              - button "dry_cleaning Trousers" [ref=e153]:
+                - generic [ref=e155]: dry_cleaning
+                - generic [ref=e156]: Trousers
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - heading "Select Garments" [level=3] [ref=e159]
+                - generic [ref=e160]:
+                  - button "Popular" [ref=e161]
+                  - button "A-Z" [ref=e162]
+              - generic [ref=e164]:
+                - generic [ref=e165] [cursor=pointer]:
+                  - generic [ref=e167]: ₹150
+                  - generic [ref=e169]: work
+                  - heading "Full Package" [level=4] [ref=e170]
+                  - paragraph [ref=e171]: Wash & Fold (Per Kg)
+                - generic [ref=e172] [cursor=pointer]:
+                  - generic [ref=e174]: ₹999
+                  - generic [ref=e176]: work
+                  - heading "Full Package" [level=4] [ref=e177]
+                  - paragraph [ref=e178]: Premium Dry Clean Bundle
+                - generic [ref=e179] [cursor=pointer]:
+                  - generic [ref=e181]: ₹400.00
+                  - generic [ref=e183]: bed
+                  - heading "Blanket" [level=4] [ref=e184]
+                  - paragraph [ref=e185]: Dry Cleaning
+                - generic [ref=e186] [cursor=pointer]:
+                  - generic [ref=e188]: ₹300.00
+                  - generic [ref=e190]: bed
+                  - heading "Blanket" [level=4] [ref=e191]
+                  - paragraph [ref=e192]: Washing
+                - generic [ref=e193] [cursor=pointer]:
+                  - generic [ref=e195]: ₹300.00
+                  - generic [ref=e197]: backpack
+                  - heading "Coat" [level=4] [ref=e198]
+                  - paragraph [ref=e199]: Dry Cleaning
+                - generic [ref=e200] [cursor=pointer]:
+                  - generic [ref=e202]: ₹100.00
+                  - generic [ref=e204]: backpack
+                  - heading "Coat" [level=4] [ref=e205]
+                  - paragraph [ref=e206]: Ironing
+                - generic [ref=e207] [cursor=pointer]:
+                  - generic [ref=e209]: ₹200.00
+                  - generic [ref=e211]: backpack
+                  - heading "Coat" [level=4] [ref=e212]
+                  - paragraph [ref=e213]: Washing
+                - generic [ref=e214] [cursor=pointer]:
+                  - generic [ref=e216]: ₹350.00
+                  - generic [ref=e218]: bed
+                  - heading "Curtains" [level=4] [ref=e219]
+                  - paragraph [ref=e220]: Dry Cleaning
+                - generic [ref=e221] [cursor=pointer]:
+                  - generic [ref=e223]: ₹150.00
+                  - generic [ref=e225]: bed
+                  - heading "Curtains" [level=4] [ref=e226]
+                  - paragraph [ref=e227]: Ironing
+                - generic [ref=e228] [cursor=pointer]:
+                  - generic [ref=e230]: ₹250.00
+                  - generic [ref=e232]: bed
+                  - heading "Curtains" [level=4] [ref=e233]
+                  - paragraph [ref=e234]: Washing
+                - generic [ref=e235] [cursor=pointer]:
+                  - generic [ref=e237]: ₹200.00
+                  - generic [ref=e239]: styler
+                  - heading "Dress" [level=4] [ref=e240]
+                  - paragraph [ref=e241]: Dry Cleaning
+                - generic [ref=e242] [cursor=pointer]:
+                  - generic [ref=e244]: ₹380.00
+                  - generic [ref=e246]: styler
+                  - heading "Dress" [level=4] [ref=e247]
+                  - paragraph [ref=e248]: Express Service
+                - generic [ref=e249] [cursor=pointer]:
+                  - generic [ref=e251]: ₹60.00
+                  - generic [ref=e253]: styler
+                  - heading "Dress" [level=4] [ref=e254]
+                  - paragraph [ref=e255]: Ironing
+                - generic [ref=e256] [cursor=pointer]:
+                  - generic [ref=e258]: ₹180.00
+                  - generic [ref=e260]: styler
+                  - heading "Dress" [level=4] [ref=e261]
+                  - paragraph [ref=e262]: Stain Removal
+                - generic [ref=e263] [cursor=pointer]:
+                  - generic [ref=e265]: ₹120.00
+                  - generic [ref=e267]: styler
+                  - heading "Dress" [level=4] [ref=e268]
+                  - paragraph [ref=e269]: Washing
+                - generic [ref=e270] [cursor=pointer]:
+                  - generic [ref=e272]: ₹220.00
+                  - generic [ref=e274]: backpack
+                  - heading "Jacket" [level=4] [ref=e275]
+                  - paragraph [ref=e276]: Dry Cleaning
+                - generic [ref=e277] [cursor=pointer]:
+                  - generic [ref=e279]: ₹70.00
+                  - generic [ref=e281]: backpack
+                  - heading "Jacket" [level=4] [ref=e282]
+                  - paragraph [ref=e283]: Ironing
+                - generic [ref=e284] [cursor=pointer]:
+                  - generic [ref=e286]: ₹140.00
+                  - generic [ref=e288]: backpack
+                  - heading "Jacket" [level=4] [ref=e289]
+                  - paragraph [ref=e290]: Washing
+                - generic [ref=e291] [cursor=pointer]:
+                  - generic [ref=e293]: ₹200.00
+                  - generic [ref=e295]: styler
+                  - heading "Saree" [level=4] [ref=e296]
+                  - paragraph [ref=e297]: Dry Cleaning
+                - generic [ref=e298] [cursor=pointer]:
+                  - generic [ref=e300]: ₹80.00
+                  - generic [ref=e302]: styler
+                  - heading "Saree" [level=4] [ref=e303]
+                  - paragraph [ref=e304]: Ironing
+                - generic [ref=e305] [cursor=pointer]:
+                  - generic [ref=e307]: ₹150.00
+                  - generic [ref=e309]: styler
+                  - heading "Saree" [level=4] [ref=e310]
+                  - paragraph [ref=e311]: Stain Removal
+                - generic [ref=e312] [cursor=pointer]:
+                  - generic [ref=e314]: ₹100.00
+                  - generic [ref=e316]: styler
+                  - heading "Saree" [level=4] [ref=e317]
+                  - paragraph [ref=e318]: Washing
+                - generic [ref=e319] [cursor=pointer]:
+                  - generic [ref=e321]: ₹80.00
+                  - generic [ref=e323]: checkroom
+                  - heading "Shirt" [level=4] [ref=e324]
+                  - paragraph [ref=e325]: Dry Cleaning
+                - generic [ref=e326] [cursor=pointer]:
+                  - generic [ref=e328]: ₹150.00
+                  - generic [ref=e330]: checkroom
+                  - heading "Shirt" [level=4] [ref=e331]
+                  - paragraph [ref=e332]: Express Service
+                - generic [ref=e333] [cursor=pointer]:
+                  - generic [ref=e335]: ₹25.00
+                  - generic [ref=e337]: checkroom
+                  - heading "Shirt" [level=4] [ref=e338]
+                  - paragraph [ref=e339]: Ironing
+                - generic [ref=e340] [cursor=pointer]:
+                  - generic [ref=e342]: ₹100.00
+                  - generic [ref=e344]: checkroom
+                  - heading "Shirt" [level=4] [ref=e345]
+                  - paragraph [ref=e346]: Stain Removal
+                - generic [ref=e347] [cursor=pointer]:
+                  - generic [ref=e349]: ₹40.00
+                  - generic [ref=e351]: checkroom
+                  - heading "Shirt" [level=4] [ref=e352]
+                  - paragraph [ref=e353]: Washing
+                - generic [ref=e354] [cursor=pointer]:
+                  - generic [ref=e356]: ₹250.00
+                  - generic [ref=e358]: person_pin_circle
+                  - heading "Suit" [level=4] [ref=e359]
+                  - paragraph [ref=e360]: Dry Cleaning
+                - generic [ref=e361] [cursor=pointer]:
+                  - generic [ref=e363]: ₹450.00
+                  - generic [ref=e365]: person_pin_circle
+                  - heading "Suit" [level=4] [ref=e366]
+                  - paragraph [ref=e367]: Express Service
+                - generic [ref=e368] [cursor=pointer]:
+                  - generic [ref=e370]: ₹80.00
+                  - generic [ref=e372]: person_pin_circle
+                  - heading "Suit" [level=4] [ref=e373]
+                  - paragraph [ref=e374]: Ironing
+                - generic [ref=e375] [cursor=pointer]:
+                  - generic [ref=e377]: ₹200.00
+                  - generic [ref=e379]: person_pin_circle
+                  - heading "Suit" [level=4] [ref=e380]
+                  - paragraph [ref=e381]: Stain Removal
+                - generic [ref=e382] [cursor=pointer]:
+                  - generic [ref=e384]: ₹150.00
+                  - generic [ref=e386]: person_pin_circle
+                  - heading "Suit" [level=4] [ref=e387]
+                  - paragraph [ref=e388]: Washing
+                - generic [ref=e389] [cursor=pointer]:
+                  - generic [ref=e391]: ₹120.00
+                  - generic [ref=e393]: apparel
+                  - heading "Trousers" [level=4] [ref=e394]
+                  - paragraph [ref=e395]: Dry Cleaning
+                - generic [ref=e396] [cursor=pointer]:
+                  - generic [ref=e398]: ₹35.00
+                  - generic [ref=e400]: apparel
+                  - heading "Trousers" [level=4] [ref=e401]
+                  - paragraph [ref=e402]: Ironing
+                - generic [ref=e403] [cursor=pointer]:
+                  - generic [ref=e405]: ₹120.00
+                  - generic [ref=e407]: apparel
+                  - heading "Trousers" [level=4] [ref=e408]
+                  - paragraph [ref=e409]: Stain Removal
+                - generic [ref=e410] [cursor=pointer]:
+                  - generic [ref=e412]: ₹60.00
+                  - generic [ref=e414]: apparel
+                  - heading "Trousers" [level=4] [ref=e415]
+                  - paragraph [ref=e416]: Washing
+            - generic [ref=e418]:
+              - generic [ref=e419]:
+                - generic [ref=e420]:
+                  - heading "Order Summary" [level=3] [ref=e421]
+                  - generic [ref=e422]: "#RIXA"
+                - generic [ref=e423] [cursor=pointer]:
+                  - generic [ref=e425]: person_add
+                  - generic [ref=e426]:
+                    - paragraph [ref=e427]: Assign Customer
+                    - paragraph [ref=e428]: Search name or phone
+              - generic [ref=e429]:
+                - generic [ref=e430]:
+                  - generic [ref=e431]:
+                    - generic [ref=e433]: work
+                    - generic [ref=e434]:
+                      - generic [ref=e435]:
+                        - heading "Full Package" [level=5] [ref=e436]
+                        - generic [ref=e437]:
+                          - generic [ref=e438]: ₹
+                          - spinbutton [ref=e439]: "999"
+                      - paragraph [ref=e440]: Premium Dry Clean Bundle
+                    - button "delete" [ref=e441]:
+                      - generic [ref=e442]: delete
+                  - generic [ref=e443]:
+                    - generic [ref=e445]: No Tag
+                    - button "edit_note Track" [ref=e446]:
+                      - generic [ref=e447]: edit_note
+                      - text: Track
+                - generic [ref=e448]:
+                  - generic [ref=e449]:
+                    - generic [ref=e451]: work
+                    - generic [ref=e452]:
+                      - generic [ref=e453]:
+                        - heading "Full Package" [level=5] [ref=e454]
+                        - generic [ref=e455]:
+                          - generic [ref=e456]: ₹
+                          - spinbutton [ref=e457]: "999"
+                      - paragraph [ref=e458]: Premium Dry Clean Bundle
+                    - button "delete" [ref=e459]:
+                      - generic [ref=e460]: delete
+                  - generic [ref=e461]:
+                    - generic [ref=e463]: No Tag
+                    - button "edit_note Track" [ref=e464]:
+                      - generic [ref=e465]: edit_note
+                      - text: Track
+                - generic [ref=e466]:
+                  - generic [ref=e467]:
+                    - generic [ref=e469]: work
+                    - generic [ref=e470]:
+                      - generic [ref=e471]:
+                        - heading "Full Package" [level=5] [ref=e472]
+                        - generic [ref=e473]:
+                          - generic [ref=e474]: ₹
+                          - spinbutton [ref=e475]: "999"
+                      - paragraph [ref=e476]: Premium Dry Clean Bundle
+                    - button "delete" [ref=e477]:
+                      - generic [ref=e478]: delete
+                  - generic [ref=e479]:
+                    - generic [ref=e481]: No Tag
+                    - button "edit_note Track" [ref=e482]:
+                      - generic [ref=e483]: edit_note
+                      - text: Track
+                - generic [ref=e484]:
+                  - generic [ref=e485]:
+                    - generic [ref=e487]: work
+                    - generic [ref=e488]:
+                      - generic [ref=e489]:
+                        - heading "Full Package" [level=5] [ref=e490]
+                        - generic [ref=e491]:
+                          - generic [ref=e492]: ₹
+                          - spinbutton [ref=e493]: "999"
+                      - paragraph [ref=e494]: Premium Dry Clean Bundle
+                    - button "delete" [ref=e495]:
+                      - generic [ref=e496]: delete
+                  - generic [ref=e497]:
+                    - generic [ref=e499]: No Tag
+                    - button "edit_note Track" [ref=e500]:
+                      - generic [ref=e501]: edit_note
+                      - text: Track
+                - generic [ref=e502]:
+                  - generic [ref=e503]:
+                    - generic [ref=e505]: work
+                    - generic [ref=e506]:
+                      - generic [ref=e507]:
+                        - heading "Full Package" [level=5] [ref=e508]
+                        - generic [ref=e509]:
+                          - generic [ref=e510]: ₹
+                          - spinbutton [ref=e511]: "999"
+                      - paragraph [ref=e512]: Premium Dry Clean Bundle
+                    - button "delete" [ref=e513]:
+                      - generic [ref=e514]: delete
+                  - generic [ref=e515]:
+                    - generic [ref=e517]: No Tag
+                    - button "edit_note Track" [ref=e518]:
+                      - generic [ref=e519]: edit_note
+                      - text: Track
+                - generic [ref=e520]:
+                  - generic [ref=e521]:
+                    - generic [ref=e523]: work
+                    - generic [ref=e524]:
+                      - generic [ref=e525]:
+                        - heading "Full Package" [level=5] [ref=e526]
+                        - generic [ref=e527]:
+                          - generic [ref=e528]: ₹
+                          - spinbutton [ref=e529]: "999"
+                      - paragraph [ref=e530]: Premium Dry Clean Bundle
+                    - button "delete" [ref=e531]:
+                      - generic [ref=e532]: delete
+                  - generic [ref=e533]:
+                    - generic [ref=e535]: No Tag
+                    - button "edit_note Track" [ref=e536]:
+                      - generic [ref=e537]: edit_note
+                      - text: Track
+              - generic [ref=e538]:
+                - generic [ref=e539]:
+                  - generic [ref=e540]:
+                    - generic [ref=e541]: Subtotal
+                    - generic [ref=e542]: ₹5,994
+                  - generic [ref=e543]:
+                    - generic [ref=e544]: Tax (18%)
+                    - generic [ref=e545]: ₹1,079
+                  - generic [ref=e546]:
+                    - textbox "PROMO CODE" [ref=e547]
+                    - button "Apply" [ref=e548]
+                  - generic [ref=e549]:
+                    - generic [ref=e550]: Total
+                    - generic [ref=e551]: ₹7,073
+                - button "Proceed to Schedule arrow_forward" [disabled]:
+                  - generic: Proceed to Schedule
+                  - generic: arrow_forward
+```
