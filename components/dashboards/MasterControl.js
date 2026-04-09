@@ -38,7 +38,7 @@ export default function MasterControl({ user }) {
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newStore, setNewStore] = useState({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'starter' });
+  const [newStore, setNewStore] = useState({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'software_only' });
   const [credentialsModal, setCredentialsModal] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -123,8 +123,8 @@ export default function MasterControl({ user }) {
       if (res.ok) {
         const data = await res.json();
         setShowCreateModal(false);
-        setNewStore({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'starter' });
-        setCredentialsModal({ storeName: data.store_name, email: data.admin_email, password: data.tempPassword });
+        setNewStore({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'software_only' });
+        setCredentialsModal({ storeName: data.store_name, email: data.admin_email, password: data.tempPassword, pin: data.tempPin });
         fetchData();
       } else {
         const err = await res.json();
@@ -159,9 +159,9 @@ export default function MasterControl({ user }) {
   };
 
   const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
       maximumFractionDigits: 0
     }).format(val || 0);
   };
@@ -402,7 +402,7 @@ export default function MasterControl({ user }) {
                             {store.status === 'active' ? 'Operational' : 'Suspended'}
                          </span>
                          <span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-slate-800 text-white shadow-sm">
-                            {store.subscription_tier === 'pro' ? 'Pro' : store.subscription_tier === 'growth' ? 'Growth' : 'Starter'} Plan
+                            {store.subscription_tier === 'hardware_bundle' ? 'Bundle' : 'Software Only'} Plan
                          </span>
                       </td>
                       <td className="py-6 text-right font-black text-sm text-on-surface">{formatCurrency(store.total_revenue)}</td>
@@ -738,9 +738,8 @@ export default function MasterControl({ user }) {
                             value={newStore.subscription_tier}
                             onChange={(e) => setNewStore({...newStore, subscription_tier: e.target.value})}
                           >
-                            <option value="starter">Starter Plan (₹999/mo)</option>
-                            <option value="growth">Growth Plan (₹1,999/mo)</option>
-                            <option value="pro">Pro Plan (₹3,500/mo)</option>
+                            <option value="software_only">Software Only (£25/mo)</option>
+                            <option value="hardware_bundle">Hardware Bundle (£35/mo)</option>
                           </select>
                        </div>
                     </div>
@@ -825,16 +824,16 @@ export default function MasterControl({ user }) {
                 <h2 className="text-3xl font-black font-headline uppercase italic text-on-surface leading-none mb-2">Nexus Linked</h2>
                 <p className="text-slate-500 font-medium italic mb-10">Credentials generated for <strong>{credentialsModal.storeName}</strong>.</p>
                 
-                <div className="bg-slate-50 p-8 rounded-3xl space-y-6 text-left border border-slate-100 mb-10 shadow-inner">
-                   <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2">Admin Identity</p>
-                      <p className="text-sm font-black text-slate-900 break-all">{credentialsModal.email}</p>
-                   </div>
-                   <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2">Access Key (PIN)</p>
-                      <p className="text-4xl font-headline font-black text-emerald-700 tracking-[0.5em]">{credentialsModal.password}</p>
-                   </div>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all">
+                     <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Temporary Password</p>
+                     <p className="text-sm font-black text-slate-900 font-mono select-all">{credentialsModal.password}</p>
+                  </div>
+                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 group hover:border-emerald-400 transition-all">
+                     <p className="text-[10px] font-black uppercase text-emerald-600 mb-1">Floor Access PIN</p>
+                     <p className="text-xl font-black text-emerald-900 font-mono tracking-widest select-all">{credentialsModal.pin}</p>
+                  </div>
+               </div>
 
                 <div className="bg-amber-50 p-4 rounded-2xl flex gap-3 text-left mb-10">
                    <span className="material-symbols-outlined text-amber-600">warning</span>

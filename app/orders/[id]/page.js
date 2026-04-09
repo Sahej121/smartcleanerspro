@@ -2,6 +2,7 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
+import { useUser, ROLES } from '@/lib/UserContext';
 
 const STAGE_LABELS = {
   received: 'Received', sorting: 'Sorting', washing: 'Washing',
@@ -22,6 +23,8 @@ const getStageIcon = (stage) => {
 
 export default function OrderDetail({ params }) {
   const { id } = use(params);
+  const { role } = useUser();
+  const isAdmin = role === ROLES.OWNER || role === ROLES.MANAGER;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRefundModal, setShowRefundModal] = useState(false);
@@ -48,11 +51,15 @@ export default function OrderDetail({ params }) {
   }, [id]);
 
   const updateStatus = async (status) => {
-    await fetch(`/api/orders/${id}/status`, {
+    const res = await fetch(`/api/orders/${id}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) {
+      const err = await res.json();
+      return alert(err.error || 'Failed to update status');
+    }
     setOrder({ ...order, status });
   };
 
@@ -203,19 +210,62 @@ export default function OrderDetail({ params }) {
     }
   };
 
-  const handleReschedule = async () => {
-    const res = await fetch(`/api/orders/${id}/reschedule`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rescheduleData),
-    });
-    if (res.ok) {
-      setOrder({ ...order, ...rescheduleData });
-      setShowRescheduleModal(false);
-    } else {
-      const err = await res.json();
-      alert(err.error || 'Reschedule failed');
-    }
+  const handlePrintAllTags = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print All Tags - ${order.order_number}</title>
+          <style>
+            body { margin: 0; font-family: sans-serif; }
+            .tag-page { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; justify-content: center; }
+            .label { 
+              text-align: center; 
+              border: 2px solid #000; 
+              padding: 15px; 
+              border-radius: 12px; 
+              width: 250px;
+              page-break-inside: avoid;
+              margin-bottom: 20px;
+            }
+            h1 { margin: 0 0 5px 0; font-size: 18px; }
+            p { margin: 2px 0; font-size: 12px; font-weight: bold; }
+            .qr-container { margin: 10px 0; display: flex; justify-content: center; }
+            .format-line { font-size: 14px; color: #000; border-top: 1px solid #eee; pt: 5px; mt: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="tag-page" id="tags-container"></div>
+          <script>
+            setTimeout(() => { window.print(); }, 1000);
+          </script>
+        </body>
+      </html>
+    `);
+
+    setTimeout(() => {
+      const container = printWindow.document.getElementById('tags-container');
+      order.items.forEach(item => {
+        const tagDiv = printWindow.document.createElement('div');
+        tagDiv.className = 'label';
+        
+        // Format: Bag - Order - Type
+        const bagId = item.bag_id || 'B1';
+        const displayTag = `${bagId} - ${order.order_number} - ${item.garment_type}`;
+        
+        tagDiv.innerHTML = `
+          <h1>${item.garment_type}</h1>
+          <p>${order.customer_name || 'Walk-in'}</p>
+          <div class="qr-container" id="qr-target-${item.id}"></div>
+          <div class="format-line">${displayTag}</div>
+          <p style="font-size: 10px; color: #666; font-weight: normal; margin-top: 4px;">ID: ${item.tag_id || item.id}</p>
+        `;
+        container.appendChild(tagDiv);
+        
+        const svgElement = document.getElementById('qr-' + item.id).cloneNode(true);
+        printWindow.document.getElementById('qr-target-' + item.id).appendChild(svgElement);
+      });
+    }, 200);
   };
 
   if (loading) return (
@@ -266,46 +316,44 @@ export default function OrderDetail({ params }) {
         </div>
         
         <div className="flex gap-4">
-          {order.status === 'received' && (
+          {isAdmin && (
             <>
-              <button 
-                className="px-6 py-3 primary-gradient text-theme-text rounded-2xl font-black text-sm shadow-lg shadow-emerald-900/10 active:scale-95 transition-all shimmer-btn flex items-center gap-2" 
-                onClick={() => updateStatus('processing')}
-              >
-                <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-                Start Processing
-              </button>
-              <Link
-                href={`/orders/new?edit=${order.id}`}
-                className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-sm shadow-sm active:scale-95 transition-all flex items-center gap-2 hover:bg-slate-50"
-              >
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-                Edit Order
-              </Link>
-              <button 
-                className="px-6 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-sm shadow-sm active:scale-95 transition-all flex items-center gap-2 hover:bg-red-100" 
-                onClick={() => { if(confirm('Are you sure you want to cancel this order?')) updateStatus('cancelled'); }}
-              >
-                <span className="material-symbols-outlined text-[18px]">cancel</span>
-                Cancel
-              </button>
+              {order.status === 'received' && (
+                <>
+                  <button 
+                    className="px-6 py-3 bg-emerald-600 text-theme-text rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 hover:bg-emerald-700" 
+                    onClick={() => updateStatus('processing')}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+                    Start Processing
+                  </button>
+                  <Link
+                    href={`/orders/new?edit=${order.id}`}
+                    className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-sm shadow-sm active:scale-95 transition-all flex items-center gap-2 hover:bg-slate-50"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                    Edit Order
+                  </Link>
+                  <button 
+                    className="px-6 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-sm shadow-sm active:scale-95 transition-all flex items-center gap-2 hover:bg-red-100" 
+                    onClick={() => { if(confirm('Are you sure you want to cancel this order?')) updateStatus('cancelled'); }}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">cancel</span>
+                    Cancel
+                  </button>
+                </>
+              )}
+              {order.status === 'ready' && (
+                <button 
+                  className="px-6 py-3 bg-indigo-600 text-theme-text rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 hover:bg-indigo-700" 
+                  onClick={() => updateStatus('delivered')}
+                >
+                  <span className="material-symbols-outlined text-[18px]">local_shipping</span>
+                  Mark Delivered
+                </button>
+              )}
             </>
           )}
-          {order.status === 'ready' && (
-            <button 
-              className="px-6 py-3 bg-indigo-600 text-theme-text rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 hover:bg-indigo-700" 
-              onClick={() => updateStatus('delivered')}
-            >
-              <span className="material-symbols-outlined text-[18px]">local_shipping</span>
-              Mark Delivered
-            </button>
-          )}
-          <button 
-            className="w-12 h-12 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-emerald-600 transition-all shadow-sm"
-            onClick={handlePrintInvoice}
-          >
-             <span className="material-symbols-outlined">print</span>
-          </button>
           <button 
             className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-sm hover:bg-slate-50 transition-all flex items-center gap-2"
             onClick={() => {
@@ -315,6 +363,13 @@ export default function OrderDetail({ params }) {
           >
             <span className="material-symbols-outlined text-[18px]">event_repeat</span>
             Reschedule
+          </button>
+          <button 
+            className="px-6 py-3 bg-slate-100 text-slate-500 border border-slate-200 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all flex items-center gap-2 shadow-sm"
+            onClick={handlePrintAllTags}
+          >
+            <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
+            Print All Tags
           </button>
         </div>
       </div>
@@ -380,10 +435,15 @@ export default function OrderDetail({ params }) {
                <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-3">Address Information</h4>
                <p className="text-xs font-bold text-on-surface mb-1">{order.customer_name}</p>
                <p className="text-[10px] text-slate-600 leading-relaxed mb-4">{order.customer_address || 'No address provided'}</p>
-               <button className="w-full py-2 bg-white border border-emerald-200 rounded-xl text-[10px] font-black text-emerald-700 uppercase tracking-widest hover:bg-emerald-100 transition-all flex items-center justify-center gap-1">
+               <a
+                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer_address || '')}`}
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 className="w-full py-2 bg-white border border-emerald-200 rounded-xl text-[10px] font-black text-emerald-700 uppercase tracking-widest hover:bg-emerald-100 transition-all flex items-center justify-center gap-1"
+               >
                  <span className="material-symbols-outlined text-[14px]">map</span>
                  View on Map
-               </button>
+               </a>
             </div>
           </div>
           
@@ -464,10 +524,10 @@ export default function OrderDetail({ params }) {
                                    <body>
                                       <div class="label">
                                         <h1>${item.garment_type}</h1>
-                                        <p>${order.order_number} | ${order.customer_name || 'Walk-in'}</p>
+                                        <p>${order.customer_name || 'Walk-in'}</p>
                                         <div class="qr-container" id="qr-target"></div>
-                                        <p>${item.tag_id}</p>
-                                        <p style="font-size: 12px; color: #666; font-weight: normal;">${item.service_type}</p>
+                                        <p style="font-size: 14px; font-weight: bold; border-top: 1px solid #eee; padding-top: 5px;">${item.bag_id || 'B1'} - ${order.order_number} - ${item.garment_type}</p>
+                                        <p style="font-size: 10px; color: #666; font-weight: normal;">ID: ${item.tag_id || item.id}</p>
                                       </div>
                                       <script>
                                         // Wait a tiny bit for the image to load on the parent side before printing

@@ -1,14 +1,22 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const STATUS_TABS = ['all', 'received', 'processing', 'ready', 'delivered', 'cancelled'];
 
 export default function OrdersPage() {
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+
+  // Sync search state when URL param changes (e.g. navigating from header search)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    setSearch(urlSearch);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchOrders();

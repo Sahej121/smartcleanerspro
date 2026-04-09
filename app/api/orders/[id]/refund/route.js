@@ -18,10 +18,20 @@ export async function POST(request, { params }) {
 
     await client.query('BEGIN');
 
-    // 1. Get order total
+    // 1. Get order total and current paid amount
     const orderRes = await client.query('SELECT total_amount, payment_status FROM orders WHERE id = $1', [id]);
     if (orderRes.rows.length === 0) throw new Error('Order not found');
     const orderTotal = parseFloat(orderRes.rows[0].total_amount);
+
+    const initialPaidRes = await client.query(
+      "SELECT SUM(amount) as total_paid FROM payments WHERE order_id = $1 AND payment_status != 'failed'",
+      [id]
+    );
+    const initialPaid = parseFloat(initialPaidRes.rows[0].total_paid || 0);
+
+    if (Math.abs(amount) > initialPaid) {
+      throw new Error(`Refund amount exceeds total paid amount of ₹${initialPaid}`);
+    }
 
     // 2. Insert refund record (negative amount in payments)
     const refundRes = await client.query(

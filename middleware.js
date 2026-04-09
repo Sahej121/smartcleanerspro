@@ -43,11 +43,13 @@ export async function middleware(request) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/webhooks/') ||
     pathname.startsWith('/icons/') ||
     pathname === '/manifest.json' ||
     pathname === '/favicon.ico' ||
     pathname === '/sw.js' ||
-    pathname === '/suspended'
+    pathname === '/suspended' ||
+    pathname === '/pricing'
   ) {
     return addSecurityHeaders(NextResponse.next());
   }

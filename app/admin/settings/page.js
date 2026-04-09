@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState('');
   const [userRole, setUserRole] = useState('');
   const [stores, setStores] = useState([]);
-  const [currentTier, setCurrentTier] = useState('starter');
+  const [currentTier, setCurrentTier] = useState('software_only');
   const [storeCount, setStoreCount] = useState(0);
   const [showAddStore, setShowAddStore] = useState(false);
   const [newStore, setNewStore] = useState({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '' });
@@ -23,7 +23,7 @@ export default function SettingsPage() {
     storePhone: '+91-9876543210',
     storeAddress: '123 Main Street',
     storeCity: 'New Delhi',
-    currency: '₹',
+    currency: '£',
     taxRate: '18',
   });
 
@@ -49,13 +49,31 @@ export default function SettingsPage() {
         const data = await res.json();
         setStores(data);
         setStoreCount(data.length);
-        if (data.length > 0) setCurrentTier(data[0].subscription_tier || 'starter');
+        if (data.length > 0) setCurrentTier(data[0].subscription_tier || 'software_only');
       }
     } catch (e) { console.error(e); }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem('cleanflow_settings', JSON.stringify(settings));
+    
+    // Update the database for the primary store if we are authorized and stores exist
+    if (stores.length > 0) {
+      try {
+        await fetch(`/api/stores/${stores[0].id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            store_name: settings.storeName,
+            city: settings.storeCity
+          })
+        });
+        fetchStores();
+      } catch (e) {
+        console.error('Failed to update store in DB', e);
+      }
+    }
+
     setMessage(t('settings_saved') || 'Settings saved successfully');
     setTimeout(() => setMessage(''), 3000);
   };
@@ -100,7 +118,7 @@ export default function SettingsPage() {
     } catch (e) { console.error(e); }
   };
 
-  const tierConfig = TIERS[currentTier] || TIERS.starter;
+  const tierConfig = TIERS[currentTier] || TIERS.software_only;
   const canAdd = tierConfig.maxStores === -1 || storeCount < tierConfig.maxStores;
 
   const tabs = [
@@ -346,9 +364,8 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                    currentTier === 'pro' ? 'bg-emerald-100 text-emerald-700' :
-                    currentTier === 'growth' ? 'bg-blue-100 text-blue-700' :
-                    'bg-slate-100 text-slate-600'
+                    currentTier === 'hardware_bundle' ? 'bg-emerald-100 text-emerald-700' :
+                    'bg-blue-100 text-blue-700'
                   }`}>
                     <span className="material-symbols-outlined text-xs mr-1 align-middle">{TIERS[currentTier]?.icon}</span>
                     {TIERS[currentTier]?.label} Plan
@@ -448,7 +465,7 @@ export default function SettingsPage() {
                               'bg-slate-100 text-slate-500'
                             }`}>{store.status}</span>
                             <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-slate-800 text-white shadow-sm">
-                              {TIERS[store.subscription_tier]?.label || 'Starter'} Plan
+                               {TIERS[store.subscription_tier]?.label || 'Software Only'} Plan
                             </span>
                             {i === 0 && <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Primary</span>}
                           </div>
@@ -483,7 +500,6 @@ export default function SettingsPage() {
                 {Object.entries(TIERS).map(([key, tier]) => {
                   const isCurrentTier = currentTier === key;
                   const colorMap = {
-                    slate: { bg: 'bg-slate-50', border: 'border-slate-200', badge: 'bg-slate-600', ring: 'ring-slate-300', btn: 'bg-slate-600 hover:bg-slate-700' },
                     blue: { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-600', ring: 'ring-blue-300', btn: 'bg-blue-600 hover:bg-blue-700' },
                     emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', badge: 'bg-emerald-600', ring: 'ring-emerald-300', btn: 'primary-gradient' },
                   };
@@ -498,7 +514,7 @@ export default function SettingsPage() {
                           Current Plan
                         </div>
                       )}
-                      {key === 'pro' && !isCurrentTier && (
+                      {key === 'hardware_bundle' && !isCurrentTier && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow-md">
                           Most Popular
                         </div>

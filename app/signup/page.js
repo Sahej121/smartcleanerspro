@@ -8,7 +8,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState(ROLES.WORKER);
+  const [role, setRole] = useState(ROLES.STAFF);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -121,7 +121,7 @@ export default function SignupPage() {
                   onChange={e => setRole(e.target.value)}
                 >
                   <option value={ROLES.ADMIN}>Atelier Manager (Admin)</option>
-                  <option value={ROLES.WORKER}>Floor Specialist (Staff)</option>
+                  <option value={ROLES.STAFF}>Floor Specialist (Staff)</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
               </div>

@@ -1,6 +1,7 @@
 import { query, transaction } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth';
+import { sendWhatsAppMessage } from '@/lib/whatsapp/twilioClient';
 
 const STAGE_ORDER = ['received', 'sorting', 'washing', 'dry_cleaning', 'drying', 'ironing', 'quality_check', 'ready', 'delivered'];
 
@@ -70,7 +71,28 @@ export async function POST(request) {
       
       const allReady = orderItemsRes.rows.every(oi => oi.status === 'ready' || oi.status === 'delivered');
       if (allReady && item.order_status !== 'ready') {
+         // Update order status
          await q(`UPDATE orders SET status = 'ready' WHERE id = $1`, [item.order_id]);
+
+         // Trigger Notification
+         const customerRes = await q(`
+           SELECT c.phone, c.name, o.order_number 
+           FROM orders o 
+           JOIN customers c ON o.customer_id = c.id 
+           WHERE o.id = $1
+         `, [item.order_id]);
+         
+         if (customerRes.rows.length > 0) {
+           const customer = customerRes.rows[0];
+           const message = `Hi ${customer.name}! Your order #${customer.order_number} is now READY for pickup/delivery at CleanFlow. See you soon!`;
+           await sendWhatsAppMessage(customer.phone, message);
+           
+           // Log notification event for frontdesk
+           await q(`
+             INSERT INTO system_logs (event_type, description, severity, store_id)
+             VALUES ($1, $2, $3, $4)
+           `, ['STAFF_ALERT', `Notification sent to ${customer.name} for Order #${customer.order_number}`, 'info', auth.user.store_id]);
+         }
       }
 
       return {

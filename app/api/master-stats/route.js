@@ -14,9 +14,9 @@ export async function GET(req) {
 
     const payload = await verifyToken(token);
 
-    // Only owners can access master stats
-    if (!payload || payload.role !== 'owner') {
-      return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
+    // Only SaaS root owner can access master stats
+    if (!payload || payload.role !== 'owner' || payload.id !== 1) {
+      return NextResponse.json({ error: 'Forbidden. Root owner access required.' }, { status: 403 });
     }
 
     // Aggregate data across ALL stores

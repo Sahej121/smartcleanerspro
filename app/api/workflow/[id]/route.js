@@ -1,7 +1,7 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
-
 import { requireRole } from '@/lib/auth';
+import { sendWhatsAppMessage } from '@/lib/whatsapp/twilioClient';
 
 const STAGE_ORDER = ['received', 'sorting', 'washing', 'dry_cleaning', 'drying', 'ironing', 'quality_check', 'ready'];
 
@@ -51,7 +51,30 @@ export async function PUT(request, { params }) {
     const anyProcessing = allItems.some(i => !['received', 'ready', 'delivered'].includes(i.status));
 
     if (allReady) {
-      await query('UPDATE orders SET status = $1 WHERE id = $2', ['ready', item.order_id]);
+      const orderRes = await query('SELECT status FROM orders WHERE id = $1', [item.order_id]);
+      if (orderRes.rows[0].status !== 'ready') {
+        await query('UPDATE orders SET status = $1 WHERE id = $2', ['ready', item.order_id]);
+        
+        // Trigger Notification
+        const customerRes = await query(`
+          SELECT c.phone, c.name, o.order_number 
+          FROM orders o 
+          JOIN customers c ON o.customer_id = c.id 
+          WHERE o.id = $1
+        `, [item.order_id]);
+        
+        if (customerRes.rows.length > 0) {
+          const customer = customerRes.rows[0];
+          const message = `Hi ${customer.name}! Your order #${customer.order_number} is now READY for pickup/delivery at CleanFlow. See you soon!`;
+          await sendWhatsAppMessage(customer.phone, message);
+          
+          // Log notification event for frontdesk
+          await query(`
+            INSERT INTO system_logs (event_type, description, severity, store_id)
+            VALUES ($1, $2, $3, $4)
+          `, ['STAFF_ALERT', `Notification sent to ${customer.name} for Order #${customer.order_number}`, 'info', auth.user.store_id]);
+        }
+      }
     } else if (anyProcessing) {
       await query('UPDATE orders SET status = $1 WHERE id = $2', ['processing', item.order_id]);
     }

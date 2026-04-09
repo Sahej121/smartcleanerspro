@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS orders (
   pickup_status TEXT CHECK(pickup_status IN ('pending','scheduled','in_transit','completed')) DEFAULT 'pending',
   delivery_status TEXT CHECK(delivery_status IN ('pending','scheduled','in_transit','completed')) DEFAULT 'pending',
   logistics_notes TEXT,
+  bag_id TEXT,
   notes TEXT,
   coupon_id INTEGER REFERENCES coupons(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -132,7 +133,9 @@ CREATE TABLE IF NOT EXISTS inventory (
   quantity NUMERIC(10,2) DEFAULT 0,
   unit TEXT DEFAULT 'units',
   reorder_level NUMERIC(10,2) DEFAULT 10,
-  store_id INTEGER REFERENCES stores(id) DEFAULT 1
+  store_id INTEGER REFERENCES stores(id) DEFAULT 1,
+  last_updated_at TIMESTAMPTZ DEFAULT NOW(),
+  historical_daily_burn NUMERIC(10,4) DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS machines (

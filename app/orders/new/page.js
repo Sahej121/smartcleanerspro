@@ -140,6 +140,15 @@ export default function NewOrder() {
     setCart([...cart, { ...item, quantity: 1, tag_id: '', bag_id: '', notes: '' }]);
   };
 
+  const handleAddCustomGarment = () => {
+    const name = window.prompt('Enter custom garment name (e.g., Designer Jacket):');
+    if (!name) return;
+    const priceStr = window.prompt(`Enter price for ${name}:`);
+    if (priceStr === null) return;
+    const price = parseFloat(priceStr) || 0;
+    addToCart({ garment_type: name, service_type: 'Custom Service', price });
+  };
+
   const removeFromCart = (index) => {
     const newCart = cart.filter((_, i) => i !== index);
     setCart(newCart);
@@ -214,6 +223,14 @@ export default function NewOrder() {
   const handleSubmitOrder = async (force = false) => {
     if (!selectedCustomer) return alert('Select a customer');
 
+    if (schedule.pickupDate && schedule.deliveryDate) {
+      const pDate = new Date(`${schedule.pickupDate}T${schedule.pickupTime || '00:00'}`);
+      const dDate = new Date(`${schedule.deliveryDate}T${schedule.deliveryTime || '00:00'}`);
+      if (pDate > dDate) {
+        return alert('Pickup date/time cannot be later than delivery date/time.');
+      }
+    }
+
     setSubmitting(true);
     setDuplicateWarning(null);
     try {
@@ -224,6 +241,7 @@ export default function NewOrder() {
         method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          customer_id: selectedCustomer.id,
           items: cart,
           totalAmount: total,
           discountAmount: applicableVolDiscount + couponDiscount + redeemedPoints,
@@ -360,6 +378,7 @@ export default function NewOrder() {
           <div className="flex items-center justify-between mb-4 px-1 animate-fade-in-up stagger-2">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Select Garments</h3>
             <div className="flex gap-2">
+              <button onClick={handleAddCustomGarment} className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase hover:bg-emerald-700 transition">+ Custom Item</button>
               <button className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase">Popular</button>
               <button className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase">A-Z</button>
             </div>

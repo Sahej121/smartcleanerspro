@@ -19,7 +19,7 @@ export default function StaffPage() {
 
   const copyToClipboard = async () => {
     if (!credentialsModal) return;
-    const text = `Email: ${credentialsModal.email}\nPassword: ${credentialsModal.password}`;
+    const text = `Email: ${credentialsModal.email}\nPassword: ${credentialsModal.password}\nPIN: ${credentialsModal.pin}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -42,15 +42,15 @@ export default function StaffPage() {
     if (res.ok) {
       const user = await res.json();
       
-      // Remove tempPassword before putting in table state
-      const { tempPassword, ...userWithoutPassword } = user;
+      // Remove tempPassword and pin before putting in table state
+      const { tempPassword, pin, ...userWithoutSecrets } = user;
       
-      setStaff([userWithoutPassword, ...staff]);
+      setStaff([userWithoutSecrets, ...staff]);
       setShowModal(false);
       setNewStaff({ name: '', email: '', phone: '', role: 'staff' });
       
-      // Show credentials to the admin
-      setCredentialsModal({ email: user.email, password: tempPassword, name: user.name });
+      // Show credentials (password + PIN) to the admin
+      setCredentialsModal({ email: user.email, password: tempPassword, pin, name: user.name });
     }
   };
 
@@ -162,19 +162,22 @@ export default function StaffPage() {
             </div>
             <div className="modal-body" style={{ textAlign: 'center', padding: '32px 16px' }}>
               <h3 style={{ marginBottom: '8px' }}>{credentialsModal.name} has been added!</h3>
-              <p className="text-muted" style={{ marginBottom: '24px' }}>Please copy these credentials and share them securely with the new team member. They will need this password to log in.</p>
+              <p className="text-muted" style={{ marginBottom: '24px' }}>Share these credentials securely. The PIN can be used for quick dashboard login.</p>
               
-              <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', textAlign: 'left', fontFamily: 'monospace', fontSize: '16px' }}>
-                <div style={{ marginBottom: '8px' }}><strong>Email:</strong> {credentialsModal.email}</div>
+              <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', textAlign: 'left', fontFamily: 'monospace', fontSize: '15px', lineHeight: '2' }}>
+                <div><strong>Email:</strong> {credentialsModal.email}</div>
                 <div><strong>Password:</strong> <span style={{ color: 'var(--primary-600)', fontWeight: 'bold' }}>{credentialsModal.password}</span></div>
+                <div style={{ borderTop: '1px solid var(--border)', marginTop: '10px', paddingTop: '10px' }}>
+                  <strong>PIN (quick login):</strong> <span style={{ color: 'var(--orange-500)', fontWeight: 'bold', fontSize: '22px', letterSpacing: '6px' }}>{credentialsModal.pin}</span>
+                </div>
               </div>
               
               <button 
                 className="btn btn-secondary" 
-                onClick={() => copyToClipboard(`${credentialsModal.email}\n${credentialsModal.password}`)}
-                style={{ width: '100%', justifyContent: 'center', gap: '8px' }}
+                onClick={copyToClipboard}
+                style={{ width: '100%', justifyContent: 'center', gap: '8px', marginTop: '16px' }}
               >
-                {copied ? 'Copied' : 'Copy Credentials'}
+                {copied ? '✓ Copied!' : 'Copy All Credentials'}
               </button>
             </div>
             <div className="modal-footer" style={{ justifyContent: 'center' }}>

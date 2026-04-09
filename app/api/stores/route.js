@@ -13,6 +13,10 @@ function generatePassword(length = 8) {
   return retVal;
 }
 
+function generatePin() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
 const defaultPricing = [
   ['Shirt', 'Dry Cleaning', 80], ['Shirt', 'Washing', 40], ['Shirt', 'Ironing', 25], ['Shirt', 'Stain Removal', 100],
   ['Suit', 'Dry Cleaning', 250], ['Suit', 'Washing', 150], ['Suit', 'Ironing', 80], ['Suit', 'Stain Removal', 200],
@@ -61,7 +65,7 @@ export async function POST(req) {
         `SELECT s.subscription_tier, (SELECT count(*) FROM stores WHERE owner_id = $1) as store_count FROM stores s WHERE s.owner_id = $1 LIMIT 1`,
         [payload.id]
       );
-      const ownerTier = ownerStoreRes.rows[0]?.subscription_tier || 'starter';
+      const ownerTier = ownerStoreRes.rows[0]?.subscription_tier || 'software_only';
       const currentStoreCount = parseInt(ownerStoreRes.rows[0]?.store_count || '0', 10);
 
       const check = canCreateStore(ownerTier, currentStoreCount);
@@ -75,9 +79,12 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing required configuration fields.' }, { status: 400 });
     }
 
-    // Generate and hash password for the new tenant admin
+    // Generate and hash credentials for the new tenant admin
     const tempPassword = generatePassword();
+    const tempPin = generatePin();
+    
     const hashedPassword = await hashPassword(tempPassword);
+    const hashedPin = await hashPassword(tempPin);
 
     const client = await getClient();
     
@@ -88,14 +95,14 @@ export async function POST(req) {
       const storeRes = await client.query(
         `INSERT INTO stores (store_name, city, owner_id, status, subscription_tier, subscription_status, last_activity) 
          VALUES ($1, $2, $3, 'active', $4, 'trial', NOW()) RETURNING id`,
-        [store_name, city, payload.id, subscription_tier || 'starter']
+        [store_name, city, payload.id, subscription_tier || 'software_only']
       );
       const newStoreId = storeRes.rows[0].id;
 
       // 2. Create the Admin/Manager user for this store
       await client.query(
-        `INSERT INTO users (name, email, phone, password_hash, role, store_id) VALUES ($1, $2, $3, $4, $5, $6)`,
-        [admin_name, admin_email, admin_phone || '', hashedPassword, 'manager', newStoreId]
+        `INSERT INTO users (name, email, phone, password_hash, pin_hash, role, store_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [admin_name, admin_email, admin_phone || '', hashedPassword, hashedPin, 'manager', newStoreId]
       );
 
       // 3. Populate default pricing templates for the new store
@@ -120,8 +127,8 @@ export async function POST(req) {
         success: true,
         store_id: newStoreId,
         store_name,
-        admin_email,
-        tempPassword
+        tempPassword,
+        tempPin
       }, { status: 201 });
 
     } catch (err) {
@@ -151,19 +158,41 @@ export async function GET() {
 
     const payload = await verifyToken(token);
 
-    // Only owners can list all stores
-    if (!payload || payload.role !== 'owner') {
+    // Owners and managers can list stores
+    if (!payload || (payload.role !== 'owner' && payload.role !== 'manager')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Join with users to get manager email if needed, or just basic store info
-    const res = await query(`
-      SELECT s.*, 
-             (SELECT count(*) FROM orders WHERE store_id = s.id) as order_count,
-             (SELECT sum(total_amount) FROM orders WHERE store_id = s.id) as total_revenue
-      FROM stores s 
-      ORDER BY s.created_at DESC
-    `);
+    const isSaasOwner = payload.id === 1;
+
+    let queryStr;
+    let queryParams;
+
+    if (payload.role === 'manager') {
+      // Manager only sees their own store
+      queryStr = `
+        SELECT s.*,
+               (SELECT count(*) FROM orders WHERE store_id = s.id) as order_count,
+               (SELECT COALESCE(sum(total_amount), 0) FROM orders WHERE store_id = s.id AND payment_status = 'paid') as total_revenue
+        FROM stores s
+        WHERE s.id = $1
+        ORDER BY s.created_at DESC
+      `;
+      queryParams = [payload.store_id];
+    } else {
+      // Owner sees all their stores (or overall if SaaS root)
+      queryStr = `
+        SELECT s.*,
+               (SELECT count(*) FROM orders WHERE store_id = s.id) as order_count,
+               (SELECT COALESCE(sum(total_amount), 0) FROM orders WHERE store_id = s.id AND payment_status = 'paid') as total_revenue
+        FROM stores s
+        WHERE ($1::boolean = TRUE) OR (s.owner_id = $2)
+        ORDER BY s.created_at DESC
+      `;
+      queryParams = [isSaasOwner, payload.id];
+    }
+
+    const res = await query(queryStr, queryParams);
 
     return NextResponse.json(res.rows);
 

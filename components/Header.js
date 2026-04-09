@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useUser } from '@/lib/UserContext';
 import { useNotifications } from '@/lib/NotificationContext';
@@ -9,9 +10,18 @@ export default function Header({ setMobileMenuOpen }) {
   const { t } = useLanguage();
   const { user, role } = useUser();
   const { notifications, unreadCount, markAllAsRead } = useNotifications();
+  const router = useRouter();
   const [showNotifs, setShowNotifs] = useState(false);
   const [bellShake, setBellShake] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/orders?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   // Trigger bell shake when unread count changes
   useEffect(() => {
@@ -31,7 +41,7 @@ export default function Header({ setMobileMenuOpen }) {
         >
           <span className="material-symbols-outlined">menu_open</span>
         </button>
-        <div className={`relative w-full max-w-md transition-all duration-500 ${searchFocused ? 'max-w-lg' : ''}`}>
+        <form onSubmit={handleSearch} className={`relative w-full max-w-md transition-all duration-500 ${searchFocused ? 'max-w-lg' : ''}`}>
           <span className={`material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-sm transition-colors duration-300 ${searchFocused ? 'text-primary' : 'text-slate-400'}`}>search</span>
           <input 
             className={`w-full bg-surface-container-low border rounded-full py-2.5 pl-10 pr-4 text-sm placeholder:text-slate-400 outline-none transition-all duration-300 ${
@@ -41,10 +51,12 @@ export default function Header({ setMobileMenuOpen }) {
             }`}
             placeholder={t('search_orders') || "Search orders, customers, or items..."} 
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
           />
-        </div>
+        </form>
       </div>
 
       <div className="flex items-center gap-3">

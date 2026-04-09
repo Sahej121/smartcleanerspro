@@ -16,6 +16,7 @@ const STAGES = [
 
 export default function OperationsPage() {
   const { role } = useUser();
+  const isAdmin = role === ROLES.OWNER || role === ROLES.MANAGER;
   const [workflow, setWorkflow] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -118,7 +119,7 @@ export default function OperationsPage() {
                               <p className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">Registered 14m ago</p>
                            </div>
                          </div>
-                         {stage.key !== 'ready' && canAdvance && (
+                         {stage.key !== 'ready' && isAdmin && (
                            <button 
                              onClick={() => advanceItem(item.id)}
                              className="w-10 h-10 rounded-[1.25rem] bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm active:scale-90"

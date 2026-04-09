@@ -90,7 +90,7 @@ export async function PUT(request) {
         const lastUpdate = new Date(item.last_updated_at);
         const diffDays = (now - lastUpdate) / (1000 * 60 * 60 * 24);
 
-        if (diffDays > 0.04) { // Roughly 1 hour minimum to calculate a rate
+        if (diffDays > 0.0001) { // Roughly 8 seconds minimum to calculate a rate
           const consumed = item.quantity - quantity;
           const currentRate = consumed / diffDays;
           

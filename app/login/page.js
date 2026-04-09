@@ -9,8 +9,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
   const router = useRouter();
-  const { fetchUser, user } = useUser();
+  const { user, fetchUser } = useUser();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -44,6 +47,29 @@ export default function LoginPage() {
     }
   };
 
+  const handleReset = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResetMessage(data.message || 'Reset instructions sent.');
+      } else {
+        setError(data.error || 'Reset failed');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAF9] flex items-center justify-center p-6 relative overflow-hidden">
       {/* Animated Decorative Orbs */}
@@ -68,55 +94,102 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">System Identity</label>
-              <div className="relative group">
-                <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${identifier ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>person</span>
-                <input 
-                  type="text" 
-                  className="w-full bg-white/100 border border-transparent rounded-2xl py-4 pl-14 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
-                  value={identifier} 
-                  onChange={e => setIdentifier(e.target.value)}
-                  required 
-                  placeholder="Email or phone reference"
-                />
+          {showForgot ? (
+            <form onSubmit={handleReset} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Account Email</label>
+                <div className="relative group">
+                  <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${resetEmail ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>mail</span>
+                  <input 
+                    type="email" 
+                    className="w-full bg-white/100 border border-transparent rounded-2xl py-4 pl-14 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
+                    value={resetEmail} 
+                    onChange={e => setResetEmail(e.target.value)}
+                    required 
+                    placeholder="Enter your email address"
+                  />
+                </div>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center px-2">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Access Key</label>
-                <button type="button" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Forgot?</button>
-              </div>
-              <div className="relative group">
-                <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${password ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>lock</span>
-                <input 
-                  type="password" 
-                  className="w-full bg-white/100 border border-transparent rounded-2xl py-4 pl-14 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)}
-                  required 
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
 
-            <button 
-              type="submit" 
-              className="w-full primary-gradient text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group shimmer-btn"
-              disabled={loading}
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
-                    AUTHENTICATING...
-                  </>
-                ) : 'AUTHORIZE ACCESS'}
-              </span>
-            </button>
-          </form>
+              {resetMessage && (
+                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3 text-emerald-600 animate-fade-in-down">
+                  <span className="material-symbols-outlined text-lg">check_circle</span>
+                  <p className="text-[11px] font-black uppercase tracking-tight">{resetMessage}</p>
+                </div>
+              )}
+
+              <button 
+                type="submit" 
+                className="w-full primary-gradient text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group shimmer-btn"
+                disabled={loading}
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+                      SENDING...
+                    </>
+                  ) : 'SEND RESET LINK'}
+                </span>
+              </button>
+              
+              <div className="text-center mt-4">
+                <button type="button" onClick={() => { setShowForgot(false); setResetMessage(''); setError(''); }} className="text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-colors">
+                  RETURN TO LOGIN
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">System Identity</label>
+                <div className="relative group">
+                  <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${identifier ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>person</span>
+                  <input 
+                    type="text" 
+                    className="w-full bg-white/100 border border-transparent rounded-2xl py-4 pl-14 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
+                    value={identifier} 
+                    onChange={e => setIdentifier(e.target.value)}
+                    required 
+                    placeholder="Email or phone reference"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center px-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Access Key</label>
+                  <button type="button" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline" onClick={() => setShowForgot(true)}>Forgot?</button>
+                </div>
+                <div className="relative group">
+                  <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${password ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>lock</span>
+                  <input 
+                    type="password" 
+                    className="w-full bg-white/100 border border-transparent rounded-2xl py-4 pl-14 pr-6 text-sm font-bold shadow-inner transition-all duration-300 placeholder:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 focus:bg-white focus:shadow-lg focus:shadow-primary/5 outline-none"
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)}
+                    required 
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                className="w-full primary-gradient text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group shimmer-btn"
+                disabled={loading}
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+                      AUTHENTICATING...
+                    </>
+                  ) : 'AUTHORIZE ACCESS'}
+                </span>
+              </button>
+            </form>
+          )}
 
           <div className="text-center mt-10">
             <p className="text-[11px] font-bold text-slate-400">

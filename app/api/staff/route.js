@@ -53,8 +53,9 @@ export async function POST(request) {
     }
     // --- End Tier Enforcement ---
     
-    let pinHash = null;
-    if (pin) pinHash = await hashPassword(pin);
+    // Auto-generate a 4-digit PIN if one is not provided
+    const plainPin = pin || String(Math.floor(1000 + Math.random() * 9000));
+    const pinHash = await hashPassword(plainPin);
 
     const tempPassword = generatePassword();
     const hashedPassword = await hashPassword(tempPassword);
@@ -66,7 +67,7 @@ export async function POST(request) {
       [name, email, phone || '', hashedPassword, pinHash, role || 'staff', session.store_id]
     );
 
-    return NextResponse.json({ ...res.rows[0], pin }, { status: 201 });
+    return NextResponse.json({ ...res.rows[0], pin: plainPin, tempPassword }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

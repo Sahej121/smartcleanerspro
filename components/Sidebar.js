@@ -5,8 +5,8 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useUser, ROLES } from '@/lib/UserContext';
 import { useBranding } from '@/lib/BrandingContext';
 
-const getNavLinks = (role) => {
-  if (role === ROLES.OWNER) {
+const getNavLinks = (role, isEnterprise, isSaasOwner) => {
+  if (role === ROLES.OWNER && isSaasOwner) {
     return [
       { href: '/', labelKey: 'nav_dashboard', icon: 'grid_view' },
       { href: '/master/nodes', labelKey: 'nav_manage_nodes', icon: 'dns' },
@@ -17,6 +17,26 @@ const getNavLinks = (role) => {
     ];
   }
 
+  // Business owner should see the same nav as store admins (plus settings),
+  // not the SaaS master-control navigation.
+  if (role === ROLES.OWNER && !isSaasOwner) {
+    return [
+      { href: '/', labelKey: 'nav_dashboard', icon: 'dashboard' },
+      { href: '/orders/new', labelKey: 'nav_new_order', icon: 'add_circle' },
+      { href: '/orders', labelKey: 'nav_orders', icon: 'receipt_long' },
+      { href: '/customers', labelKey: 'nav_customers', icon: 'group' },
+      { href: '/admin/analytics/staff', labelKey: 'nav_staff_analytics', icon: 'analytics' },
+      { href: '/inventory', labelKey: 'nav_inventory', icon: 'inventory_2' },
+      { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route', isEnterpriseOnly: true },
+      { href: '/operations/machines', labelKey: 'Machine Ops', icon: 'precision_manufacturing', isEnterpriseOnly: true },
+      { href: '/logistics', labelKey: 'Logistics Driver', icon: 'local_shipping' },
+      { href: '/admin/settings', labelKey: 'nav_settings', icon: 'settings' },
+    ].filter(link => {
+      if (link.isEnterpriseOnly && !isEnterprise) return false;
+      return true;
+    });
+  }
+
   // Standard Store Admin / Staff Nav
   return [
     { href: '/', labelKey: 'nav_dashboard', icon: 'dashboard', allowedRoles: [ROLES.ADMIN, ROLES.WORKER] },
@@ -25,11 +45,15 @@ const getNavLinks = (role) => {
     { href: '/customers', labelKey: 'nav_customers', icon: 'group', allowedRoles: [ROLES.ADMIN] },
     { href: '/admin/analytics/staff', labelKey: 'nav_staff_analytics', icon: 'analytics', allowedRoles: [ROLES.ADMIN] },
     { href: '/inventory', labelKey: 'nav_inventory', icon: 'inventory_2', allowedRoles: [ROLES.ADMIN] },
-    { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route', allowedRoles: [ROLES.ADMIN, ROLES.WORKER] },
-    { href: '/operations/machines', labelKey: 'Machine Ops', icon: 'precision_manufacturing', allowedRoles: [ROLES.ADMIN, ROLES.WORKER] },
+    { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route', allowedRoles: [ROLES.ADMIN, ROLES.WORKER], isEnterpriseOnly: true },
+    { href: '/operations/machines', labelKey: 'Machine Ops', icon: 'precision_manufacturing', allowedRoles: [ROLES.ADMIN, ROLES.WORKER], isEnterpriseOnly: true },
     { href: '/logistics', labelKey: 'Logistics Driver', icon: 'local_shipping', allowedRoles: [ROLES.ADMIN, ROLES.WORKER, 'driver'] },
     { href: '/admin/settings', labelKey: 'nav_settings', icon: 'settings', allowedRoles: [ROLES.ADMIN] },
-  ].filter(link => !link.allowedRoles || link.allowedRoles.includes(role));
+  ].filter(link => {
+    if (link.allowedRoles && !link.allowedRoles.includes(role)) return false;
+    if (link.isEnterpriseOnly && !isEnterprise) return false;
+    return true;
+  });
 };
 
 export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
@@ -40,10 +64,15 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
 
   function isActive(href) {
     if (href === '/') return pathname === '/';
+    // Exact match for /orders so it doesn't activate while on /orders/new
+    if (href === '/orders') return pathname === '/orders';
     return pathname.startsWith(href);
   }
 
-  const filteredLinks = getNavLinks(role);
+  const isSaasOwner = user?.role === 'owner' && user?.id === 1;
+  // In this codebase, enterprise gating effectively means "Pro-tier operational modules".
+  const isEnterprise = user?.tier === 'pro' || isSaasOwner;
+  const filteredLinks = getNavLinks(role, isEnterprise, isSaasOwner);
 
   return (
     <>
