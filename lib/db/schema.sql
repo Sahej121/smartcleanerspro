@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS stores (
   phone TEXT,
   owner_id INTEGER,
   status TEXT CHECK(status IN ('active', 'suspended', 'idle')) DEFAULT 'active',
-  subscription_tier VARCHAR(20) DEFAULT 'starter',
+  subscription_tier VARCHAR(20) DEFAULT 'software_only',
   subscription_status TEXT DEFAULT 'trial',
   last_activity TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()

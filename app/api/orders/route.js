@@ -94,14 +94,10 @@ export async function POST(request) {
 
     await client.query('BEGIN');
 
-    // Generate order number
-    const lastOrderRes = await client.query('SELECT order_number FROM orders ORDER BY id DESC LIMIT 1');
-    let nextNum = 1007;
-    if (lastOrderRes.rows.length > 0) {
-      const num = parseInt(lastOrderRes.rows[0].order_number.replace('CF-', ''));
-      nextNum = num + 1;
-    }
-    const orderNumber = `CF-${nextNum}`;
+    // Generate order number atomically
+    const prefix = (schedule && schedule.pickupDate) ? 'WA' : 'CF';
+    const seqRes = await client.query("SELECT nextval('order_number_seq')");
+    const orderNumber = `${prefix}-${seqRes.rows[0].nextval}`;
 
     // Calculate volume discount
     let totalItems = 0;
@@ -178,6 +174,61 @@ export async function POST(request) {
         `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, 'received', $2)`,
         [itemRes.rows[0].id, auth.user.id]
       );
+    }
+
+    // ── Auto-decrement inventory based on order items ──
+    // Best-effort: inventory issues must never block order creation
+    try {
+      const storeId = auth.user.store_id;
+      let totalGarments = 0;
+      let washKg = 0;
+      let dryCleanPieces = 0;
+
+      for (const item of items) {
+        const qty = item.quantity || 1;
+        totalGarments += qty;
+
+        const svc = (item.service_type || '').toLowerCase();
+        if (svc.includes('wash') || svc.includes('fold') || svc.includes('laundry')) {
+          washKg += qty;
+        }
+        if (svc.includes('dry clean') || svc.includes('dryclean')) {
+          dryCleanPieces += qty;
+        }
+      }
+
+      // Helper: decrement an inventory item by name pattern
+      const decrement = async (pattern, amount) => {
+        if (amount <= 0) return;
+        await client.query(
+          `UPDATE inventory SET quantity = GREATEST(0, quantity - $1),
+             last_updated_at = CURRENT_TIMESTAMP
+           WHERE store_id = $2 AND item_name ILIKE $3`,
+          [amount, storeId, pattern]
+        );
+      };
+
+      // Per-garment consumables
+      await decrement('%Hanger%', totalGarments);
+      await decrement('%Garment Bag%', totalGarments);
+      await decrement('%Cover%', totalGarments);
+      await decrement('%Tag%', totalGarments);
+      await decrement('%Label%', totalGarments);
+      await decrement('%Packaging%', Math.ceil(totalGarments / 5)); // ~1 roll per 5 items
+
+      // Wash consumables (liters per kg)
+      if (washKg > 0) {
+        await decrement('%Detergent%', washKg * 0.15);      // ~150ml per kg
+        await decrement('%Fabric Softener%', washKg * 0.05); // ~50ml per kg
+      }
+
+      // Dry clean consumables
+      if (dryCleanPieces > 0) {
+        await decrement('%Dry Clean%Solvent%', dryCleanPieces * 0.3); // ~300ml per piece
+        await decrement('%Stain Remover%', dryCleanPieces * 0.1);     // ~100ml per piece
+      }
+    } catch (invErr) {
+      console.error('[Inventory Auto-Decrement] Non-blocking error:', invErr.message);
     }
 
     // Insert payments (handles split / multiple initial payments)

@@ -14,12 +14,16 @@ export async function GET() {
     if (!payload || payload.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     // Simple health check: DB Ping + Resource Simulation
+    console.log('[API HEALTH] Starting logic...');
     const startTime = Date.now();
     await query('SELECT 1');
     const latency = Date.now() - startTime;
+    console.log('[API HEALTH] DB Ping successful:', latency);
 
     const storeStats = await query('SELECT status, count(*) FROM stores GROUP BY status');
+    console.log('[API HEALTH] Store stats fetched');
     const logsCount = await query('SELECT count(*) FROM system_logs');
+    console.log('[API HEALTH] Logs count fetched');
 
     return NextResponse.json({
       status: 'OPERATIONAL',
@@ -32,6 +36,7 @@ export async function GET() {
     });
 
   } catch (error) {
+    console.error('[API HEALTH] CRITICAL FAILURE:', error.stack || error);
     return NextResponse.json({ status: 'DEGRADED', error: error.message }, { status: 500 });
   }
 }

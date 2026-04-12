@@ -1,7 +1,7 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
 import { hashPassword, getSession, requireRole } from '@/lib/auth';
-import { canAddStaff } from '@/lib/tier-config';
+import { canAddStaff, normalizeTier } from '@/lib/tier-config';
 
 function generatePassword(length = 8) {
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -42,7 +42,7 @@ export async function POST(request) {
 
     // --- Subscription Tier Enforcement ---
     const storeRes = await query(`SELECT subscription_tier FROM stores WHERE id = $1`, [session.store_id]);
-    const tier = storeRes.rows[0]?.subscription_tier || 'starter';
+    const tier = normalizeTier(storeRes.rows[0]?.subscription_tier);
     
     const staffCountRes = await query(`SELECT count(*) FROM users WHERE store_id = $1`, [session.store_id]);
     const currentStaffCount = parseInt(staffCountRes.rows[0].count, 10);
@@ -67,7 +67,7 @@ export async function POST(request) {
       [name, email, phone || '', hashedPassword, pinHash, role || 'staff', session.store_id]
     );
 
-    return NextResponse.json({ ...res.rows[0], pin: plainPin, tempPassword }, { status: 201 });
+    return NextResponse.json({ ...res.rows[0], pin: plainPin }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -80,21 +80,36 @@ export async function PUT(request) {
     const session = auth.user;
 
     const body = await request.json();
-    const { id, name, email, phone, role } = body;
+    const { id, name, email, phone, role, regeneratePin } = body;
+
+    let pinHash = undefined;
+    let plainPin = undefined;
+
+    if (regeneratePin) {
+      plainPin = String(Math.floor(1000 + Math.random() * 9000));
+      pinHash = await hashPassword(plainPin);
+    }
 
     const res = await query(
-      `UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), 
-       phone = COALESCE($3, phone), role = COALESCE($4, role)
-       WHERE id = $5 AND store_id = $6 AND role != 'owner'
+      `UPDATE users 
+       SET name = COALESCE($1, name), 
+           email = COALESCE($2, email), 
+           phone = COALESCE($3, phone), 
+           role = COALESCE($4, role),
+           pin_hash = COALESCE($5, pin_hash)
+       WHERE id = $6 AND store_id = $7 AND role != 'owner'
        RETURNING id, name, email, phone, role, created_at`,
-      [name, email, phone, role, id, session.store_id]
+      [name, email, phone, role, pinHash, id, session.store_id]
     );
 
     if (res.rows.length === 0) {
       return NextResponse.json({ error: 'Staff not found or access denied' }, { status: 404 });
     }
 
-    return NextResponse.json(res.rows[0]);
+    const response = { ...res.rows[0] };
+    if (plainPin) response.pin = plainPin;
+
+    return NextResponse.json(response);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function QualityControlPage() {
   const [items, setItems] = useState([]);
@@ -31,10 +32,13 @@ export default function QualityControlPage() {
 
   return (
     <div id="quality-page" className="p-4 lg:p-8 max-w-7xl mx-auto min-h-screen">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <Link href="/operations" className="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container hover:bg-surface-container-low transition-colors shadow-sm" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
+        </Link>
         <div>
-          <h1>Quality Control</h1>
-          <p>Review garments at the quality check stage</p>
+          <h1 style={{ margin: 0 }}>Quality Control</h1>
+          <p style={{ margin: 0 }}>Review garments at the quality check stage</p>
         </div>
         <button className="btn btn-secondary" onClick={fetchItems}>🔄 Refresh</button>
       </div>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { query } from '@/lib/db/db';
+import { normalizeTier } from '@/lib/tier-config';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -21,13 +22,13 @@ export async function GET() {
 
   // Check Store Status and Tier
   let isSuspended = false;
-  let tier = 'starter';
+  let tier = 'software_only';
   if (payload.store_id) {
     const res = await query('SELECT status, subscription_tier FROM stores WHERE id = $1', [payload.store_id]);
     const store = res.rows[0];
     if (store) {
       if (store.status === 'suspended') isSuspended = true;
-      tier = store.subscription_tier || 'starter';
+      tier = normalizeTier(store.subscription_tier);
     }
   }
 

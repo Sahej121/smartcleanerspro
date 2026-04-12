@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db/db';
 import { verifyPassword, createToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { normalizeTier } from '@/lib/tier-config';
 
 export async function POST(req) {
   try {
@@ -36,12 +37,20 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Fetch store tier for feature gating
+    let tier = 'software_only';
+    if (user.store_id) {
+      const storeRes = await query('SELECT subscription_tier FROM stores WHERE id = $1', [user.store_id]);
+      tier = normalizeTier(storeRes.rows[0]?.subscription_tier);
+    }
+
     const userPayload = {
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-      store_id: user.store_id
+      store_id: user.store_id,
+      tier
     };
 
     const token = await createToken(userPayload);

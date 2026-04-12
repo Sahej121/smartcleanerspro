@@ -5,6 +5,45 @@ import { verifyToken } from '@/lib/auth';
 // Note: In production with multiple server instances, use Redis.
 const rateLimitMap = new Map();
 
+// --- Inlined tier helpers for Edge middleware (cannot import tier-config.js) ---
+const TIER_LEGACY_MAP = {
+  starter: 'software_only',
+  standard: 'software_only',
+  growth: 'hardware_bundle',
+  pro: 'enterprise',
+};
+
+const TIER_ROUTES = {
+  software_only: [
+    '/', '/orders', '/customers', '/inventory', '/logistics',
+    '/admin/settings', '/support', '/reports', '/admin/billing',
+    '/admin/pricing', '/suspended',
+    '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/pricing', '/api/coupons', '/api/payments'
+  ],
+  hardware_bundle: [
+    '/', '/orders', '/customers', '/inventory', '/logistics',
+    '/admin/settings', '/admin/analytics', '/operations/assembly',
+    '/operations/machines', '/support', '/reports', '/admin/billing',
+    '/admin/pricing', '/suspended',
+    '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/analytics', '/api/pricing', '/api/coupons', '/api/payments'
+  ],
+  enterprise: ['*'],
+};
+
+function normalizeTierMw(tier) {
+  return TIER_LEGACY_MAP[tier] || tier || 'software_only';
+}
+
+function canAccessRouteMw(tier, route) {
+  const allowed = TIER_ROUTES[tier];
+  if (!allowed) return false;
+  if (allowed.includes('*')) return true;
+  return allowed.some(prefix => {
+    if (prefix === '/') return route === '/';
+    return route === prefix || route.startsWith(prefix + '/');
+  });
+}
+
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const ip = request.ip || request.headers.get('x-forwarded-for') || 'anonymous';
@@ -69,6 +108,28 @@ export async function middleware(request) {
   // Has session, trying to access auth pages
   if (payload && isAuthPage) {
     return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // --- 3. Tier-Based Feature Gating ---
+  // Block access to routes the user's subscription tier doesn't include.
+  // The tier is embedded in the JWT payload at login time.
+  if (payload && !isAuthPage) {
+    const tier = normalizeTierMw(payload.tier);
+
+    // SaaS owner (id=1, role=owner) bypasses all tier restrictions
+    const isSaasOwner = payload.role === 'owner' && payload.id === 1;
+
+    if (!isSaasOwner && !canAccessRouteMw(tier, pathname)) {
+      // If it's an API request, return JSON 403 instead of redirecting to an HTML page
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Feature restricted by subscription tier' }, 
+          { status: 403 }
+        );
+      }
+      // Redirect to dashboard — the gated page should not be visible at all
+      return NextResponse.redirect(new URL('/', request.url));
+    }
   }
 
   return addSecurityHeaders(NextResponse.next());

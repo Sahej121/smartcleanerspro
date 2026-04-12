@@ -44,10 +44,9 @@ export default function StoreAdmin({ user }) {
         fetch('/api/stats'),
         fetch('/api/system/broadcast/active')
       ]);
-      const [statsData, broadcastData] = await Promise.all([
-        statsRes.json(),
-        broadcastRes.json().catch(() => null)
-      ]);
+      if (!statsRes.ok) { console.error('[Dashboard] /api/stats returned', statsRes.status); return; }
+      const statsData = await statsRes.json();
+      const broadcastData = broadcastRes.ok ? await broadcastRes.json().catch(() => null) : null;
       setStats(statsData);
       setActiveBroadcast(broadcastData);
     } catch (error) {
@@ -79,141 +78,132 @@ export default function StoreAdmin({ user }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <div className="w-12 h-12 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse">Initializing Atelier POS...</p>
+        <div className="w-12 h-12 rounded-full border-4 border-theme-border border-t-emerald-600 animate-spin" />
+        <p className="text-theme-text-muted font-medium animate-pulse">Initializing Atelier POS...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-4 lg:p-8 space-y-4 lg:space-y-8">
+    <div className="p-4 lg:p-10 space-y-10 lg:space-y-12 animate-fade-in max-w-[1600px] mx-auto">
       {/* Broadcast Banner */}
       {activeBroadcast && (
-        <div className={`p-4 rounded-xl shadow-lg border animate-fade-in flex items-center gap-4 ${
-          activeBroadcast.severity === 'error' ? 'bg-red-600 text-white border-red-700 shadow-red-900/20' :
-          activeBroadcast.severity === 'warning' ? 'bg-amber-500 text-white border-amber-600 shadow-amber-900/20' :
-          'bg-emerald-600 text-white border-emerald-700 shadow-emerald-900/20'
+        <div className={`p-5 rounded-2xl shadow-lg border animate-fade-in flex items-center gap-5 backdrop-blur-md ${
+          activeBroadcast.severity === 'error' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+          activeBroadcast.severity === 'warning' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+          'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
         }`}>
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>
+          <div className="w-12 h-12 rounded-xl bg-current/10 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-2xl animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>
                {activeBroadcast.severity === 'error' ? 'emergency_home' : 'campaign'}
             </span>
           </div>
           <div className="flex-1">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">
-               {activeBroadcast.severity === 'error' ? 'Global Emergency Transmit' : 'System Broadcast'} • {new Date(activeBroadcast.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 mb-1 flex items-center gap-2">
+               {activeBroadcast.severity === 'error' ? 'Global Emergency Transmit' : 'System Broadcast'} 
+               <span className="w-1 h-1 rounded-full bg-current opacity-30"></span>
+               {new Date(activeBroadcast.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </h4>
-            <p className="font-bold text-sm tracking-tight leading-snug">{activeBroadcast.description.replace(/^Admin Broadcast:\s*/i, '')}</p>
+            <p className="font-bold text-sm tracking-tight leading-snug text-theme-text">{activeBroadcast.description.replace(/^Admin Broadcast:\s*/i, '')}</p>
           </div>
-          <button onClick={() => setActiveBroadcast(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+          <button onClick={() => setActiveBroadcast(null)} className="p-2 rounded-full hover:bg-current/10 flex items-center justify-center transition-all shrink-0 text-theme-text-muted">
             <span className="material-symbols-outlined text-sm">close</span>
           </button>
         </div>
       )}
 
       {/* Greeting Section */}
-      <div className="flex justify-between items-start animate-fade-in-up">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-fade-in-up">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface mb-1 font-headline">
-            {getGreeting()}, Atelier
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] px-3 py-1 bg-primary/10 rounded-full border border-primary/20">Operational Pulse</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-theme-text italic leading-none">
+            {getGreeting()}, <span className="inline-block px-2 text-transparent bg-clip-text bg-gradient-to-r from-theme-text to-theme-text-muted">{user?.name?.split(' ')[0] || 'Atelier'}</span>
           </h1>
-          <p className="text-on-surface-variant font-medium">Here's how your shop is performing today.</p>
+          <p className="text-theme-text-muted font-bold tracking-tight text-sm mt-2">Intelligent oversight for Pristine Atelier's daily logistics.</p>
         </div>
-        <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
-          <Link href="/orders/new?type=pickup" className="flex items-center justify-center gap-2 px-6 py-2.5 premium-gradient text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-900/10 active:scale-95 shimmer-btn transition-all">
-            <span className="material-symbols-outlined text-lg">add</span>
-            New Pickup
+        <div className="flex flex-wrap gap-3">
+          <Link href="/orders/new?type=pickup" className="flex items-center justify-center gap-3 px-8 py-4 bg-theme-text text-theme-bg rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-theme-text/10 active:scale-95 transition-all hover:-translate-y-1">
+            <span className="material-symbols-outlined text-lg">add_circle</span>
+            New Order
           </Link>
-          <button className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest font-bold text-sm text-on-surface hover:bg-surface-container-low hover:shadow-md transition-all">
-            <span className="material-symbols-outlined text-lg">calendar_today</span>
-            Last 24 Hours
-          </button>
-          <button className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest font-bold text-sm text-on-surface hover:bg-surface-container-low hover:shadow-md transition-all">
-            <span className="material-symbols-outlined text-lg">download</span>
-            Report
+          <button className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-theme-border bg-theme-surface/30 backdrop-blur-md font-black text-[11px] uppercase tracking-widest text-theme-text-muted hover:text-theme-text hover:bg-theme-surface-container transition-all">
+            <span className="material-symbols-outlined text-lg">tune</span>
+            Filters
           </button>
         </div>
       </div>
 
       {/* Hero Stats Bento */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Large Stats Card — Revenue */}
-        <div className="md:col-span-2 lg:col-span-2 p-6 rounded-3xl bg-surface-container-lowest shadow-sm flex flex-col justify-between relative overflow-hidden group border border-outline-variant/10 card-hover animate-fade-in-up stagger-1">
-          <div className="relative z-10">
+        <div className="md:col-span-2 p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none group-hover:bg-primary/10 transition-colors duration-700"></div>
+          
+          <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined">payments</span>
-                  </div>
-                </div>
-                <h3 className="text-sm font-semibold text-on-surface-variant mb-1">Daily Revenue</h3>
-                <p className="text-4xl font-extrabold tracking-tighter text-on-surface font-headline animate-count-up">
+                <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-2">Daily Revenue Matrix</p>
+                <p className="text-5xl font-black tracking-tighter text-theme-text font-headline animate-count-up italic">
                   {formatCurrency(stats?.todayRevenue || 0)}
                 </p>
               </div>
-              <span className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
-                <span className="material-symbols-outlined text-xs">trending_up</span> +12.4%
-              </span>
+              <div className="flex flex-col items-end">
+                <span className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                  <span className="material-symbols-outlined text-sm">trending_up</span> +12.4%
+                </span>
+                <span className="text-[9px] font-bold text-theme-text-muted">vs. prev session</span>
+              </div>
             </div>
-            <div className="flex items-end gap-1.5 h-24">
-              {[0.5, 0.65, 0.45, 0.75, 1.0, 0.65, 0.85].map((h, i) => (
+            
+            <div className="flex items-end gap-2 h-20">
+              {[0.4, 0.6, 0.5, 0.8, 0.9, 0.7, 1.0].map((h, i) => (
                 <div 
                   key={i} 
-                  className={`flex-1 rounded-t-xl transition-all duration-500 bar-animate ${i === 6 ? 'primary-gradient shadow-lg shadow-primary/20' : 'bg-primary/10 group-hover:bg-primary/15'}`}
+                  className={`flex-1 rounded-t-xl transition-all duration-700 bar-animate ${i === 6 ? 'bg-primary shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'bg-white/5 opacity-50 group-hover:opacity-100'}`}
                   style={{ height: `${h * 100}%`, animationDelay: `${i * 100}ms` }}
                 ></div>
               ))}
             </div>
           </div>
-          <div className="absolute -right-12 -top-12 w-48 h-48 bg-emerald-50 rounded-full blur-3xl opacity-40 group-hover:opacity-60 group-hover:scale-125 transition-all duration-700"></div>
         </div>
 
         {/* Total Orders */}
-        <div className="p-6 rounded-3xl bg-surface-container-lowest shadow-sm flex flex-col justify-between border border-outline-variant/10 group hover:border-primary/20 transition-all card-hover animate-fade-in-up stagger-2">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-primary group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-emerald-100 transition-all duration-300">
-              <span className="material-symbols-outlined text-2xl">shopping_basket</span>
+        <div className="p-8 rounded-[2.5rem] glass-card-matte group flex flex-col justify-between overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[40px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div className="w-14 h-14 rounded-2xl bg-theme-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 border border-theme-border">
+              <span className="material-symbols-outlined text-3xl">shopping_basket</span>
             </div>
-            <span className="text-xs font-bold text-slate-400">Same as yesterday</span>
           </div>
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold text-on-surface-variant mb-1">Total Orders</h3>
-            <p className="text-3xl font-extrabold tracking-tighter text-on-surface font-headline">
+          <div className="mt-8 relative z-10">
+            <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-1">Total Throughput</p>
+            <p className="text-4xl font-black tracking-tighter text-theme-text font-headline italic">
               <AnimatedCounter value={stats?.todayOrders || 0} />
             </p>
+            <p className="text-[9px] font-bold text-emerald-500 mt-2 uppercase tracking-widest">Awaiting Induction: 4</p>
           </div>
         </div>
 
-        {/* Ready for Pickup — Green Hero Card */}
-        <div className="p-6 rounded-3xl primary-gradient text-white shadow-xl shadow-emerald-900/10 flex flex-col justify-between relative overflow-hidden group card-hover animate-fade-in-up stagger-3">
-          <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+        {/* Ready for Pickup Card */}
+        <div className="p-8 rounded-[2.5rem] glass-card-matte group flex flex-col justify-between overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[40px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
           <div className="flex justify-between items-start relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>notifications_active</span>
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:rotate-12 transition-transform duration-500 border border-emerald-500/20">
+              <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
             </div>
+            {stats?.pendingPickup > 0 && <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]"></span>}
           </div>
-          <div className="mt-4 relative z-10">
-            <h3 className="text-sm font-bold text-white/80 mb-1">Ready for Pickup</h3>
-            <p className="text-4xl font-extrabold tracking-tighter text-white font-headline">
+          <div className="mt-8 relative z-10">
+            <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-1">Ready for Rack</p>
+            <p className="text-4xl font-black tracking-tighter text-theme-text font-headline italic">
               <AnimatedCounter value={stats?.pendingPickup || 0} />
             </p>
-          </div>
-          <button className="mt-4 py-2 w-full bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition-all backdrop-blur-sm relative z-10 active:scale-95 flex items-center justify-center gap-1">
-            Notify Customers <span className="material-symbols-outlined text-sm">chevron_right</span>
-          </button>
-        </div>
-
-        {/* Avg. Turnaround */}
-        <div className="p-6 rounded-3xl bg-surface-container-lowest shadow-sm flex flex-col justify-between border border-outline-variant/10 group hover:border-primary/20 transition-all card-hover animate-fade-in-up stagger-4 lg:col-span-1 hidden lg:flex">
-          <div className="flex justify-between items-start">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-primary group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-emerald-100 transition-all duration-300">
-              <span className="material-symbols-outlined text-2xl">timer</span>
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold text-on-surface-variant mb-1">Avg. Turnaround</h3>
-            <p className="text-3xl font-extrabold tracking-tighter text-on-surface font-headline">18.2 <span className="text-lg">hrs</span></p>
+            <button className="mt-4 flex items-center gap-2 text-primary hover:text-emerald-400 text-[10px] font-black uppercase tracking-widest transition-colors">
+              Notify All <span className="material-symbols-outlined text-sm">send</span>
+            </button>
           </div>
         </div>
       </div>
@@ -222,92 +212,106 @@ export default function StoreAdmin({ user }) {
         {/* Recent Orders Section */}
         <div className="lg:col-span-2 space-y-6 animate-fade-in-up stagger-4">
           <div className="flex items-center justify-between px-2">
-            <h2 className="text-xl font-extrabold tracking-tight text-on-surface font-headline">Recent Orders</h2>
-            <Link href="/orders" className="text-primary text-sm font-bold hover:underline tracking-tight flex items-center gap-1 group">
-              View All Records
+            <h2 className="text-2xl font-black tracking-tighter text-theme-text font-headline italic">Recent Deliveries</h2>
+            <Link href="/orders" className="text-primary text-[10px] font-black uppercase tracking-widest hover:text-emerald-400 transition-colors flex items-center gap-2 group">
+              Audit Logs
               <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
             </Link>
           </div>
-          <div className="bg-surface-container-lowest rounded-3xl shadow-sm overflow-x-auto border border-outline-variant/10">
+          <div className="glass-panel rounded-[2.5rem] overflow-hidden">
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant">Order ID</th>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant">Customer</th>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant">Garment Type</th>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant">Status</th>
-                  <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-on-surface-variant text-right">Amount</th>
+                <tr className="bg-theme-surface-container/30 border-b border-theme-border">
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Order ID</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Entity</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Allocation</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Vector</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted text-right">Valuation</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100/50">
-                {stats?.recentOrders?.map((order, idx) => (
-                  <tr key={order.id} className="hover:bg-emerald-50/30 transition-all group cursor-pointer row-enter" style={{ animationDelay: `${idx * 80}ms` }}>
-                    <td className="px-6 py-5">
-                      <Link href={`/orders/${order.id}`} className="text-sm font-bold text-emerald-800 group-hover:text-emerald-600 transition-colors">
-                        {order.order_number}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center text-[10px] font-bold text-emerald-700 uppercase shadow-inner">
-                          {order.customer_name?.charAt(0) || 'W'}
+              <tbody className="divide-y divide-theme-border">
+                {(!stats?.recentOrders || stats.recentOrders.length === 0) ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="opacity-20">
+                      <td className="px-8 py-6"><div className="h-4 w-24 bg-theme-surface-container rounded animate-pulse"></div></td>
+                      <td className="px-8 py-6"><div className="h-4 w-32 bg-theme-surface-container rounded animate-pulse"></div></td>
+                      <td className="px-8 py-6"><div className="h-4 w-20 bg-theme-surface-container rounded animate-pulse"></div></td>
+                      <td className="px-8 py-6"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse"></div></td>
+                      <td className="px-8 py-6 text-right"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse ml-auto"></div></td>
+                    </tr>
+                  ))
+                ) : (
+                  stats.recentOrders.map((order, idx) => (
+                    <tr key={order.id} className="hover:bg-white/[0.02] transition-all group cursor-pointer row-enter" style={{ animationDelay: `${idx * 50}ms` }}>
+                      <td className="px-8 py-6">
+                        <Link href={`/orders/${order.id}`} className="text-[11px] font-black text-theme-text tracking-widest group-hover:text-primary transition-colors">
+                          {order.order_number}
+                        </Link>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-[10px] font-black text-theme-text-muted uppercase shadow-inner group-hover:border-primary/30 group-hover:text-primary transition-all">
+                            {order.customer_name?.charAt(0) || 'W'}
+                          </div>
+                          <span className="text-[11px] font-bold text-theme-text-muted group-hover:text-theme-text transition-colors">{order.customer_name || 'Walk-in'}</span>
                         </div>
-                        <span className="text-sm font-medium text-on-surface">{order.customer_name || 'Walk-in'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-sm text-on-surface-variant">
-                      {order.item_count || 1}x Garment
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${
-                        order.status === 'ready' ? 'bg-emerald-100 text-emerald-700' : 
-                        order.status === 'processing' ? 'bg-amber-100 text-amber-700' : 
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-right font-bold text-sm text-on-surface whitespace-nowrap">
-                      {formatCurrency(order.total_amount)}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-8 py-6 text-[10px] font-black text-theme-text-muted uppercase tracking-widest">
+                        {order.item_count || 1} Units
+                      </td>
+                      <td className="px-8 py-6">
+                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${
+                          order.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                          order.status === 'processing' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                          'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-8 py-6 text-right font-black text-[11px] text-theme-text tracking-tight">
+                        {formatCurrency(order.total_amount)}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
         {/* Sidebar: Staff Leaderboard & Daily Goal */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Staff Leaderboard */}
           <section className="animate-fade-in-up stagger-5">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <h2 className="text-lg font-extrabold tracking-tight text-on-surface font-headline">Staff Leaderboard</h2>
+            <div className="flex items-center justify-between mb-6 px-2">
+              <h2 className="text-xl font-black tracking-tighter text-theme-text font-headline italic">Performance</h2>
               <button 
                 onClick={() => setShowAddStaffModal(true)}
-                className="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                className="w-10 h-10 rounded-xl bg-theme-surface-container border border-theme-border hover:border-primary/50 text-primary flex items-center justify-center transition-all shadow-sm"
               >
-                <span className="material-symbols-outlined text-[16px]">person_add</span>
-                Add Staff
+                <span className="material-symbols-outlined text-[20px]">person_add</span>
               </button>
             </div>
-            <div className="bg-surface-container-lowest rounded-3xl shadow-sm border border-outline-variant/10 p-6 space-y-5">
+            <div className="glass-panel rounded-[2.5rem] p-8 space-y-6">
               {[
-                { name: 'Sarah Connor', role: 'Head Presser', score: 98 },
-                { name: 'David Chen', role: 'Quality Control', score: 94 },
-                { name: 'Elena Rodriguez', role: 'Front Desk', score: 92 },
+                { name: 'Sarah Connor', role: 'Head Presser', score: 98, trend: 'up' },
+                { name: 'David Chen', role: 'Quality Control', score: 94, trend: 'stable' },
+                { name: 'Elena Rodriguez', role: 'Front Desk', score: 92, trend: 'up' },
               ].map((staff, i) => (
-                <div key={i} className="flex items-center gap-4 group animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center text-emerald-700 font-bold text-xs shadow-inner">
-                    {staff.name.charAt(0)}
+                <div key={i} className="flex items-center gap-5 group animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-2xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-primary font-black text-[11px] shadow-inner group-hover:border-primary/50 transition-all duration-500">
+                      {staff.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    {staff.trend === 'up' && <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-theme-surface shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-on-surface">{staff.name}</p>
-                    <p className="text-[10px] text-on-surface-variant">{staff.role}</p>
+                    <p className="text-sm font-black text-theme-text group-hover:text-primary transition-colors tracking-tight">{staff.name}</p>
+                    <p className="text-[10px] text-theme-text-muted font-bold uppercase tracking-widest opacity-60">{staff.role}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-black text-emerald-600">{staff.score}%</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Efficiency</p>
+                    <p className="text-2xl font-black text-theme-text italic leading-none">{staff.score}%</p>
+                    <p className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest mt-1">Efficiency</p>
                   </div>
                 </div>
               ))}
@@ -316,33 +320,44 @@ export default function StoreAdmin({ user }) {
 
           {/* Daily Order Goal */}
           <section className="animate-fade-in-up stagger-6">
-            <div className="p-6 rounded-3xl bg-surface-container-high border border-outline-variant/10 card-hover">
-              <div className="flex justify-between items-start mb-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Daily Order Goal</p>
-                <span className="text-2xl font-black text-on-surface font-headline">71%</span>
+            <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Target Achievement</p>
+                   <h3 className="text-3xl font-black text-theme-text font-headline italic">71%</h3>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                  <span className="material-symbols-outlined text-xl">flag</span>
+                </div>
               </div>
-              <div className="w-full bg-white/50 h-2.5 rounded-full overflow-hidden mb-3">
-                <div className="primary-gradient h-full rounded-full shadow-[0_0_8px_rgba(34,197,94,0.3)] progress-animate" style={{ width: '71%' }}></div>
+              <div className="w-full bg-theme-surface-container h-2.5 rounded-full overflow-hidden mb-4 border border-theme-border">
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] progress-animate relative" style={{ width: '71%' }}>
+                   <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.1)_50%,rgba(255,255,255,0.1)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[shimmer_2s_linear_infinite]"></div>
+                </div>
               </div>
-              <p className="text-[11px] text-emerald-700 font-medium">
-                {stats?.todayOrders || 0}/200 Orders processed today. Keep pushing!
+              <p className="text-[11px] text-theme-text-muted font-bold tracking-tight">
+                <span className="text-theme-text">{stats?.todayOrders || 0}</span> / 200 Orders processed today.
               </p>
             </div>
           </section>
 
           {/* Inventory Status */}
           <section className="animate-fade-in-up stagger-7">
-            <div className="p-6 rounded-3xl bg-surface-container-high border border-outline-variant/10 card-hover">
-              <div className="flex justify-between items-start mb-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Stock Integrity</p>
-                <span className={`text-2xl font-black font-headline ${(stats?.stockHealth || 0) < 60 ? 'text-amber-600' : 'text-emerald-600'}`}>{stats?.stockHealth ?? 0}%</span>
+            <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Stock Integrity</p>
+                   <h3 className={`text-3xl font-black font-headline italic ${(stats?.stockHealth || 0) < 60 ? 'text-amber-500' : 'text-emerald-500'}`}>{stats?.stockHealth ?? 0}%</h3>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-theme-surface-container flex items-center justify-center text-theme-text-muted border border-theme-border">
+                  <span className="material-symbols-outlined text-xl">{(stats?.inventoryAlerts || 0) > 0 ? 'inventory' : 'verified'}</span>
+                </div>
               </div>
-              <div className="w-full bg-white/50 h-2.5 rounded-full overflow-hidden mb-3">
+              <div className="w-full bg-theme-surface-container h-2.5 rounded-full overflow-hidden mb-4 border border-theme-border">
                 <div className={`h-full rounded-full shadow-sm progress-animate ${(stats?.stockHealth || 0) < 60 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${stats?.stockHealth ?? 0}%` }}></div>
               </div>
-              <p className={`text-[11px] font-medium flex items-center gap-1 ${(stats?.inventoryAlerts || 0) > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
-                <span className="material-symbols-outlined text-[14px]">{(stats?.inventoryAlerts || 0) > 0 ? 'warning' : 'check_circle'}</span>
-                {(stats?.inventoryAlerts || 0) > 0 ? `${stats.lowStockItems} running low.` : 'All stock levels healthy.'}
+              <p className={`text-[11px] font-bold tracking-tight ${(stats?.inventoryAlerts || 0) > 0 ? 'text-amber-500' : 'text-theme-text-muted'}`}>
+                {(stats?.inventoryAlerts || 0) > 0 ? `${stats.lowStockItems} sectors require replenishment.` : 'All production material vectors are stable.'}
               </p>
             </div>
           </section>
@@ -350,63 +365,76 @@ export default function StoreAdmin({ user }) {
       </div>
 
       {/* Bottom Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-up stagger-7">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-up stagger-7">
         {/* Solvent Levels */}
-        <div className="p-6 rounded-3xl bg-surface-container-lowest shadow-sm border border-outline-variant/10 card-hover">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">water_drop</span>
+        <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-8">
+            <div className="w-14 h-14 rounded-2xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-primary group-hover:bg-primary/5 transition-all">
+              <span className="material-symbols-outlined text-3xl">water_drop</span>
             </div>
-            <h3 className="text-sm font-bold text-on-surface">Solvent Levels</h3>
+            <div className="text-right">
+               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Solvent Integrity</p>
+               <h3 className="text-3xl font-black text-theme-text font-headline italic">32%</h3>
+            </div>
           </div>
           <div className="flex items-end justify-between">
-            <div>
-              <p className="text-3xl font-black text-on-surface font-headline">32%</p>
-              <p className="text-xs font-bold text-amber-600 mt-1">Refill Soon</p>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span>
+              <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Low Level Alert</p>
             </div>
-            <div className="flex items-end gap-1 h-12">
-              {[0.6, 0.4, 0.3].map((h, i) => (
-                <div key={i} className="w-3 bg-primary/20 rounded-t-md" style={{ height: `${h * 100}%` }}></div>
+            <div className="flex items-end gap-1.5 h-12">
+              {[0.6, 0.45, 0.32].map((h, i) => (
+                <div key={i} className={`w-3 rounded-t-lg transition-all duration-1000 ${i === 2 ? 'bg-amber-500/40' : 'bg-primary/10'}`} style={{ height: `${h * 100}%` }}></div>
               ))}
             </div>
+          </div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-amber-500/20">
+             <div className="h-full bg-amber-500 w-[32%] shadow-[0_0_15px_rgba(245,158,11,0.5)]"></div>
           </div>
         </div>
 
         {/* Packaging Stock */}
-        <div className="p-6 rounded-3xl bg-surface-container-lowest shadow-sm border border-outline-variant/10 card-hover">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">inventory_2</span>
+        <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-8">
+            <div className="w-14 h-14 rounded-2xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-primary group-hover:bg-primary/5 transition-all">
+              <span className="material-symbols-outlined text-3xl">inventory_2</span>
             </div>
-            <h3 className="text-sm font-bold text-on-surface">Packaging Stock</h3>
+            <div className="text-right">
+               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Packaging Reserve</p>
+               <h3 className="text-3xl font-black text-emerald-500 font-headline italic">HIGH</h3>
+            </div>
           </div>
           <div className="flex items-end justify-between">
-            <div>
-              <p className="text-3xl font-black text-on-surface font-headline">High</p>
-              <p className="text-xs font-bold text-emerald-600 mt-1">Next delivery 14 Oct</p>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Supply Validated</p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-              <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
             </div>
           </div>
+          <p className="mt-4 text-[9px] font-black text-theme-text-muted uppercase tracking-widest opacity-60">Replenishment ETA: 14 OCT 2024</p>
         </div>
 
         {/* Energy Efficiency */}
-        <div className="p-6 rounded-3xl bg-surface-container-lowest shadow-sm border border-outline-variant/10 card-hover">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">bolt</span>
+        <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+          <div className="flex items-center justify-between mb-8">
+            <div className="w-14 h-14 rounded-2xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-primary group-hover:bg-primary/5 transition-all">
+              <span className="material-symbols-outlined text-3xl">bolt</span>
             </div>
-            <h3 className="text-sm font-bold text-on-surface">Energy Efficiency</h3>
+            <div className="text-right">
+               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Energy Efficiency</p>
+               <h3 className="text-3xl font-black text-theme-text font-headline italic">A+</h3>
+            </div>
           </div>
           <div className="flex items-end justify-between">
-            <div>
-              <p className="text-3xl font-black text-on-surface font-headline">A+</p>
-              <p className="text-xs font-bold text-emerald-600 mt-1">Eco-mode active</p>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Eco-Optimization Active</p>
             </div>
-            <div className="flex items-end gap-1 h-12">
-              {[0.6, 0.8, 1.0].map((h, i) => (
-                <div key={i} className="w-3 bg-primary/30 rounded-t-md" style={{ height: `${h * 100}%` }}></div>
+            <div className="flex items-end gap-1.5 h-12">
+              {[0.4, 0.7, 0.9, 1.0].map((h, i) => (
+                <div key={i} className="w-2.5 bg-primary/20 rounded-full" style={{ height: `${h * 100}%` }}></div>
               ))}
             </div>
           </div>
@@ -414,79 +442,90 @@ export default function StoreAdmin({ user }) {
       </div>
 
       {/* Footer */}
-      <footer className="flex items-center justify-between pt-6 border-t border-emerald-100/10">
-        <p className="text-xs text-slate-400 font-medium">© 2024 CleanFlow Enterprise. All systems operational.</p>
-        <div className="flex gap-4">
-          <a className="text-xs font-bold text-slate-500 hover:text-primary transition-colors" href="#">Privacy</a>
-          <a className="text-xs font-bold text-slate-500 hover:text-primary transition-colors" href="#">API Docs</a>
+      <footer className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-theme-border gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 rounded-lg bg-theme-surface-container border border-theme-border flex items-center justify-center text-theme-text-muted">
+            <span className="material-symbols-outlined text-sm">terminal</span>
+          </div>
+          <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.3em]">© 2024 CleanFlow Enterprise • v2.4.0-matrix</p>
+        </div>
+        <div className="flex items-center gap-8">
+          <a className="text-[10px] font-black text-theme-text-muted hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-2" href="#">
+            <span className="w-1 h-1 rounded-full bg-theme-text-muted"></span>
+            Privacy Protocol
+          </a>
+          <a className="text-[10px] font-black text-theme-text-muted hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-2" href="#">
+            <span className="w-1 h-1 rounded-full bg-theme-text-muted"></span>
+            System API
+          </a>
         </div>
       </footer>
 
       {/* Add Staff Modal */}
       {showAddStaffModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-surface-container-lowest rounded-3xl w-full max-w-md shadow-2xl border border-outline-variant/20 overflow-hidden animate-fade-in-up">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <span className="material-symbols-outlined">person_add</span>
+        <div className="fixed inset-0 bg-theme-bg/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="glass-panel bg-theme-surface rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-fade-in-up">
+            <div className="p-8 border-b border-theme-border flex justify-between items-center bg-theme-surface-container/30">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                  <span className="material-symbols-outlined text-2xl">person_add</span>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-on-surface text-lg">Invite Staff Member</h3>
-                  <p className="text-xs font-medium text-slate-500">Provide their details to generate a PIN.</p>
+                  <h3 className="font-black text-theme-text text-xl tracking-tighter italic">Provision Staff</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-theme-text-muted">Generate secure access credentials</p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowAddStaffModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200/50 text-slate-400 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 text-theme-text-muted transition-colors"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
             
-            <div className="p-6 space-y-5">
+            <div className="p-8 space-y-6">
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1 block">Full Name</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Operator Identity</label>
                 <input 
                   type="text" 
                   autoFocus
-                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300" 
-                  placeholder="e.g. Jane Doe"
+                  className="w-full bg-theme-surface-container border border-theme-border rounded-2xl p-4 text-sm font-bold text-theme-text focus:border-primary/50 outline-none transition-all placeholder:text-theme-text-muted/30" 
+                  placeholder="e.g. Sarah Connor"
                   value={newStaff.name}
                   onChange={e => setNewStaff({...newStaff, name: e.target.value})}
                 />
               </div>
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1 block">Email Address</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Enterprise Mailbox</label>
                 <input 
                   type="email" 
-                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all placeholder:text-slate-300" 
-                  placeholder="name@cleanflow.com"
+                  className="w-full bg-theme-surface-container border border-theme-border rounded-2xl p-4 text-sm font-bold text-theme-text focus:border-primary/50 outline-none transition-all placeholder:text-theme-text-muted/30" 
+                  placeholder="operator@cleanflow.ai"
                   value={newStaff.email}
                   onChange={e => setNewStaff({...newStaff, email: e.target.value})}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1 block">Role</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Sector Assignment</label>
                   <select 
-                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all appearance-none"
+                    className="w-full bg-theme-surface-container border border-theme-border rounded-2xl p-4 text-sm font-bold text-theme-text focus:border-primary/50 outline-none transition-all appearance-none"
                     value={newStaff.role}
                     onChange={e => setNewStaff({...newStaff, role: e.target.value})}
                   >
-                    <option value="Front Desk">Front Desk</option>
-                    <option value="Presser">Presser</option>
-                    <option value="Quality Control">Quality Control</option>
-                    <option value="Delivery Manager">Delivery Manager</option>
+                    <option value="Front Desk">Logistics Desk</option>
+                    <option value="Presser">Production Press</option>
+                    <option value="Quality Control">Integrity Check</option>
+                    <option value="Delivery Manager">Vector Fleet</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1 block">Login PIN</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Security PIN</label>
                   <input 
                     type="text" 
                     maxLength={4}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-black text-center tracking-widest focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all font-mono" 
-                    placeholder="1234"
+                    className="w-full bg-theme-surface-container border border-theme-border rounded-2xl p-4 text-sm font-black text-theme-text text-center tracking-[0.5em] focus:border-primary/50 outline-none transition-all font-mono" 
+                    placeholder="0000"
                     value={newStaff.pin}
                     onChange={e => setNewStaff({...newStaff, pin: e.target.value.replace(/\D/g,'')})}
                   />
@@ -494,12 +533,12 @@ export default function StoreAdmin({ user }) {
               </div>
             </div>
             
-            <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+            <div className="p-8 border-t border-theme-border flex justify-end gap-4 bg-theme-surface-container/30">
               <button 
                 onClick={() => setShowAddStaffModal(false)}
-                className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-200/50 transition-colors"
+                className="px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-theme-text-muted hover:text-theme-text transition-colors"
               >
-                Cancel
+                Abort
               </button>
               <button 
                 onClick={async () => {
@@ -522,10 +561,9 @@ export default function StoreAdmin({ user }) {
                   setNewStaff({ name: '', role: 'Front Desk', email: '', pin: '' });
                 }}
                 disabled={!newStaff.name || newStaff.pin.length < 4}
-                className="px-6 py-2.5 rounded-xl text-sm font-bold text-white primary-gradient shadow-md shadow-primary/20 hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none transition-all flex items-center gap-2"
+                className="px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-theme-bg bg-theme-text shadow-xl shadow-theme-text/10 disabled:opacity-20 disabled:pointer-events-none active:scale-95 transition-all flex items-center gap-2"
               >
-                <span className="material-symbols-outlined text-[16px]">send</span>
-                Send Invite
+                Execute Provision
               </button>
             </div>
           </div>
@@ -535,26 +573,26 @@ export default function StoreAdmin({ user }) {
       {/* Staff Credentials Success Modal */}
       {staffCredentials && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
-          <div className="bg-white rounded-[2.5rem] w-full max-md shadow-2xl border border-emerald-500/20 overflow-hidden animate-fade-in-up relative">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -translate-y-16 translate-x-16 opacity-60"></div>
+          <div className="bg-theme-surface rounded-[2.5rem] w-full max-md shadow-2xl border border-emerald-500/20 overflow-hidden animate-fade-in-up relative">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-theme-surface-container rounded-full blur-3xl -translate-y-16 translate-x-16 opacity-60"></div>
              
              <div className="p-8 relative z-10 text-center">
                 <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto mb-6 shadow-inner animate-bounce-subtle">
                    <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>lock_open</span>
                 </div>
                 
-                <h2 className="text-2xl font-black text-on-surface font-headline uppercase tracking-tighter mb-2">Staff Registered!</h2>
-                <p className="text-sm font-medium text-slate-500 mb-8 italic">Access PIN confirmed for <span className="text-emerald-700 font-bold">{staffCredentials.name}</span></p>
+                <h2 className="text-2xl font-black text-theme-text font-headline uppercase tracking-tighter mb-2">Staff Registered!</h2>
+                <p className="text-sm font-medium text-theme-text-muted mb-8 italic">Access PIN confirmed for <span className="text-theme-text font-bold">{staffCredentials.name}</span></p>
                 
                 <div className="space-y-4 mb-8 text-left">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Login Email/ID</p>
-                    <p className="text-sm font-bold text-on-surface">{staffCredentials.email || 'Assigned to Store'}</p>
+                  <div className="p-4 bg-theme-surface-container rounded-2xl border border-theme-border group">
+                    <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-1">Login Email/ID</p>
+                    <p className="text-sm font-bold text-theme-text">{staffCredentials.email || 'Assigned to Store'}</p>
                   </div>
-                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 group">
+                  <div className="p-4 bg-theme-surface-container rounded-2xl border border-theme-border group">
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Assigned Access PIN</p>
                     <div className="flex justify-between items-center">
-                      <p className="text-2xl font-black text-emerald-700 tracking-[0.5em]">{staffCredentials.pin}</p>
+                      <p className="text-2xl font-black text-theme-text tracking-[0.5em]">{staffCredentials.pin}</p>
                       <button className="text-emerald-400 hover:text-emerald-600 transition-colors">
                         <span className="material-symbols-outlined text-sm">content_copy</span>
                       </button>
@@ -564,7 +602,7 @@ export default function StoreAdmin({ user }) {
                 
                 <button 
                   onClick={() => setStaffCredentials(null)}
-                  className="w-full py-4 primary-gradient text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                  className="w-full py-4 bg-theme-text text-theme-bg rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-sm active:scale-95 transition-all"
                 >
                   Confirm & Close
                 </button>

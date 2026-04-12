@@ -210,6 +210,29 @@ export default function OrderDetail({ params }) {
     }
   };
 
+  const handleReschedule = async () => {
+    const res = await fetch(`/api/orders/${id}/reschedule`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rescheduleData),
+    });
+
+    if (res.ok) {
+      // Refresh local state with new dates
+      setOrder({ 
+        ...order, 
+        pickup_date: rescheduleData.pickup_date, 
+        delivery_date: rescheduleData.delivery_date,
+        pickup_status: 'pending', // Reset status as it's a new appointment
+        delivery_status: 'pending'
+      });
+      setShowRescheduleModal(false);
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Reschedule failed');
+    }
+  };
+
   const handlePrintAllTags = () => {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`

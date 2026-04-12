@@ -55,57 +55,100 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { store_name, city, admin_name, admin_email, admin_phone, subscription_tier } = body;
+    const { store_name, city, subscription_tier, admin_name, admin_email, owner_id, manager_name, manager_email } = body;
 
-    // --- Tier Limit Enforcement ---
-    const bypassTierCheck = payload.id === 1;
+    const isSuperadmin = payload.id === 1;
 
-    if (!bypassTierCheck) {
-      const ownerStoreRes = await query(
-        `SELECT s.subscription_tier, (SELECT count(*) FROM stores WHERE owner_id = $1) as store_count FROM stores s WHERE s.owner_id = $1 LIMIT 1`,
-        [payload.id]
-      );
-      const ownerTier = ownerStoreRes.rows[0]?.subscription_tier || 'software_only';
-      const currentStoreCount = parseInt(ownerStoreRes.rows[0]?.store_count || '0', 10);
-
-      const check = canCreateStore(ownerTier, currentStoreCount);
-      if (!check.allowed) {
-        return NextResponse.json({ error: check.reason }, { status: 403 });
-      }
-    }
-    // --- End Tier Limit Enforcement ---
-
-    if (!store_name || !city || !admin_name || !admin_email) {
+    if (!store_name || !city) {
       return NextResponse.json({ error: 'Missing required configuration fields.' }, { status: 400 });
     }
-
-    // Generate and hash credentials for the new tenant admin
-    const tempPassword = generatePassword();
-    const tempPin = generatePin();
-    
-    const hashedPassword = await hashPassword(tempPassword);
-    const hashedPin = await hashPassword(tempPin);
 
     const client = await getClient();
     
     try {
       await client.query('BEGIN');
 
-      // 1. Create the store
+      let targetOwnerId = owner_id;
+      let tempPassword = null;
+      let tempPin = null;
+      let managerDetails = null;
+
+      // 1. Handle Owner Creation (Superadmin only - for new business onboarding)
+      if (isSuperadmin && !targetOwnerId) {
+        if (!admin_email || !admin_name) {
+          throw new Error('Owner details (name and email) required for new provisioning.');
+        }
+
+        // Check if user exists
+        const userCheck = await client.query('SELECT id FROM users WHERE email = $1', [admin_email]);
+        if (userCheck.rows.length > 0) {
+          targetOwnerId = userCheck.rows[0].id;
+        } else {
+          tempPassword = generatePassword();
+          tempPin = generatePin();
+          const pHash = await hashPassword(tempPassword);
+          const pinHash = await hashPassword(tempPin);
+
+          const userRes = await client.query(
+            `INSERT INTO users (name, email, role, password_hash, pin_hash) VALUES ($1, $2, 'owner', $3, $4) RETURNING id`,
+            [admin_name, admin_email, pHash, pinHash]
+          );
+          targetOwnerId = userRes.rows[0].id;
+        }
+      } else if (!isSuperadmin) {
+        targetOwnerId = payload.id;
+      }
+
+      if (!targetOwnerId) {
+        throw new Error('Target owner identification failed.');
+      }
+
+      // 2. Tier Limit Enforcement (Non-superadmin)
+      if (!isSuperadmin) {
+        const ownerStoreRes = await client.query(
+          `SELECT s.subscription_tier, (SELECT count(*) FROM stores WHERE owner_id = $1) as store_count FROM stores s WHERE s.owner_id = $1 LIMIT 1`,
+          [targetOwnerId]
+        );
+        const ownerTier = ownerStoreRes.rows[0]?.subscription_tier || 'software_only';
+        const currentStoreCount = parseInt(ownerStoreRes.rows[0]?.store_count || '0', 10);
+
+        const check = canCreateStore(ownerTier, currentStoreCount);
+        if (!check.allowed) {
+          throw new Error(check.reason);
+        }
+      }
+
+      // 3. Create the store
       const storeRes = await client.query(
         `INSERT INTO stores (store_name, city, owner_id, status, subscription_tier, subscription_status, last_activity) 
          VALUES ($1, $2, $3, 'active', $4, 'trial', NOW()) RETURNING id`,
-        [store_name, city, payload.id, subscription_tier || 'software_only']
+        [store_name, city, targetOwnerId, subscription_tier || 'software_only']
       );
       const newStoreId = storeRes.rows[0].id;
 
-      // 2. Create the Admin/Manager user for this store
-      await client.query(
-        `INSERT INTO users (name, email, phone, password_hash, pin_hash, role, store_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [admin_name, admin_email, admin_phone || '', hashedPassword, hashedPin, 'manager', newStoreId]
-      );
+      // Update the user's primary store if they don't have one
+      await client.query('UPDATE users SET store_id = $1 WHERE id = $2 AND store_id IS NULL', [newStoreId, targetOwnerId]);
 
-      // 3. Populate default pricing templates for the new store
+      // 4. Handle Manager Provisioning (Optional)
+      if (manager_email && manager_name) {
+        const managerPassword = generatePassword();
+        const managerPin = generatePin();
+        const pHash = await hashPassword(managerPassword);
+        const pinHash = await hashPassword(managerPin);
+
+        await client.query(
+          `INSERT INTO users (name, email, role, store_id, password_hash, pin_hash) VALUES ($1, $2, 'manager', $3, $4, $5)`,
+          [manager_name, manager_email, newStoreId, pHash, pinHash]
+        );
+        managerDetails = {
+          name: manager_name,
+          email: manager_email,
+          tempPin: managerPin,
+          tempPassword: managerPassword
+        };
+      }
+
+      // 5. Populate default pricing templates for the new store
       for (const p of defaultPricing) {
         await client.query(
           `INSERT INTO pricing (garment_type, service_type, price, store_id) VALUES ($1, $2, $3, $4)`,
@@ -113,7 +156,7 @@ export async function POST(req) {
         );
       }
 
-      // 4. Populate default inventory templates for the new store
+      // 6. Populate default inventory templates for the new store
       for (const inv of defaultInventory) {
         await client.query(
           `INSERT INTO inventory (item_name, quantity, unit, reorder_level, store_id) VALUES ($1, $2, $3, $4, $5)`,
@@ -127,27 +170,27 @@ export async function POST(req) {
         success: true,
         store_id: newStoreId,
         store_name,
+        admin_email: admin_email || payload.email,
         tempPassword,
-        tempPin
+        tempPin,
+        manager: managerDetails
       }, { status: 201 });
 
     } catch (err) {
       await client.query('ROLLBACK');
-      throw err;
+      console.error('API Error details:', err);
+      return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 400 });
     } finally {
       client.release();
     }
 
   } catch (error) {
-    console.error('API Error:', error);
-    if (error.message && error.message.includes('unique constraint')) {
-      return NextResponse.json({ error: 'That email is already registered.' }, { status: 400 });
-    }
-      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Core API Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('cleanflow_session')?.value;
@@ -158,42 +201,73 @@ export async function GET() {
 
     const payload = await verifyToken(token);
 
-    // Owners and managers can list stores
     if (!payload || (payload.role !== 'owner' && payload.role !== 'manager')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const isSaasOwner = payload.id === 1;
+    const { searchParams } = new URL(request.url);
+    const isHierarchical = searchParams.get('hierarchical') === 'true';
 
+    if (isSaasOwner && isHierarchical) {
+      // Superadmin sees all owners and their stores - ONLY for cluster management view
+      const ownersRes = await query(`
+        SELECT 
+          u.id as owner_id, 
+          u.name as name, 
+          u.email as email, 
+          u.phone as phone,
+          u.created_at,
+          (SELECT subscription_tier FROM stores WHERE owner_id = u.id ORDER BY created_at ASC LIMIT 1) as tier,
+          (SELECT COUNT(*) FROM stores WHERE owner_id = u.id) as store_count,
+          (SELECT COALESCE(SUM(total_amount), 0) FROM orders o JOIN stores s ON o.store_id = s.id WHERE s.owner_id = u.id AND o.payment_status = 'paid') as total_revenue
+        FROM users u
+        WHERE u.role = 'owner' AND u.id != 1
+        ORDER BY u.created_at DESC
+      `);
+
+      const storesRes = await query(`
+        SELECT s.*, 
+               (SELECT count(*) FROM orders WHERE store_id = s.id) as order_count,
+               (SELECT COALESCE(sum(total_amount), 0) FROM orders WHERE store_id = s.id AND payment_status = 'paid') as total_revenue
+        FROM stores s
+        ORDER BY s.created_at DESC
+      `);
+
+      const owners = ownersRes.rows.map(owner => ({
+        ...owner,
+        stores: storesRes.rows.filter(s => s.owner_id === owner.owner_id)
+      }));
+
+      return NextResponse.json(owners);
+    }
+
+    // Regular owners/managers see their own stores flat
     let queryStr;
     let queryParams;
 
     if (payload.role === 'manager') {
-      // Manager only sees their own store
       queryStr = `
         SELECT s.*,
                (SELECT count(*) FROM orders WHERE store_id = s.id) as order_count,
                (SELECT COALESCE(sum(total_amount), 0) FROM orders WHERE store_id = s.id AND payment_status = 'paid') as total_revenue
         FROM stores s
         WHERE s.id = $1
-        ORDER BY s.created_at DESC
       `;
       queryParams = [payload.store_id];
     } else {
-      // Owner sees all their stores (or overall if SaaS root)
       queryStr = `
         SELECT s.*,
                (SELECT count(*) FROM orders WHERE store_id = s.id) as order_count,
                (SELECT COALESCE(sum(total_amount), 0) FROM orders WHERE store_id = s.id AND payment_status = 'paid') as total_revenue
         FROM stores s
-        WHERE ($1::boolean = TRUE) OR (s.owner_id = $2)
+        WHERE s.owner_id = $1
         ORDER BY s.created_at DESC
       `;
-      queryParams = [isSaasOwner, payload.id];
+      queryParams = [payload.id];
     }
 
     const res = await query(queryStr, queryParams);
-
     return NextResponse.json(res.rows);
 
   } catch (error) {

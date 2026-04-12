@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useUser } from '@/lib/UserContext';
 import { useRouter } from 'next/navigation';
 
@@ -91,10 +92,15 @@ export default function InductionPage() {
   return (
     <div className="p-4 lg:p-8 space-y-8 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-4xl font-black text-on-surface uppercase tracking-tight font-headline">Front Desk Induction</h1>
-          <p className="text-on-surface-variant font-medium">Process WhatsApp collections and assign physical tags/bags.</p>
+      <div className="flex justify-between items-end gap-6">
+        <div className="flex items-center gap-4">
+          <Link href="/operations" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors shrink-0 mb-1">
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+          </Link>
+          <div>
+            <h1 className="text-4xl font-black text-on-surface uppercase tracking-tight font-headline">Front Desk Induction</h1>
+            <p className="text-on-surface-variant font-medium">Process WhatsApp collections and assign physical tags/bags.</p>
+          </div>
         </div>
         <div className="bg-emerald-50 text-emerald-700 px-6 py-3 rounded-2xl border border-emerald-100 flex items-center gap-3">
           <span className="material-symbols-outlined text-lg animate-pulse">pending_actions</span>

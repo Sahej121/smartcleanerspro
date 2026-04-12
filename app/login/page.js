@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
+import { normalizeTier } from '@/lib/tier-config';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -17,8 +18,8 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) router.push('/');
-  }, [user, router]);
+    if (user && !loading) router.push('/');
+  }, [user, router, loading]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -120,7 +121,7 @@ export default function LoginPage() {
 
               <button 
                 type="submit" 
-                className="w-full primary-gradient text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group shimmer-btn"
+                className="w-full primary-gradient text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group"
                 disabled={loading}
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
@@ -176,7 +177,7 @@ export default function LoginPage() {
 
               <button 
                 type="submit" 
-                className="w-full primary-gradient text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group shimmer-btn"
+                className="w-full primary-gradient text-white py-5 rounded-[2rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group"
                 disabled={loading}
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">

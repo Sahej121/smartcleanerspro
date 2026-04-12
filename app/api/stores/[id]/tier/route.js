@@ -20,15 +20,28 @@ export async function PATCH(req, { params }) {
 
     const { id } = await params;
     const body = await req.json();
-    const { tier } = body;
+    const { tier, payment_confirmed } = body;
 
-    const validTiers = ['starter', 'growth', 'pro'];
+    const validTiers = ['software_only', 'hardware_bundle', 'enterprise'];
     if (!tier || !validTiers.includes(tier)) {
-      return NextResponse.json({ error: 'Invalid tier. Must be starter, growth, or pro.' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid tier. Must be software_only, hardware_bundle, or enterprise.' }, { status: 400 });
     }
 
-    // Verify the store belongs to this owner
-    const storeRes = await query('SELECT * FROM stores WHERE id = $1 AND owner_id = $2', [id, payload.id]);
+    const isSuperadmin = payload.id === 1;
+
+    // If regular owner, demand "payment"
+    if (!isSuperadmin && !payment_confirmed) {
+      return NextResponse.json({ error: 'Payment required for subscription upgrade.' }, { status: 402 });
+    }
+
+    // Verify the store belongs to this owner (superadmin bypasses this check)
+    let storeRes;
+    if (isSuperadmin) {
+      storeRes = await query('SELECT * FROM stores WHERE id = $1', [id]);
+    } else {
+      storeRes = await query('SELECT * FROM stores WHERE id = $1 AND owner_id = $2', [id, payload.id]);
+    }
+    
     if (storeRes.rows.length === 0) {
       return NextResponse.json({ error: 'Store not found or access denied.' }, { status: 404 });
     }

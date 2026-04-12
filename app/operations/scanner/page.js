@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useUser, ROLES } from '@/lib/UserContext';
 
 const STAGE_LABELS = {
@@ -93,16 +94,21 @@ export default function ScannerPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-surface border border-theme-border p-8 rounded-[3rem] shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">Back Office Operations</span>
+          <div className="flex items-center gap-6 relative z-10">
+            <Link href="/operations" className="flex items-center justify-center w-12 h-12 rounded-full bg-background border border-theme-border hover:border-emerald-500/50 transition-all shadow-sm">
+              <span className="material-symbols-outlined text-sm">arrow_back</span>
+            </Link>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">Back Office Operations</span>
+              </div>
+              <h1 className="text-4xl font-black tracking-tighter text-theme-text font-headline mb-1">
+                Garment Tracker
+              </h1>
+              <p className="text-theme-text-muted font-medium">
+                Real-time garment logistics and status synchronization terminal.
+              </p>
             </div>
-            <h1 className="text-4xl font-black tracking-tighter text-theme-text font-headline mb-1">
-              Garment Tracker
-            </h1>
-            <p className="text-theme-text-muted font-medium">
-              Real-time garment logistics and status synchronization terminal.
-            </p>
           </div>
 
           <div className="flex items-center gap-4 relative z-10">

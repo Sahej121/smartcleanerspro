@@ -117,7 +117,7 @@ export default function BusinessOwner({ user }) {
           </div>
 
           <div className="flex gap-3">
-          <Link href="/orders/new" className="flex items-center justify-center gap-2 px-6 py-2.5 premium-gradient text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-900/10 active:scale-95 shimmer-btn transition-all">
+          <Link href="/orders/new" className="flex items-center justify-center gap-2 px-6 py-2.5 premium-gradient text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-900/10 active:scale-95 transition-all">
             <span className="material-symbols-outlined text-lg">add</span>
             New Order
           </Link>
