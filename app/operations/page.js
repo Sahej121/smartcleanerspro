@@ -60,13 +60,13 @@ export default function OperationsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-           <div className="flex items-center gap-3 px-5 py-3 bg-surface-container-low rounded-[1.5rem] border border-outline-variant/10">
+           <div className="flex items-center gap-3 px-5 py-3 bg-theme-container rounded-[1.5rem] border border-theme shadow-sm">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
              <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest leading-none">
                {canAdvance ? 'Control Mode Active' : 'Monitor Mode Active'}
              </span>
            </div>
-           <button onClick={fetchWorkflow} className="w-12 h-12 rounded-[1.25rem] bg-white border border-outline-variant/10 text-slate-400 hover:text-primary hover:border-primary/20 transition-all shadow-sm active:scale-90">
+           <button onClick={fetchWorkflow} className="w-12 h-12 rounded-[1.25rem] bg-theme-surface border border-theme text-theme-muted hover:text-emerald-500 hover:border-emerald-500/20 transition-all shadow-sm active:scale-90">
              <span className="material-symbols-outlined text-xl block">sync</span>
            </button>
         </div>
@@ -80,12 +80,12 @@ export default function OperationsPage() {
             return (
               <div key={stage.key} className="w-[340px] flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
                 {/* Column Header */}
-                <div className="flex items-center justify-between px-6 py-4 bg-surface-container-low rounded-[2rem] border border-outline-variant/10">
+                <div className="flex items-center justify-between px-6 py-4 bg-theme-container rounded-[2rem] border border-theme shadow-sm">
                   <div className="flex items-center gap-3">
                     <span className={`material-symbols-outlined text-lg ${stage.key === 'ready' ? 'text-primary' : 'text-slate-400'}`}>{stage.icon}</span>
                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant">{stage.label}</span>
                   </div>
-                  <span className="text-[11px] font-black bg-white px-3 py-1 rounded-full text-on-surface shadow-sm border border-outline-variant/5">
+                  <span className="text-[11px] font-black bg-theme-surface px-3 py-1 rounded-full text-theme shadow-sm border border-theme">
                     {items.length}
                   </span>
                 </div>
@@ -98,7 +98,7 @@ export default function OperationsPage() {
                        <span className="text-[9px] font-black uppercase tracking-widest leading-none">No Items</span>
                     </div>
                   ) : items.map((item, i) => (
-                    <div key={item.id} className={`bg-white p-6 rounded-[2.5rem] border border-outline-variant/10 shadow-sm transition-all group animate-in slide-in-from-bottom-2 duration-300 hover:shadow-2xl hover:-translate-y-1 ${stage.shadow}`}>
+                    <div key={item.id} className={`bg-theme-surface p-6 rounded-[2.5rem] border border-theme shadow-sm transition-all group animate-in slide-in-from-bottom-2 duration-300 hover:shadow-2xl hover:-translate-y-1 ${stage.shadow}`}>
                       <div className="flex justify-between items-start mb-6">
                         <span className="text-[11px] font-black text-primary uppercase tracking-widest">{item.order_number}</span>
                         <div className={`w-2 h-2 rounded-full ${stage.accent} shadow-[0_0_8px] ${stage.key === 'ready' ? 'shadow-primary/40' : 'opacity-40'}`}></div>

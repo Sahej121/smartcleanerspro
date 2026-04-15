@@ -6,6 +6,11 @@ export async function GET(request) {
   const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
+  // Tier-based access control (Machine Ops is Enterprise Only)
+  if (auth.user.tier !== 'enterprise' && auth.user.id !== 1) {
+    return NextResponse.json({ error: 'Machine Operations requires an Enterprise subscription.' }, { status: 403 });
+  }
+
   try {
     const storeIdFilter = auth.user.role === 'owner' ? '' : `WHERE store_id = ${auth.user.store_id || 1}`;
 

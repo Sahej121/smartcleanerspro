@@ -2,14 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/currency-utils';
 
-function formatCurrencyINR(val) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(val || 0);
-}
+
 
 export default function BusinessOwner({ user }) {
   const [stats, setStats] = useState(null);
@@ -142,7 +137,7 @@ export default function BusinessOwner({ user }) {
                 </div>
                 <h3 className="text-sm font-semibold text-on-surface-variant mb-1">Total Revenue (Today)</h3>
                 <p className="text-4xl font-extrabold tracking-tighter text-on-surface font-headline">
-                  {formatCurrencyINR(stats?.todayRevenue || 0)}
+                  {formatCurrency(stats?.todayRevenue || 0, selectedStore?.country || user?.country)}
                 </p>
               </div>
             </div>
@@ -150,7 +145,6 @@ export default function BusinessOwner({ user }) {
               {selectedStoreId === 'all' ? 'Across all stores' : 'Selected store'} • Paid orders only
             </p>
           </div>
-          <div className="absolute -right-12 -top-12 w-48 h-48 bg-emerald-50 rounded-full blur-3xl opacity-40 group-hover:opacity-60 group-hover:scale-125 transition-all duration-700" />
         </div>
 
         <div className="p-6 rounded-3xl bg-surface-container-lowest shadow-sm flex flex-col justify-between border border-outline-variant/10 group hover:border-primary/20 transition-all card-hover">
@@ -248,7 +242,7 @@ export default function BusinessOwner({ user }) {
                       </span>
                     </td>
                     <td className="px-6 py-5 text-right font-bold text-sm text-on-surface whitespace-nowrap">
-                      {formatCurrencyINR(o.total_amount)}
+                      {formatCurrency(o.total_amount, o.country || user?.country)}
                     </td>
                   </tr>
                 ))}
@@ -274,7 +268,7 @@ export default function BusinessOwner({ user }) {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.city || '—'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-emerald-700">{formatCurrencyINR(s.total_revenue)}</p>
+                    <p className="text-sm font-black text-emerald-700">{formatCurrency(s.total_revenue, s.country || user?.country)}</p>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{s.order_count} orders</p>
                   </div>
                 </div>

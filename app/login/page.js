@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
 import { normalizeTier } from '@/lib/tier-config';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -79,12 +80,17 @@ export default function LoginPage() {
       <div className="absolute top-[30%] right-[10%] w-[20%] h-[20%] bg-emerald-200/20 blur-[80px] rounded-full animate-float-slow" style={{ animationDelay: '8s' }}></div>
 
       <div className="w-full max-w-md relative z-10 animate-fade-in-up" style={{ animationDuration: '0.8s' }}>
+        <div className="mb-4 flex justify-center">
+          <Link href="/" className="rounded-full border border-emerald-100 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">
+            Back to Website
+          </Link>
+        </div>
         <div className="glass-panel p-10 rounded-[3rem] border border-white bg-white/40 shadow-[0_32px_64px_-16px_rgba(11,28,48,0.1)]">
           <div className="text-center mb-10">
             <div className="w-16 h-16 rounded-[1.5rem] primary-gradient flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-emerald-900/20 mx-auto mb-6 transition-transform hover:scale-110 breathe-glow">
               C
             </div>
-            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">CleanFlow</h1>
+            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">{typeof window !== 'undefined' ? (localStorage.getItem('cleanflow_system_name') || 'DrycleanersFlow') : 'DrycleanersFlow'}</h1>
             <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">Atelier Management</p>
           </div>
 
@@ -195,6 +201,9 @@ export default function LoginPage() {
           <div className="text-center mt-10">
             <p className="text-[11px] font-bold text-slate-400">
               New to the Atelier? <button onClick={() => router.push('/signup')} className="text-primary font-black hover:underline ml-1">REGISTER</button>
+            </p>
+            <p className="mt-2 text-[11px] font-bold text-slate-400">
+              Looking for plans first? <Link href="/pricing" className="text-primary font-black hover:underline ml-1">VIEW PRICING</Link>
             </p>
           </div>
         </div>

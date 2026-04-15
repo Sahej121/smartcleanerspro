@@ -18,14 +18,16 @@ const TIER_ROUTES = {
     '/', '/orders', '/customers', '/inventory', '/logistics',
     '/admin/settings', '/support', '/reports', '/admin/billing',
     '/admin/pricing', '/suspended',
-    '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/pricing', '/api/coupons', '/api/payments'
+    '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/pricing', '/api/coupons', '/api/payments', '/api/stain-analysis',
+    '/api/analytics', '/api/reports', '/api/staff', '/api/tasks'
   ],
   hardware_bundle: [
     '/', '/orders', '/customers', '/inventory', '/logistics',
     '/admin/settings', '/admin/analytics', '/operations/assembly',
-    '/operations/machines', '/support', '/reports', '/admin/billing',
+    '/support', '/reports', '/admin/billing',
     '/admin/pricing', '/suspended',
-    '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/analytics', '/api/pricing', '/api/coupons', '/api/payments'
+    '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/analytics', '/api/pricing', '/api/coupons', '/api/payments', '/api/stain-analysis',
+    '/api/reports', '/api/staff', '/api/tasks', '/api/workflow', '/api/operations'
   ],
   enterprise: ['*'],
 };
@@ -88,7 +90,12 @@ export async function middleware(request) {
     pathname === '/favicon.ico' ||
     pathname === '/sw.js' ||
     pathname === '/suspended' ||
-    pathname === '/pricing'
+    pathname === '/' ||
+    pathname === '/features' ||
+    pathname === '/how-it-works' ||
+    pathname === '/pricing' ||
+    pathname === '/contact' ||
+    pathname === '/policy'
   ) {
     return addSecurityHeaders(NextResponse.next());
   }

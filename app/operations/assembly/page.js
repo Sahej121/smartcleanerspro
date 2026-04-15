@@ -44,6 +44,10 @@ export default function PremiumAssemblyPage() {
   const fetchData = async () => {
     try {
       const res = await fetch('/api/workflow/assembly');
+      if (!res.ok) {
+        console.error('API Error:', res.statusText);
+        return;
+      }
       const json = await res.json();
       setData(json);
     } catch (err) {
@@ -327,7 +331,7 @@ export default function PremiumAssemblyPage() {
                    <p className="text-theme-text-muted font-bold tracking-[0.2em] uppercase text-xs mt-3">All garments processed efficiently</p>
                  </div>
                ) : (
-                 data.active.map((item, idx) => {
+                 data.active?.map((item, idx) => {
                    const isCurrentOrder = checklist?.items?.some(ci => ci.id === item.id);
                    const isScanned = checklist?.scanned_tag === item.tag_id;
                    const isBottleneck = item.is_bottleneck;
@@ -424,7 +428,7 @@ export default function PremiumAssemblyPage() {
                  </div>
  
                  <div className="space-y-3 max-h-[350px] overflow-y-auto no-scrollbar pr-2 relative z-10">
-                    {data.active.filter(i => i.is_bottleneck).map(i => (
+                    {data.active?.filter(i => i.is_bottleneck).map(i => (
                       <div key={i.id} className="p-5 rounded-[1.5rem] bg-theme-surface-container border border-theme-border flex items-center justify-between group/bot hover:border-red-500/30 transition-colors">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-[0.8rem] bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center shrink-0">
@@ -442,7 +446,7 @@ export default function PremiumAssemblyPage() {
  
                  <div className="pt-6 border-t border-theme-border relative z-10">
                     <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.2em] leading-relaxed">
-                      High latency detected in <span className="text-theme-text">{new Set(data.active.filter(i => i.is_bottleneck).map(i => STAGE_LABELS[i.status])).size}</span> operative stages. 
+                      High latency detected in <span className="text-theme-text">{new Set(data.active?.filter(i => i.is_bottleneck).map(i => STAGE_LABELS[i.status])).size}</span> operative stages. 
                       Resource reallocation is highly recommended.
                     </p>
                  </div>
@@ -465,7 +469,7 @@ export default function PremiumAssemblyPage() {
                  </div>
  
                  <div className="space-y-3">
-                    {checklist.items.map(i => {
+                    {checklist.items?.map(i => {
                       const isScannedNow = i.tag_id === checklist.scanned_tag;
                       const isReady = i.status === 'ready';
                       return (

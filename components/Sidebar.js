@@ -37,15 +37,15 @@ const getNavLinks = (role, userTier, isSaasOwner) => {
 
   // Standard Store Admin / Staff Nav
   return [
-    { href: '/', labelKey: 'nav_dashboard', icon: 'dashboard', allowedRoles: [ROLES.ADMIN, ROLES.WORKER] },
+    { href: '/', labelKey: 'nav_dashboard', icon: 'dashboard', allowedRoles: [ROLES.ADMIN, ROLES.STAFF, ROLES.FRONTDESK, ROLES.DRIVER] },
     { href: '/orders/new', labelKey: 'nav_new_order', icon: 'add_circle', allowedRoles: [ROLES.ADMIN] },
     { href: '/orders', labelKey: 'nav_orders', icon: 'receipt_long', allowedRoles: [ROLES.ADMIN] },
     { href: '/customers', labelKey: 'nav_customers', icon: 'group', allowedRoles: [ROLES.ADMIN] },
     { href: '/admin/analytics/staff', labelKey: 'nav_staff_analytics', icon: 'analytics', allowedRoles: [ROLES.ADMIN] },
     { href: '/inventory', labelKey: 'nav_inventory', icon: 'inventory_2', allowedRoles: [ROLES.ADMIN] },
-    { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route', allowedRoles: [ROLES.ADMIN, ROLES.WORKER] },
-    { href: '/operations/machines', labelKey: 'Machine Ops', icon: 'precision_manufacturing', allowedRoles: [ROLES.ADMIN, ROLES.WORKER] },
-    { href: '/logistics', labelKey: 'Logistics Driver', icon: 'local_shipping', allowedRoles: [ROLES.ADMIN, ROLES.WORKER, 'driver'] },
+    { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route', allowedRoles: [ROLES.ADMIN, ROLES.STAFF, ROLES.FRONTDESK] },
+    { href: '/operations/machines', labelKey: 'Machine Ops', icon: 'precision_manufacturing', allowedRoles: [ROLES.ADMIN, ROLES.STAFF] },
+    { href: '/logistics', labelKey: 'Logistics Driver', icon: 'local_shipping', allowedRoles: [ROLES.ADMIN, ROLES.DRIVER] },
     { href: '/admin/settings', labelKey: 'nav_settings', icon: 'settings', allowedRoles: [ROLES.ADMIN] },
   ].filter(link => {
     // Both 'admin' and 'manager' are treated as store managers
@@ -95,17 +95,17 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
       {/* Logo Area */}
       <div className="flex items-center gap-3 px-3 py-6 mb-4 group">
         <div className="relative">
-          <div className="w-11 h-11 rounded-xl premium-gradient flex items-center justify-center text-white shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-105 breathe-glow">
+          <div className="w-11 h-11 rounded-xl premium-gradient flex items-center justify-center text-white shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
             <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
           </div>
           {/* System online indicator */}
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-surface status-dot-pulse"></div>
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-surface"></div>
         </div>
         <div>
           <h1 className="text-lg font-black text-theme-text font-black tracking-tighter font-headline">
-            {systemName || 'CleanFlow'}
+            {systemName || 'DrycleanersFlow'}
           </h1>
-          <p className="text-[10px] uppercase tracking-widest text-theme-text-muted opacity-80 font-bold uppercase tracking-widest">
+          <p className="text-[10px] uppercase tracking-widest text-theme-text-muted font-bold">
             Pristine Atelier POS
           </p>
         </div>

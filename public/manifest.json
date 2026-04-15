@@ -1,6 +1,6 @@
 {
-  "name": "CleanFlow - Dry Cleaner POS",
-  "short_name": "CleanFlow",
+  "name": "DrycleanersFlow - Dry Cleaner POS",
+  "short_name": "DrycleanersFlow",
   "description": "Dry Cleaner Management System & POS",
   "start_url": "/",
   "display": "standalone",

@@ -6,13 +6,13 @@ import { NotificationProvider } from '@/lib/NotificationContext';
 import MainLayout from '@/components/MainLayout';
 
 export const metadata = {
-  title: 'CleanFlow – Dry Cleaner POS',
+  title: 'DrycleanersFlow – Dry Cleaner POS',
   description: 'Modern dry cleaner management and POS system',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'CleanFlow',
+    title: 'DrycleanersFlow',
   },
 };
 

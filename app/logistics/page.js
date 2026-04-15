@@ -3,11 +3,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/lib/UserContext';
 import { useRouter } from 'next/navigation';
+import SignaturePad from '@/components/logistics/SignaturePad';
+import PhotoCapture from '@/components/logistics/PhotoCapture';
 
 export default function LogisticsDashboard() {
   const { user, loading: authLoading } = useUser();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showSignature, setShowSignature] = useState(null); // stores {id, type}
+  const [showPhoto, setShowPhoto] = useState(null); // stores {id, type}
   const router = useRouter();
 
   useEffect(() => {
@@ -30,15 +34,22 @@ export default function LogisticsDashboard() {
     }
   };
 
-  const handleAction = async (id, type, newStatus) => {
+  const handleAction = async (id, type, newStatus, extraData = {}) => {
     try {
       const res = await fetch(`/api/orders/${id}/logistics`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, status: newStatus })
+        body: JSON.stringify({ 
+          type, 
+          status: newStatus,
+          ...extraData,
+          driverId: user?.id
+        })
       });
       if (res.ok) {
         fetchTasks();
+        setShowSignature(null);
+        setShowPhoto(null);
       }
     } catch (err) {
       console.error('Action failed', err);
@@ -52,8 +63,22 @@ export default function LogisticsDashboard() {
     </div>
   );
 
+  // Clustering Logic: Group by the first part of the address (neighborhood-ish)
+  const clusterTasks = (taskList) => {
+    const clusters = {};
+    taskList.forEach(task => {
+      const area = (task.customer_address || 'Other').split(',').slice(-2, -1)[0]?.trim() || 'General';
+      if (!clusters[area]) clusters[area] = [];
+      clusters[area].push(task);
+    });
+    return Object.entries(clusters).sort((a, b) => b[1].length - a[1].length);
+  };
+
   const pendingPickups = tasks.filter(t => ['pending', 'scheduled', 'in_transit'].includes(t.pickup_status));
   const pendingDeliveries = tasks.filter(t => ['pending', 'scheduled', 'in_transit'].includes(t.delivery_status));
+
+  const pickupClusters = clusterTasks(pendingPickups);
+  const deliveryClusters = clusterTasks(pendingDeliveries);
 
   return (
     <div className="min-h-screen bg-background text-theme-text p-4 lg:p-8 font-sans selection:bg-theme-surface-container/30 selection:text-emerald-200">
@@ -70,7 +95,7 @@ export default function LogisticsDashboard() {
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <span className="w-2 h-2 rounded-full bg-theme-surface-container animate-pulse"></span>
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">Fleet Active</span>
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">Fleet Active • {user?.name} Dispatch</span>
               </div>
               <h1 className="text-4xl font-black text-theme-text tracking-tighter">Logistics Hub</h1>
             </div>
@@ -93,60 +118,92 @@ export default function LogisticsDashboard() {
           
           {/* Pickups Column */}
           <div className="space-y-6">
-            <h2 className="text-sm font-black text-theme-text-muted uppercase tracking-[0.3em] pl-4">Pending Pickups</h2>
-            <div className="space-y-4">
-              {pendingPickups.length === 0 ? (
+            <h2 className="text-sm font-black text-theme-text-muted uppercase tracking-[0.3em] pl-4 flex items-center gap-3">
+               <span className="material-symbols-outlined text-amber-500">assignment_return</span>
+               Pending Pickups
+            </h2>
+            <div className="space-y-10">
+              {pickupClusters.length === 0 ? (
                 <div className="p-12 text-center bg-theme-surface/50 rounded-[3rem] border border-dashed border-theme-border">
                   <span className="material-symbols-outlined text-4xl text-theme-text mb-4">task_alt</span>
                   <p className="text-xs font-black text-theme-text-muted uppercase tracking-widest">No pending pickups</p>
                 </div>
-              ) : pendingPickups.map((task, i) => (
-                <div key={'p-'+task.id} className="bg-theme-surface border border-theme-border rounded-[2.5rem] p-6 hover:border-theme-border transition-colors shadow-sm animate-scale-in" style={{ animationDelay: (i * 50) + 'ms' }}>
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <span className="text-[10px] font-black bg-amber-500/10 text-amber-500 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-amber-500/20">
-                        {task.pickup_status}
-                      </span>
-                      <h3 className="text-xl font-black text-theme-text mt-3 leading-tight">{task.customer_name}</h3>
-                      <p className="text-xs font-bold text-theme-text-muted flex items-center gap-1.5 mt-1">
-                        <span className="material-symbols-outlined text-[14px]">call</span> {task.customer_phone}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">#{task.order_number}</span>
+              ) : pickupClusters.map(([area, areaTasks]) => (
+                <div key={area} className="space-y-4">
+                  <div className="flex items-center gap-4 pl-4 mb-2">
+                    <span className="h-[1px] flex-1 bg-theme-border"></span>
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-widest whitespace-nowrap bg-theme-surface-container px-4 py-1.5 rounded-full border border-theme-border">
+                      Neighborhood: {area}
+                    </span>
+                    <span className="h-[1px] flex-1 bg-theme-border"></span>
                   </div>
-                  
-                  <div className="bg-theme-surface-container rounded-3xl p-5 mb-4 border border-theme-border/50 flex gap-4">
-                    <span className="material-symbols-outlined text-theme-text-muted mt-0.5">location_on</span>
-                    <p className="text-sm font-bold text-theme-text leading-relaxed">{task.customer_address}</p>
-                  </div>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.customer_address || '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full mb-4 py-2.5 rounded-2xl border border-theme-border bg-theme-surface-container hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 text-theme-text-muted font-black text-[10px] uppercase tracking-widest transition-all"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">map</span>
-                    View on Google Maps
-                  </a>
+                  {areaTasks.map((task, i) => (
+                    <div key={'p-'+task.id} className="bg-theme-surface border border-theme-border rounded-[2.5rem] p-6 hover:border-theme-border transition-colors shadow-sm animate-scale-in">
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <div className="flex gap-2">
+                             <span className="text-[10px] font-black bg-amber-500/10 text-amber-500 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-amber-500/20">
+                              {task.pickup_status}
+                            </span>
+                            {task.driver_id ? (
+                               <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-emerald-500/20">Assigned</span>
+                            ) : (
+                               <span className="text-[10px] font-black bg-slate-500/10 text-slate-500 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-slate-500/20">Unassigned</span>
+                            )}
+                          </div>
+                          <h3 className="text-xl font-black text-theme-text mt-3 leading-tight">{task.customer_name}</h3>
+                          <p className="text-xs font-bold text-theme-text-muted flex items-center gap-1.5 mt-1">
+                            <span className="material-symbols-outlined text-[14px]">call</span> {task.customer_phone}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">#{task.order_number}</span>
+                      </div>
+                      
+                      <div className="bg-theme-surface-container rounded-3xl p-5 mb-4 border border-theme-border/50 flex gap-4">
+                        <span className="material-symbols-outlined text-theme-text-muted mt-0.5">location_on</span>
+                        <p className="text-sm font-bold text-theme-text leading-relaxed">{task.customer_address}</p>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.customer_address || '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 flex-1 mb-4 py-2.5 rounded-2xl border border-theme-border bg-theme-surface-container hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 text-theme-text-muted font-black text-[10px] uppercase tracking-widest transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">map</span>
+                          Maps
+                        </a>
+                        {!task.driver_id && (
+                          <button 
+                            onClick={() => handleAction(task.id, 'pickup', task.pickup_status)}
+                            className="flex-[2] mb-4 py-2.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500 hover:text-white text-emerald-600 font-black text-[10px] uppercase tracking-widest transition-all"
+                          >
+                            Assign to Me
+                          </button>
+                        )}
+                      </div>
 
-                  <div className="flex gap-3">
-                    {task.pickup_status === 'pending' || task.pickup_status === 'scheduled' ? (
-                      <button 
-                        onClick={() => handleAction(task.id, 'pickup', 'in_transit')}
-                        className="flex-1 bg-amber-600 hover:bg-amber-500 text-theme-text rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all"
-                      >
-                        Start Route
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handleAction(task.id, 'pickup', 'completed')}
-                        className="flex-1 bg-emerald-600 hover:bg-theme-surface-container text-theme-text rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">check_circle</span> Mark Collected
-                      </button>
-                    )}
-                  </div>
+                      <div className="flex gap-3">
+                        {task.pickup_status === 'pending' || task.pickup_status === 'scheduled' ? (
+                          <button 
+                            disabled={!task.driver_id}
+                            onClick={() => handleAction(task.id, 'pickup', 'in_transit')}
+                            className={`flex-1 rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all ${task.driver_id ? 'bg-amber-600 hover:bg-amber-500 text-theme-text' : 'bg-theme-border text-theme-text-muted cursor-not-allowed'}`}
+                          >
+                            Start Route
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => setShowSignature({id: task.id, type: 'pickup'})}
+                            className="flex-1 bg-emerald-600 hover:brightness-110 text-theme-text rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">check_circle</span> Mark Collected
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
@@ -154,67 +211,121 @@ export default function LogisticsDashboard() {
 
           {/* Deliveries Column */}
           <div className="space-y-6">
-            <h2 className="text-sm font-black text-theme-text-muted uppercase tracking-[0.3em] pl-4">Pending Deliveries</h2>
-            <div className="space-y-4">
-              {pendingDeliveries.length === 0 ? (
+            <h2 className="text-sm font-black text-theme-text-muted uppercase tracking-[0.3em] pl-4 flex items-center gap-3">
+               <span className="material-symbols-outlined text-emerald-500">local_shipping</span>
+               Pending Deliveries
+            </h2>
+            <div className="space-y-10">
+              {deliveryClusters.length === 0 ? (
                 <div className="p-12 text-center bg-theme-surface/50 rounded-[3rem] border border-dashed border-theme-border">
                   <span className="material-symbols-outlined text-4xl text-theme-text mb-4">task_alt</span>
                   <p className="text-xs font-black text-theme-text-muted uppercase tracking-widest">No pending deliveries</p>
                 </div>
-              ) : pendingDeliveries.map((task, i) => (
-                <div key={'d-'+task.id} className="bg-theme-surface border border-theme-border rounded-[2.5rem] p-6 hover:border-theme-border transition-colors shadow-sm animate-scale-in" style={{ animationDelay: (i * 50) + 'ms' }}>
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <span className="text-[10px] font-black bg-theme-surface-container/10 text-emerald-400 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-emerald-500/20">
-                        {task.delivery_status}
-                      </span>
-                      <h3 className="text-xl font-black text-theme-text mt-3 leading-tight">{task.customer_name}</h3>
-                      <p className="text-xs font-bold text-theme-text-muted flex items-center gap-1.5 mt-1">
-                        <span className="material-symbols-outlined text-[14px]">call</span> {task.customer_phone}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">#{task.order_number}</span>
+              ) : deliveryClusters.map(([area, areaTasks]) => (
+                <div key={area} className="space-y-4">
+                  <div className="flex items-center gap-4 pl-4 mb-2">
+                    <span className="h-[1px] flex-1 bg-theme-border"></span>
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-widest whitespace-nowrap bg-theme-surface-container px-4 py-1.5 rounded-full border border-theme-border">
+                      Neighborhood: {area}
+                    </span>
+                    <span className="h-[1px] flex-1 bg-theme-border"></span>
                   </div>
-                  
-                  <div className="bg-theme-surface-container rounded-3xl p-5 mb-4 border border-theme-border/50 flex gap-4">
-                    <span className="material-symbols-outlined text-emerald-600/50 mt-0.5">location_on</span>
-                    <p className="text-sm font-bold text-theme-text leading-relaxed">{task.customer_address}</p>
-                  </div>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.customer_address || '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full mb-4 py-2.5 rounded-2xl border border-theme-border bg-theme-surface-container hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 text-theme-text-muted font-black text-[10px] uppercase tracking-widest transition-all"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">map</span>
-                    View on Google Maps
-                  </a>
+                  {areaTasks.map((task, i) => (
+                    <div key={'d-'+task.id} className="bg-theme-surface border border-theme-border rounded-[2.5rem] p-6 hover:border-theme-border transition-colors shadow-sm animate-scale-in">
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <div className="flex gap-2">
+                            <span className="text-[10px] font-black bg-theme-surface-container/10 text-emerald-400 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-emerald-500/20">
+                              {task.delivery_status}
+                            </span>
+                            {task.driver_id ? (
+                               <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-emerald-500/20">Assigned</span>
+                            ) : (
+                               <span className="text-[10px] font-black bg-slate-500/10 text-slate-500 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-slate-500/20">Unassigned</span>
+                            )}
+                          </div>
+                          <h3 className="text-xl font-black text-theme-text mt-3 leading-tight">{task.customer_name}</h3>
+                          <p className="text-xs font-bold text-theme-text-muted flex items-center gap-1.5 mt-1">
+                            <span className="material-symbols-outlined text-[14px]">call</span> {task.customer_phone}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">#{task.order_number}</span>
+                      </div>
+                      
+                      <div className="bg-theme-surface-container rounded-3xl p-5 mb-4 border border-theme-border/50 flex gap-4">
+                        <span className="material-symbols-outlined text-emerald-600/50 mt-0.5">location_on</span>
+                        <p className="text-sm font-bold text-theme-text leading-relaxed">{task.customer_address}</p>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.customer_address || '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 flex-1 mb-4 py-2.5 rounded-2xl border border-theme-border bg-theme-surface-container hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 text-theme-text-muted font-black text-[10px] uppercase tracking-widest transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">map</span>
+                          Maps
+                        </a>
+                        {!task.driver_id && (
+                          <button 
+                            onClick={() => handleAction(task.id, 'delivery', task.delivery_status)}
+                            className="flex-[2] mb-4 py-2.5 rounded-2xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500 hover:text-white text-blue-600 font-black text-[10px] uppercase tracking-widest transition-all"
+                          >
+                            Assign to Me
+                          </button>
+                        )}
+                      </div>
 
-                  <div className="flex gap-3">
-                    {task.delivery_status === 'pending' || task.delivery_status === 'scheduled' ? (
-                      <button 
-                        onClick={() => handleAction(task.id, 'delivery', 'in_transit')}
-                        className="flex-1 bg-blue-600 hover:bg-blue-500 text-theme-text rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all"
-                      >
-                        Start Route
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handleAction(task.id, 'delivery', 'completed')}
-                        className="flex-1 bg-emerald-600 hover:bg-theme-surface-container text-theme-text rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">verified</span> Confirm Delivery
-                      </button>
-                    )}
-                  </div>
+                      <div className="flex gap-3">
+                        {task.delivery_status === 'pending' || task.delivery_status === 'scheduled' ? (
+                          <button 
+                            disabled={!task.driver_id}
+                            onClick={() => handleAction(task.id, 'delivery', 'in_transit')}
+                            className={`flex-1 rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all ${task.driver_id ? 'bg-blue-600 hover:bg-blue-500 text-theme-text' : 'bg-theme-border text-theme-text-muted cursor-not-allowed'}`}
+                          >
+                            Start Route
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => setShowPhoto({id: task.id, type: 'delivery'})}
+                            className="flex-1 bg-emerald-600 hover:brightness-110 text-theme-text rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">verified</span> Confirm Delivery
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
           </div>
-
         </div>
       </div>
+
+      {/* Logic Modals */}
+      {showSignature && (
+        <SignaturePad 
+          onSave={(sigData) => {
+            handleAction(showSignature.id, showSignature.type, 'completed', { signature: sigData });
+          }}
+          onCancel={() => setShowSignature(null)}
+        />
+      )}
+
+      {showPhoto && (
+        <PhotoCapture 
+          onCapture={(photoURL) => {
+            // For delivery, we usually want BOTH photo and then maybe a signature.
+            // But let's simplify: completing delivery requires signature, but photo is optional/stored alongside.
+            // Actually, let's just use photo as the completion trigger for deliveries.
+            handleAction(showPhoto.id, showPhoto.type, 'completed', { photo: photoURL });
+          }}
+          onCancel={() => setShowPhoto(null)}
+        />
+      )}
+
       <style dangerouslySetInnerHTML={{ __html: `
         .animate-scale-in {
           animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;

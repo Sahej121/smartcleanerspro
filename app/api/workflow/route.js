@@ -36,34 +36,36 @@ export async function POST(request) {
 
     const { itemId } = await request.json();
     
-    // 1. Get current item
-    const itemRes = await query(
-      'SELECT oi.*, o.store_id FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.id = $1 AND o.store_id = $2', 
-      [itemId, auth.user.store_id]
-    );
+    // 1. Get current item and full order context
+    const itemRes = await query(`
+      SELECT oi.*, o.store_id, o.order_number, o.customer_id, c.name as customer_name, c.phone as customer_phone
+      FROM order_items oi 
+      JOIN orders o ON oi.order_id = o.id 
+      LEFT JOIN customers c ON o.customer_id = c.id
+      WHERE oi.id = $1 AND o.store_id = $2
+    `, [itemId, auth.user.store_id]);
+    
     const item = itemRes.rows[0];
     if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 });
 
-    // 2. Determine next stage
-    const flow = ['received', 'sorting', 'washing', 'drying', 'ironing', 'quality_check', 'ready'];
+    // 2. Determine next stage (linear flow with dry_cleaning branch)
+    const STAGE_ORDER = ['received', 'sorting', 'washing', 'dry_cleaning', 'drying', 'ironing', 'quality_check', 'ready'];
     
-    // Custom logic: if it's dry cleaning, skip washing/drying if needed, but for simplicity let's stick to a linear flow or small branch
     let nextStatus;
-    const currentIndex = flow.indexOf(item.status);
+    const currentIndex = STAGE_ORDER.indexOf(item.status);
     
     if (currentIndex === -1) {
-       // Handle cases like 'dry_cleaning' which might be a parallel to 'washing'
-       if (item.status === 'dry_cleaning') nextStatus = 'drying';
-       else nextStatus = 'ready'; // fallback
-    } else if (currentIndex < flow.length - 1) {
-       nextStatus = flow[currentIndex + 1];
+       nextStatus = 'ready'; // fallback
+    } else if (currentIndex < STAGE_ORDER.length - 1) {
+       nextStatus = STAGE_ORDER[currentIndex + 1];
     } else {
        return NextResponse.json({ message: 'Item already at final stage' });
     }
 
-    // Branching logic for dry cleaning
-    if (item.status === 'sorting' && item.service_type.toLowerCase().includes('dry cleaning')) {
-      nextStatus = 'dry_cleaning';
+    // Branching logic: sorting -> dry_cleaning OR washing
+    if (item.status === 'sorting') {
+      const isDryCleaning = item.service_type?.toLowerCase().includes('dry cleaning');
+      nextStatus = isDryCleaning ? 'dry_cleaning' : 'washing';
     }
 
     // 3. Update DB
@@ -75,7 +77,39 @@ export async function POST(request) {
       [itemId, nextStatus, auth.user.id]
     );
 
-    // 5. Automate Task Updates
+    // 5. Sync Order Status & Handle Notifications
+    const allItemsRes = await query('SELECT status FROM order_items WHERE order_id = $1', [item.order_id]);
+    const allItems = allItemsRes.rows;
+
+    const allReady = allItems.every(i => i.status === 'ready' || i.status === 'delivered');
+    const anyProcessing = allItems.some(i => !['received', 'ready', 'delivered'].includes(i.status));
+
+    if (allReady) {
+      const orderRes = await query('SELECT status FROM orders WHERE id = $1', [item.order_id]);
+      if (orderRes.rows[0].status !== 'ready') {
+        await query('UPDATE orders SET status = $1 WHERE id = $2', ['ready', item.order_id]);
+        
+        // Trigger Notification
+        if (item.customer_phone) {
+          const message = `Hi ${item.customer_name}! Your order #${item.order_number} is now READY for pickup/delivery at DrycleanersFlow. See you soon!`;
+          try {
+            const { sendWhatsAppMessage } = require('@/lib/whatsapp/twilioClient');
+            await sendWhatsAppMessage(item.customer_phone, message);
+          } catch (notifErr) {
+            console.error('Notification failed:', notifErr);
+          }
+          
+          await query(`
+            INSERT INTO system_logs (event_type, description, severity, store_id)
+            VALUES ($1, $2, $3, $4)
+          `, ['STAFF_ALERT', `Notification sent to ${item.customer_name} for Order #${item.order_number}`, 'info', auth.user.store_id]);
+        }
+      }
+    } else if (anyProcessing) {
+      await query('UPDATE orders SET status = $1 WHERE id = $2', ['processing', item.order_id]);
+    }
+
+    // 6. Automate Task Updates
     // Complete previous task if it exists
     await query(
       `UPDATE staff_tasks 
@@ -84,19 +118,22 @@ export async function POST(request) {
       [`%Item #${itemId}%Stage: ${item.status}%`]
     );
 
-    // Create next task
-    const nextTaskDesc = `Process ${itemRes.rows[0].garment_type} (Order #${itemRes.rows[0].order_number}) - Item #${itemId} - Stage: ${nextStatus}`;
-    await query(
-      `INSERT INTO staff_tasks (user_id, task_description, due_date, store_id)
-       SELECT id, $1, NOW() + INTERVAL '2 hours', $2
-       FROM users 
-       WHERE role = 'staff' AND store_id = $2
-       LIMIT 1`, 
-      [nextTaskDesc, auth.user.store_id]
-    );
+    // Create next task (only if not ready)
+    if (nextStatus !== 'ready') {
+      const nextTaskDesc = `Process ${item.garment_type} (Order #${item.order_number}) - Item #${itemId} - Stage: ${nextStatus}`;
+      await query(
+        `INSERT INTO staff_tasks (user_id, task_description, due_date, store_id)
+         SELECT id, $1, NOW() + INTERVAL '2 hours', $2
+         FROM users 
+         WHERE role = 'staff' AND store_id = $2
+         LIMIT 1`, 
+        [nextTaskDesc, auth.user.store_id]
+      );
+    }
 
     return NextResponse.json({ success: true, nextStatus });
   } catch (error) {
+    console.error('Workflow error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

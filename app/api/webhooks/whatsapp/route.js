@@ -40,7 +40,7 @@ export async function POST(req) {
     if (!session) {
       await query('INSERT INTO whatsapp_sessions (phone_number) VALUES ($1)', [phone]);
       session = { phone_number: phone, state: 'REQUIRE_PIN', context: {} };
-      await sendWhatsAppMessage(From, 'Welcome to CleanFlow Atelier POS! 👔\n\nPlease reply with your 4-digit Staff PIN to authenticate.');
+      await sendWhatsAppMessage(From, 'Welcome to DrycleanersFlow Atelier POS! 👔\n\nPlease reply with your 4-digit Staff PIN to authenticate.');
       return NextResponse.json({ success: true });
     }
 

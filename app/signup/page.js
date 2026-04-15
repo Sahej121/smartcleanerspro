@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, ROLES } from '@/lib/UserContext';
+import Link from 'next/link';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -48,12 +49,17 @@ export default function SignupPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full"></div>
 
       <div className="w-full max-w-lg relative z-10 animate-in fade-in zoom-in-95 duration-700">
+        <div className="mb-4 flex justify-center">
+          <Link href="/" className="rounded-full border border-emerald-100 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">
+            Back to Website
+          </Link>
+        </div>
         <div className="glass-panel p-10 rounded-[3.5rem] border border-white bg-white/40 shadow-[0_32px_64px_-16px_rgba(11,28,48,0.1)]">
           <div className="text-center mb-10">
             <div className="w-16 h-16 rounded-[1.5rem] primary-gradient flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-emerald-900/20 mx-auto mb-6 transition-transform hover:scale-110">
               C
             </div>
-            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">Join CleanFlow</h1>
+            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">Join {typeof window !== 'undefined' ? (localStorage.getItem('cleanflow_system_name') || 'DrycleanersFlow') : 'DrycleanersFlow'}</h1>
             <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">Create Atelier Profile</p>
           </div>
 
@@ -140,6 +146,9 @@ export default function SignupPage() {
           <div className="text-center mt-10">
             <p className="text-[11px] font-bold text-slate-400">
               Already have a profile? <button onClick={() => router.push('/login')} className="text-primary font-black hover:underline ml-1">SIGN IN</button>
+            </p>
+            <p className="mt-2 text-[11px] font-bold text-slate-400">
+              Want to compare plans? <Link href="/pricing" className="text-primary font-black hover:underline ml-1">VIEW PRICING</Link>
             </p>
           </div>
         </div>

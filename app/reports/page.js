@@ -173,7 +173,7 @@ export default function ReportsPage() {
                          <span className="text-theme-text bg-slate-800 px-2 rounded">{s.count}</span>
                        </div>
                        <div className="h-1.5 bg-background rounded-full overflow-hidden shadow-inner">
-                         <div className={`h-full rounded-full transition-all duration-1000 ease-out ${bgColor}`} style={{ width: \`\${percentage}%\` }}></div>
+                         <div className={`h-full rounded-full transition-all duration-1000 ease-out ${bgColor}`} style={{ width: `${percentage}%` }}></div>
                        </div>
                      </div>
                    );

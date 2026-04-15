@@ -165,7 +165,7 @@ export default function StaffAnalyticsPage() {
                 <div className="flex-1">
                   <div className="flex justify-between items-center mb-2.5">
                     <span className="text-sm font-black text-theme-text uppercase tracking-widest">{b.stage.replace(/_/g, ' ')}</span>
-                    <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-full">{b.count} Items</span>
+                    <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest bg-theme-container px-2 py-0.5 rounded-full">{b.count} Items</span>
                   </div>
                   <div className="w-full bg-theme-surface-container h-2 rounded-full overflow-hidden p-[2px]">
                     <div 
@@ -190,7 +190,7 @@ export default function StaffAnalyticsPage() {
 
       {/* Staff Leaderboard */}
       <div className="bg-theme-surface hover:bg-theme-surface-container transition-all rounded-[3rem] border border-theme-border/50 hover:border-theme-border shadow-2xl shadow-slate-200/60 overflow-hidden stagger-6">
-        <div className="p-10 border-b border-theme-border/50 hover:border-theme-border flex flex-col md:flex-row md:items-center justify-between bg-white/40 gap-4">
+        <div className="p-10 border-b border-theme-border/50 hover:border-theme-border flex flex-col md:flex-row md:items-center justify-between bg-theme-surface-container/20 gap-4">
           <div>
             <h3 className="font-black text-theme-text text-xl uppercase tracking-tighter italic font-headline">Worker Efficiency Breakdown</h3>
             <p className="text-theme-text-muted text-xs font-medium">Individual performance audit based on 7-day throughput.</p>
@@ -211,7 +211,7 @@ export default function StaffAnalyticsPage() {
                 <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.25em] text-theme-text-muted text-right">Trend</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white">
+            <tbody className="divide-y border-theme">
               {data.staffStats.map((staff, idx) => (
                 <tr key={staff.id} className="hover:bg-theme-surface-container/50 text-theme-text/40 transition-all group animate-fade-in-up" style={{ animationDelay: `${idx * 50}ms` }}>
                   <td className="px-10 py-6">
@@ -240,7 +240,7 @@ export default function StaffAnalyticsPage() {
                     </div>
                   </td>
                   <td className="px-10 py-6 text-right">
-                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-2xl ${idx < 3 ? 'bg-theme-surface-container text-primary border-theme-border' : 'bg-slate-50 text-theme-text-muted'} border border-current opacity-20`}>
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-2xl ${idx < 3 ? 'bg-theme-surface-container text-theme border-theme-border' : 'bg-theme-container text-theme-text-muted'} border border-current opacity-20`}>
                       <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                         {idx < 3 ? 'trending_up' : 'trending_flat'}
                       </span>

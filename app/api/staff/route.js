@@ -12,18 +12,24 @@ function generatePassword(length = 8) {
   return retVal;
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const role = searchParams.get('role');
+    const roleFilter = role ? `AND u.role = $2` : '';
+    const params = [session.store_id];
+    if (role) params.push(role);
 
     const res = await query(`
       SELECT u.id, u.name, u.email, u.phone, u.role, u.created_at, s.store_name
       FROM users u
       LEFT JOIN stores s ON u.store_id = s.id
-      WHERE u.store_id = $1 AND u.role != 'owner'
+      WHERE u.store_id = $1 AND u.role != 'owner' ${roleFilter}
       ORDER BY u.created_at DESC
-    `, [session.store_id]);
+    `, params);
 
     return NextResponse.json(res.rows);
   } catch (error) {

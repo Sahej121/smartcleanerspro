@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useBranding } from '@/lib/BrandingContext';
-import { TIERS } from '@/lib/tier-config';
+import { TIERS, hasFeature } from '@/lib/tier-config';
+import { formatCurrency, detectCountry } from '@/lib/currency-utils';
 
 export default function SettingsPage() {
   const { lang, changeLang, t, LANGUAGES } = useLanguage();
@@ -15,7 +16,13 @@ export default function SettingsPage() {
   const [currentTier, setCurrentTier] = useState('software_only');
   const [storeCount, setStoreCount] = useState(0);
   const [showAddStore, setShowAddStore] = useState(false);
-  const [newStore, setNewStore] = useState({ store_name: '', city: '', manager_name: '', manager_email: '' });
+  const [newStore, setNewStore] = useState({ 
+    store_name: '', 
+    city: '', 
+    country: detectCountry(), // Auto-detect country
+    manager_name: '', 
+    manager_email: '' 
+  });
   const [storeLoading, setStoreLoading] = useState(false);
   const [storeError, setStoreError] = useState('');
   const [pinDetailsModal, setPinDetailsModal] = useState(null);
@@ -24,7 +31,7 @@ export default function SettingsPage() {
   const [showAdminUpgradeModal, setShowAdminUpgradeModal] = useState(null);
 
   const [settings, setSettings] = useState({
-    storeName: 'CleanFlow',
+    storeName: 'DrycleanersFlow',
     storePhone: '+91-9876543210',
     storeAddress: '123 Main Street',
     storeCity: 'New Delhi',
@@ -124,7 +131,13 @@ export default function SettingsPage() {
         setStoreError(data.error || 'Failed to create store');
       } else {
         setShowAddStore(false);
-        setNewStore({ store_name: '', city: '', manager_name: '', manager_email: '' });
+        setNewStore({ 
+          store_name: '', 
+          city: '', 
+          country: detectCountry(),
+          manager_name: '', 
+          manager_email: '' 
+        });
         
         // If a manager was provisioned, show the credentials modal
         if (data.manager) {
@@ -202,7 +215,9 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', label: t('general') || 'General', icon: 'settings' },
     { id: 'language', label: t('language') || 'Language', icon: 'language' },
-    { id: 'appearance', label: t('appearance') || 'Appearance', icon: 'palette' },
+    ...(hasFeature(currentTier, 'whiteLabel') ? [
+      { id: 'appearance', label: t('appearance') || 'Appearance', icon: 'palette' },
+    ] : []),
     ...(userRole === 'owner' ? [
       { id: 'stores', label: t('stores') || 'Stores', icon: 'store' },
     ] : []),
@@ -395,7 +410,7 @@ export default function SettingsPage() {
                     {systemLogo || '🏢'}
                   </div>
                   <div className="flex-1 space-y-2">
-                    <h3 className="font-bold text-theme-text text-lg">{systemName || 'CleanFlow Atelier'}</h3>
+                    <h3 className="font-bold text-theme-text text-lg">{systemName || 'DrycleanersFlow Atelier'}</h3>
                     <p className="text-xs font-medium text-theme-text-muted">Current active branding. These elements appear on the sidebar and customer receipts.</p>
                   </div>
                 </div>
@@ -409,7 +424,7 @@ export default function SettingsPage() {
                         className="w-full bg-theme-surface-container border border-transparent rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/50 transition-all outline-none text-theme-text" 
                         value={systemName} 
                         onChange={e => updateBranding(e.target.value, systemLogo)} 
-                        placeholder="e.g. CleanFlow Pristine"
+                        placeholder="e.g. DrycleanersFlow Pristine"
                       />
                     </div>
                   </div>
@@ -490,7 +505,7 @@ export default function SettingsPage() {
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      { key: 'store_name', label: 'Store Name', icon: 'storefront', ph: 'e.g. CleanFlow South Delhi' },
+                      { key: 'store_name', label: 'Store Name', icon: 'storefront', ph: 'e.g. DrycleanersFlow South Delhi' },
                       { key: 'city', label: 'City', icon: 'location_city', ph: 'e.g. New Delhi' },
                       { key: 'manager_name', label: 'Manager Name', icon: 'person', ph: 'e.g. John Doe' },
                       { key: 'manager_email', label: 'Manager Email', icon: 'mail', ph: 'e.g. manager@store.com' },
@@ -508,6 +523,26 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     ))}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1">Country / Region</label>
+                      <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg">public</span>
+                        <select 
+                          className="w-full bg-theme-surface border border-theme-border rounded-2xl py-3 pl-11 pr-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-emerald-300 transition-all outline-none appearance-none text-theme-text"
+                          value={newStore.country}
+                          onChange={(e) => setNewStore({ ...newStore, country: e.target.value })}
+                        >
+                          <option value="India">India</option>
+                          <option value="United Kingdom">United Kingdom</option>
+                          <option value="United States">United States</option>
+                          <option value="Germany">Germany</option>
+                          <option value="France">France</option>
+                          <option value="Australia">Australia</option>
+                          <option value="New Zealand">New Zealand</option>
+                          <option value="Canada">Canada</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 pt-2">
                     <button
@@ -533,8 +568,14 @@ export default function SettingsPage() {
                                       'bg-blue-50 text-blue-700 border-blue-200/60';
                   
                   return (
-                  <div key={store.id || store.owner_id || i} className={`group relative p-6 rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:shadow-theme-text/5 hover:-translate-y-1 ${i === 0 ? 'bg-gradient-to-br from-emerald-50/40 to-white border-emerald-200 ring-4 ring-emerald-50/50' : 'bg-theme-surface border-theme-border hover:border-theme-border'}`}>
-                    {i === 0 && <div className="absolute top-0 right-8 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-emerald-600/20">Primary Store</div>}
+                  <div key={store.id || store.owner_id || i} className={`group relative p-6 rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:shadow-theme-text/5 hover:-translate-y-1 ${store.status === 'suspended' ? 'bg-red-50/20 border-red-200 grayscale-[0.3]' : i === 0 ? 'bg-gradient-to-br from-emerald-50/40 to-white border-emerald-200 ring-4 ring-emerald-50/50' : 'bg-theme-surface border-theme-border hover:border-theme-border'}`}>
+                    {store.status === 'suspended' && (
+                       <div className="absolute top-0 right-8 -translate-y-1/2 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-red-600/20 flex items-center gap-2">
+                         <span className="material-symbols-outlined text-[14px]">warning</span>
+                         Suspended by Plan
+                       </div>
+                    )}
+                    {i === 0 && store.status !== 'suspended' && <div className="absolute top-0 right-8 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-emerald-600/20">Primary Store</div>}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex items-start gap-4">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black shadow-sm shrink-0 transition-transform group-hover:scale-105 ${
@@ -565,19 +606,21 @@ export default function SettingsPage() {
                       </div>
                       <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 border-t md:border-t-0 border-theme-border pt-4 md:pt-0">
                         <div className="text-left md:text-right">
-                          <div className="text-2xl font-black text-theme-text tracking-tight">₹{(parseFloat(store.total_revenue) || 0).toLocaleString('en-IN')}</div>
+                        <div className="text-2xl font-black text-theme-text tracking-tight">{formatCurrency(parseFloat(store.total_revenue) || 0, store.country)}</div>
                           <div className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mt-0.5">{store.order_count || 0} Orders</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setShowAdminUpgradeModal({ storeId: store.id, storeName: store.store_name, currentTier: store.subscription_tier }); }}
-                              className="relative overflow-hidden group/btn flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
-                              title="Upgrade Node Tier"
-                            >
-                              <div className="absolute inset-0 w-full h-full bg-theme-surface/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500 ease-out"></div>
-                              <span className="material-symbols-outlined text-[16px]">upgrade</span>
-                              Upgrade
-                            </button>
+                         <div className="flex items-center gap-2">
+                           {i === 0 && (
+                             <button 
+                               onClick={(e) => { e.stopPropagation(); setShowAdminUpgradeModal({ storeId: store.id, storeName: store.store_name, currentTier: store.subscription_tier }); }}
+                               className="relative overflow-hidden group/btn flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
+                               title="Upgrade Node Tier"
+                             >
+                               <div className="absolute inset-0 w-full h-full bg-theme-surface/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500 ease-out"></div>
+                               <span className="material-symbols-outlined text-[16px]">upgrade</span>
+                               Upgrade
+                             </button>
+                           )}
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleResetManagerPin(store); }}
                             className="flex items-center gap-1.5 px-3 py-2 bg-theme-surface hover:bg-theme-surface-container text-theme-text-muted rounded-xl text-xs font-bold border border-theme-border shadow-sm active:scale-95 transition-all"

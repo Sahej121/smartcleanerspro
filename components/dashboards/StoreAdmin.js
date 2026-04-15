@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/currency-utils';
 
 function AnimatedCounter({ value, prefix = '', suffix = '', duration = 1200 }) {
   const [display, setDisplay] = useState(0);
@@ -60,13 +61,7 @@ export default function StoreAdmin({ user }) {
     fetchData();
   }, []);
 
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(val || 0);
-  };
+
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -120,7 +115,7 @@ export default function StoreAdmin({ user }) {
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-theme-text italic leading-none">
-            {getGreeting()}, <span className="inline-block px-2 text-transparent bg-clip-text bg-gradient-to-r from-theme-text to-theme-text-muted">{user?.name?.split(' ')[0] || 'Atelier'}</span>
+            {getGreeting()}, <span className="inline-block px-3 text-transparent bg-clip-text bg-gradient-to-r from-theme-text to-theme-text-muted">{user?.name?.split(' ')[0] || 'Atelier'}</span>
           </h1>
           <p className="text-theme-text-muted font-bold tracking-tight text-sm mt-2">Intelligent oversight for Pristine Atelier's daily logistics.</p>
         </div>
@@ -147,7 +142,7 @@ export default function StoreAdmin({ user }) {
               <div>
                 <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-2">Daily Revenue Matrix</p>
                 <p className="text-5xl font-black tracking-tighter text-theme-text font-headline animate-count-up italic">
-                  {formatCurrency(stats?.todayRevenue || 0)}
+                  {formatCurrency(stats?.todayRevenue || 0, user?.country)}
                 </p>
               </div>
               <div className="flex flex-col items-end">
@@ -269,7 +264,7 @@ export default function StoreAdmin({ user }) {
                         </span>
                       </td>
                       <td className="px-8 py-6 text-right font-black text-[11px] text-theme-text tracking-tight">
-                        {formatCurrency(order.total_amount)}
+                        {formatCurrency(order.total_amount, user?.country)}
                       </td>
                     </tr>
                   ))
@@ -332,7 +327,6 @@ export default function StoreAdmin({ user }) {
               </div>
               <div className="w-full bg-theme-surface-container h-2.5 rounded-full overflow-hidden mb-4 border border-theme-border">
                 <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full shadow-[0_0_15px_rgba(16,185,129,0.3)] progress-animate relative" style={{ width: '71%' }}>
-                   <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.1)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.1)_50%,rgba(255,255,255,0.1)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-[shimmer_2s_linear_infinite]"></div>
                 </div>
               </div>
               <p className="text-[11px] text-theme-text-muted font-bold tracking-tight">
@@ -447,7 +441,7 @@ export default function StoreAdmin({ user }) {
           <div className="w-8 h-8 rounded-lg bg-theme-surface-container border border-theme-border flex items-center justify-center text-theme-text-muted">
             <span className="material-symbols-outlined text-sm">terminal</span>
           </div>
-          <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.3em]">© 2024 CleanFlow Enterprise • v2.4.0-matrix</p>
+          <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.3em]">© 2024 {typeof window !== 'undefined' ? (localStorage.getItem('cleanflow_system_name') || 'DrycleanersFlow') : 'DrycleanersFlow'} Enterprise • v2.4.0-matrix</p>
         </div>
         <div className="flex items-center gap-8">
           <a className="text-[10px] font-black text-theme-text-muted hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-2" href="#">
@@ -573,10 +567,8 @@ export default function StoreAdmin({ user }) {
       {/* Staff Credentials Success Modal */}
       {staffCredentials && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-fade-in">
-          <div className="bg-theme-surface rounded-[2.5rem] w-full max-md shadow-2xl border border-emerald-500/20 overflow-hidden animate-fade-in-up relative">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-theme-surface-container rounded-full blur-3xl -translate-y-16 translate-x-16 opacity-60"></div>
-             
-             <div className="p-8 relative z-10 text-center">
+          <div className="bg-theme-surface rounded-[2.5rem] w-full max-w-sm shadow-2xl border border-emerald-500/20 overflow-hidden animate-fade-in-up relative">
+             <div className="p-6 relative z-10 text-center">
                 <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto mb-6 shadow-inner animate-bounce-subtle">
                    <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>lock_open</span>
                 </div>

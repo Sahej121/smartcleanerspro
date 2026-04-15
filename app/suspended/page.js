@@ -45,7 +45,7 @@ export default function SuspendedPage() {
 
         <p className="mt-12 text-[9px] font-black uppercase text-slate-300 tracking-[0.3em] relative z-10 flex items-center justify-center gap-2">
           <span className="material-symbols-outlined text-xs">shield</span>
-          Secured by CleanFlow
+          Secured by DrycleanersFlow
         </p>
       </div>
     </div>

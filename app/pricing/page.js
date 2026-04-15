@@ -2,16 +2,23 @@
 
 import { useRouter } from 'next/navigation';
 import { TIERS, ADD_ONS } from '@/lib/tier-config';
+import MarketingNavbar from '@/components/marketing/MarketingNavbar';
+import MarketingFooter from '@/components/marketing/MarketingFooter';
 
 export default function PricingLandingPage() {
   const router = useRouter();
 
   const handleStart = (tierKey) => {
+    if (tierKey === 'enterprise') {
+      router.push('/contact');
+      return;
+    }
     router.push(`/signup?tier=${tierKey}`);
   };
 
   return (
     <div className="min-h-screen bg-[#F8FAF9] text-slate-900 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+      <MarketingNavbar />
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-100/40 blur-[120px] rounded-full animate-pulse"></div>
@@ -22,11 +29,11 @@ export default function PricingLandingPage() {
       <header className="relative z-10 pt-20 pb-16 text-center px-6">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full border border-emerald-100 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Aligned with CleanFlow v2.4</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Aligned with DrycleanersFlow v2.4</span>
         </div>
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 mb-6 font-headline leading-tight animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
           Simple Pricing for<br />
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-blue-600">Modern Ateliers</span>
+          <span className="text-emerald-700">Modern Ateliers</span>
         </h1>
         <p className="max-w-2xl mx-auto text-lg text-slate-500 font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
           Move beyond outdated systems. Choose a plan that fuels your growth with automated workflows, real-time tracking, and premium hardware.
@@ -35,7 +42,7 @@ export default function PricingLandingPage() {
 
       {/* Pricing Grid */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {Object.entries(TIERS).map(([key, tier], idx) => (
             <div 
               key={key}
@@ -43,7 +50,7 @@ export default function PricingLandingPage() {
             >
               {key === 'hardware_bundle' && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">
-                  Most Popular for Laundromats
+                  Most Popular
                 </div>
               )}
 
@@ -54,7 +61,9 @@ export default function PricingLandingPage() {
                 <h3 className="text-3xl font-black text-slate-900 mb-2 font-headline">{tier.label}</h3>
                 <div className="flex items-baseline gap-1">
                   <span className="text-5xl font-black text-slate-900 tracking-tighter">{tier.price}</span>
-                  <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">/ Month</span>
+                  {key !== 'enterprise' ? (
+                    <span className="text-slate-400 font-bold uppercase tracking-widest text-xs">/ Month</span>
+                  ) : null}
                 </div>
               </div>
 
@@ -79,7 +88,7 @@ export default function PricingLandingPage() {
                     key === 'hardware_bundle' ? 'primary-gradient text-white shadow-emerald-900/10' : 'bg-slate-900 text-white shadow-slate-900/10'
                   }`}
                 >
-                  <span className="relative z-10">Get Started with {tier.label}</span>
+                  <span className="relative z-10">{key === 'enterprise' ? 'Contact Sales' : `Get Started with ${tier.label}`}</span>
                   <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/btn:translate-x-[0%] transition-transform duration-500 skew-x-12"></div>
                 </button>
               </div>
@@ -98,8 +107,8 @@ export default function PricingLandingPage() {
       {/* Add-Ons Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 pb-32">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter font-headline mb-4">Enterprise Add-Ons</h2>
-          <p className="text-slate-500 font-medium uppercase tracking-[0.3em] text-[10px]">Scale your operational capacity as needed</p>
+          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter font-headline mb-4">Add-Ons For Every Tier</h2>
+          <p className="text-slate-500 font-medium uppercase tracking-[0.3em] text-[10px]">Optional upgrades available on Software, Hardware Bundle, and Enterprise plans</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -118,8 +127,7 @@ export default function PricingLandingPage() {
         </div>
       </section>
 
-      {/* Comparison Footer */}
-      <footer className="relative z-10 bg-slate-900 py-32 text-white">
+      <section className="relative z-10 bg-slate-900 py-32 text-white">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <div className="inline-flex items-center gap-2 px-6 py-2 bg-white/5 rounded-full border border-white/10 mb-10">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Unmatched Performance</span>
@@ -129,7 +137,7 @@ export default function PricingLandingPage() {
             <span className="italic">Production Speed</span>
           </h2>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg mb-12 font-medium">
-            Join 500+ ateliers who switched to CleanFlow. No hidden fees. No long-term contracts. Just pristine operations.
+            Join 500+ ateliers who switched to DrycleanersFlow. No hidden fees. No long-term contracts. Just pristine operations.
           </p>
           <button 
             onClick={() => router.push('/signup')}
@@ -153,7 +161,8 @@ export default function PricingLandingPage() {
             </div>
           </div>
         </div>
-      </footer>
+      </section>
+      <MarketingFooter />
     </div>
   );
 }

@@ -18,16 +18,35 @@ export async function POST(request) {
 
     // Use a transaction for atomic update and logging
     const result = await transaction(async (q) => {
-      // 1. Find the item
+      // 1. Find the item using FlexTag logic (Exact match > Partial match > Order match)
       const itemRes = await q(`
         SELECT oi.*, o.order_number, o.store_id, o.status as order_status
         FROM order_items oi
         JOIN orders o ON oi.order_id = o.id
-        WHERE oi.tag_id = $1 AND o.store_id = $2
+        WHERE o.store_id = $2
+          AND (
+            oi.tag_id ILIKE $1                      -- Exact Tag Match (Case Insensitive)
+            OR oi.tag_id ILIKE 'WA-' || $1          -- Missing 'WA-' Prefix
+            OR oi.tag_id ILIKE 'CF-' || $1          -- Missing 'CF-' Prefix
+            OR oi.tag_id ILIKE '%' || $1            -- End-of-Tag match (e.g. 8775-1)
+            OR o.order_number ILIKE $1              -- Order Number Match (pick first item)
+            OR o.order_number ILIKE 'WA-' || $1 
+            OR o.order_number ILIKE 'CF-' || $1
+          )
+          AND oi.status != 'delivered'           -- Don't match already completed items
+        ORDER BY 
+          CASE 
+            WHEN oi.tag_id ILIKE $1 THEN 1
+            WHEN oi.tag_id ILIKE '%' || $1 THEN 2
+            WHEN o.order_number ILIKE $1 THEN 3
+            ELSE 4
+          END,
+          oi.id ASC
+        LIMIT 1
       `, [tag_id, auth.user.store_id]);
 
       if (itemRes.rows.length === 0) {
-        throw new Error(`Item with Tag ID ${tag_id} not found.`);
+        throw new Error(`Item with Tag ID/Ref "${tag_id}" not found in active pool.`);
       }
 
       const item = itemRes.rows[0];
@@ -84,7 +103,7 @@ export async function POST(request) {
          
          if (customerRes.rows.length > 0) {
            const customer = customerRes.rows[0];
-           const message = `Hi ${customer.name}! Your order #${customer.order_number} is now READY for pickup/delivery at CleanFlow. See you soon!`;
+           const message = `Hi ${customer.name}! Your order #${customer.order_number} is now READY for pickup/delivery at DrycleanersFlow. See you soon!`;
            await sendWhatsAppMessage(customer.phone, message);
            
            // Log notification event for frontdesk

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db/db';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { transaction } from '@/lib/db/db';
+import { reconcileStoreLimits } from '@/lib/tier-enforcement';
 
 export async function PATCH(req, { params }) {
   try {
@@ -34,23 +35,37 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: 'Payment required for subscription upgrade.' }, { status: 402 });
     }
 
-    // Verify the store belongs to this owner (superadmin bypasses this check)
-    let storeRes;
-    if (isSuperadmin) {
-      storeRes = await query('SELECT * FROM stores WHERE id = $1', [id]);
-    } else {
-      storeRes = await query('SELECT * FROM stores WHERE id = $1 AND owner_id = $2', [id, payload.id]);
-    }
-    
-    if (storeRes.rows.length === 0) {
-      return NextResponse.json({ error: 'Store not found or access denied.' }, { status: 404 });
-    }
+    // Use a transaction to update the tier and reconcile limits
+    const stats = await transaction(async (q) => {
+      // 1. Verify access
+      let storeCheck;
+      if (isSuperadmin) {
+        storeCheck = await q('SELECT owner_id FROM stores WHERE id = $1', [id]);
+      } else {
+        storeCheck = await q('SELECT owner_id FROM stores WHERE id = $1 AND owner_id = $2', [id, payload.id]);
+      }
 
-    await query('UPDATE stores SET subscription_tier = $1 WHERE id = $2', [tier, id]);
+      if (storeCheck.rows.length === 0) {
+        throw new Error('NOT_FOUND');
+      }
 
-    return NextResponse.json({ success: true, store_id: id, tier });
+      const targetOwnerId = storeCheck.rows[0].owner_id;
+
+      // 2. Perform reconciliation (this updates ALL stores for this owner to the new tier)
+      return await reconcileStoreLimits({ query: q }, targetOwnerId, tier);
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      store_id: id, 
+      tier,
+      reconciliation: stats
+    });
 
   } catch (error) {
+    if (error.message === 'NOT_FOUND') {
+      return NextResponse.json({ error: 'Store not found or access denied.' }, { status: 404 });
+    }
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

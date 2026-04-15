@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
+import PhotoCapture from '@/components/logistics/PhotoCapture';
 
 function AnimatedTotal({ value, prefix = '₹' }) {
   const [display, setDisplay] = useState(0);
@@ -137,9 +138,15 @@ export default function NewOrder() {
   
   const [itemEditIndex, setItemEditIndex] = useState(null);
   const [showItemEditModal, setShowItemEditModal] = useState(false);
-  const [itemEditData, setItemEditData] = useState({ tag_id: '', bag_id: '', notes: '' });
+  const [itemEditData, setItemEditData] = useState({ tag_id: '', bag_id: '', notes: '', fabric_hint: '', stain_analysis: null });
+  const [showStainCapture, setShowStainCapture] = useState(false);
+  const [stainAnalyzing, setStainAnalyzing] = useState(false);
+  const [stainError, setStainError] = useState('');
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [customItem, setCustomItem] = useState({ name: '', price: '' });
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategory, setNewCategory] = useState({ garment_type: '', service_type: 'Dry Cleaning', price: '' });
+  const [addCategoryLoading, setAddCategoryLoading] = useState(false);
 
   const addToCart = (item) => {
     // Each garment is a unique physical item for tracking
@@ -149,6 +156,32 @@ export default function NewOrder() {
   const handleAddCustomGarment = () => {
     setCustomItem({ name: '', price: '' });
     setIsCustomModalOpen(true);
+  };
+
+  const handleAddCategory = async () => {
+    const price = parseFloat(newCategory.price);
+    if (!newCategory.garment_type || !newCategory.service_type || isNaN(price) || price <= 0) return;
+    setAddCategoryLoading(true);
+    try {
+      const res = await fetch('/api/pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ garment_type: newCategory.garment_type, service_type: newCategory.service_type, price }),
+      });
+      if (res.ok) {
+        const added = await res.json();
+        setPricing(prev => [...prev, added]);
+        setActiveCategory(newCategory.garment_type);
+        setShowAddCategoryModal(false);
+        setNewCategory({ garment_type: '', service_type: 'Dry Cleaning', price: '' });
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to add category');
+      }
+    } catch (e) {
+      alert('Network error: ' + e.message);
+    }
+    setAddCategoryLoading(false);
   };
 
   const removeFromCart = (index) => {
@@ -380,6 +413,7 @@ export default function NewOrder() {
           <div className="flex items-center justify-between mb-4 px-1 animate-fade-in-up stagger-2">
             <h3 className="text-xs font-black uppercase tracking-widest text-theme-text-muted/70">Select Garments</h3>
             <div className="flex gap-2">
+              <button onClick={() => setShowAddCategoryModal(true)} className="px-3 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase hover:bg-amber-600 transition flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">add</span>Category</button>
               <button onClick={handleAddCustomGarment} className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase hover:bg-emerald-700 transition">+ Custom Item</button>
               <button className="px-3 py-1 rounded-full bg-emerald-100 text-theme-text text-[10px] font-bold uppercase">Popular</button>
               <button className="px-3 py-1 rounded-full bg-theme-surface-container text-theme-text-muted text-[10px] font-bold uppercase">A-Z</button>
@@ -610,7 +644,14 @@ export default function NewOrder() {
                        <button 
                          onClick={() => {
                            setItemEditIndex(i);
-                           setItemEditData({ tag_id: item.tag_id || '', bag_id: item.bag_id || '', notes: item.notes || '' });
+                           setItemEditData({
+                             tag_id: item.tag_id || '',
+                             bag_id: item.bag_id || '',
+                             notes: item.notes || '',
+                             fabric_hint: item.fabric_hint || '',
+                             stain_analysis: item.stain_analysis || null
+                           });
+                           setStainError('');
                            setShowItemEditModal(true);
                          }}
                          className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-widest hover:text-theme-text"
@@ -621,6 +662,14 @@ export default function NewOrder() {
                     </div>
                     {item.notes && (
                       <p className="text-[8px] text-amber-600 font-medium italic truncate px-1">Note: {item.notes}</p>
+                    )}
+                    {item.stain_analysis?.stains?.[0] && (
+                      <div className="px-1">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-[8px] font-black uppercase tracking-tight">
+                          <span className="material-symbols-outlined text-[10px]">biotech</span>
+                          {item.stain_analysis.stains[0].label} ({Math.round((item.stain_analysis.stains[0].confidence || 0) * 100)}%)
+                        </span>
+                      </div>
                     )}
                   </div>
                 ))
@@ -1073,6 +1122,50 @@ export default function NewOrder() {
                   placeholder="Stains, delicate fabric, etc."
                 />
               </div>
+              <div>
+                <label className="text-[10px] font-black uppercase text-theme-text-muted/70 tracking-widest block mb-1">Fabric Hint (Optional)</label>
+                <input
+                  type="text"
+                  className="w-full bg-theme-surface-container border border-transparent rounded-xl p-3 text-sm font-bold focus:bg-theme-surface focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all"
+                  value={itemEditData.fabric_hint}
+                  onChange={e => setItemEditData({ ...itemEditData, fabric_hint: e.target.value })}
+                  placeholder="e.g. silk, wool, cotton"
+                />
+              </div>
+              <div className="bg-theme-surface-container rounded-xl p-3 border border-theme-border">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-theme-text">ML Stain Scan</p>
+                    <p className="text-[10px] text-theme-text-muted">Using mock stub now. Real model endpoint later.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setStainError(''); setShowStainCapture(true); }}
+                    disabled={stainAnalyzing}
+                    className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {stainAnalyzing ? 'Analyzing...' : 'Scan Stain'}
+                  </button>
+                </div>
+                {stainError && (
+                  <p className="mt-2 text-[10px] font-bold text-red-600">{stainError}</p>
+                )}
+                {itemEditData.stain_analysis?.stains?.[0] && (
+                  <div className="mt-3 p-2 rounded-lg bg-theme-surface border border-theme-border">
+                    <p className="text-[10px] font-black text-theme-text uppercase tracking-widest">
+                      Detected: {itemEditData.stain_analysis.stains[0].label}
+                    </p>
+                    <p className="text-[10px] text-theme-text-muted">
+                      Confidence: {Math.round((itemEditData.stain_analysis.stains[0].confidence || 0) * 100)}% • Model: {itemEditData.stain_analysis.model_version}
+                    </p>
+                    {itemEditData.stain_analysis.recommendations?.[0] && (
+                      <p className="text-[10px] text-emerald-700 font-bold mt-1">
+                        Recommended: {itemEditData.stain_analysis.recommendations[0].chemical} ({itemEditData.stain_analysis.recommendations[0].method})
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex flex-col gap-3">
               <button 
@@ -1089,6 +1182,119 @@ export default function NewOrder() {
               <button 
                 onClick={() => setShowItemEditModal(false)}
                 className="w-full py-4 bg-theme-surface-container text-theme-text-muted rounded-2xl font-bold text-sm hover:bg-slate-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showStainCapture && (
+        <PhotoCapture
+          title="Stain Scanner"
+          helperText="Take a clear photo of the stain area"
+          confirmLabel="Analyze Stain"
+          onCancel={() => setShowStainCapture(false)}
+          onCapture={async (imageBase64) => {
+            setShowStainCapture(false);
+            setStainError('');
+            setStainAnalyzing(true);
+            try {
+              const currentItem = cart[itemEditIndex] || {};
+              const res = await fetch('/api/stain-analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  image_base64: imageBase64,
+                  garment_type: currentItem.garment_type || '',
+                  fabric_hint: itemEditData.fabric_hint || '',
+                }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || 'Stain analysis failed');
+              setItemEditData(prev => ({ ...prev, stain_analysis: data }));
+            } catch (err) {
+              setStainError(err.message || 'Could not analyze stain image');
+            } finally {
+              setStainAnalyzing(false);
+            }
+          }}
+        />
+      )}
+
+      {/* Add Category Modal */}
+      {showAddCategoryModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-theme-surface rounded-[2.5rem] shadow-2xl border border-theme-border p-8 w-full max-w-md animate-scale-in">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-2xl">category</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-black font-headline text-theme-text">New Category</h2>
+                <p className="text-xs font-medium text-theme-text-muted">Add a new garment type to your pricing</p>
+              </div>
+              <button onClick={() => setShowAddCategoryModal(false)} className="w-10 h-10 rounded-full hover:bg-theme-surface-container flex items-center justify-center text-theme-text-muted transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-5 mb-8">
+              <div>
+                <label className="text-[10px] font-black uppercase text-theme-text-muted/70 tracking-widest pl-2 mb-2 block">Garment Type *</label>
+                <input
+                  autoFocus
+                  className="w-full bg-theme-surface-container border border-transparent rounded-2xl py-4 px-6 text-sm font-bold shadow-inner focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/30 transition-all placeholder:text-theme-text-muted/50 outline-none"
+                  placeholder="e.g. Silk Saree, Leather Jacket, Wedding Gown"
+                  value={newCategory.garment_type}
+                  onChange={e => setNewCategory({ ...newCategory, garment_type: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted/70 tracking-widest pl-2 mb-2 block">Service Type</label>
+                  <select
+                    className="w-full bg-theme-surface-container border border-transparent rounded-2xl py-4 px-5 text-sm font-bold shadow-inner focus:ring-2 focus:ring-amber-500/20 transition-all outline-none"
+                    value={newCategory.service_type}
+                    onChange={e => setNewCategory({ ...newCategory, service_type: e.target.value })}
+                  >
+                    {['Dry Cleaning', 'Washing', 'Ironing', 'Stain Removal', 'Express Service', 'Polishing', 'Wash & Fold (Per Kg)', 'Premium Dry Clean Bundle'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted/70 tracking-widest pl-2 mb-2 block">Price (₹) *</label>
+                  <div className="relative">
+                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-theme-text-muted font-black text-sm">₹</span>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full bg-theme-surface-container border border-transparent rounded-2xl py-4 pl-10 pr-6 text-sm font-bold shadow-inner focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/30 transition-all placeholder:text-theme-text-muted/50 outline-none font-headline text-lg"
+                      placeholder="0"
+                      value={newCategory.price}
+                      onChange={e => setNewCategory({ ...newCategory, price: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                disabled={!newCategory.garment_type || !newCategory.price || addCategoryLoading}
+                onClick={handleAddCategory}
+                className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-amber-900/10 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {addCategoryLoading ? (
+                  <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div> Saving...</>
+                ) : (
+                  <><span className="material-symbols-outlined text-[18px]">add_circle</span> Add to Pricing Matrix</>
+                )}
+              </button>
+              <button
+                onClick={() => setShowAddCategoryModal(false)}
+                className="w-full py-4 bg-theme-surface-container text-theme-text-muted rounded-2xl font-bold text-sm hover:bg-theme-surface-container/80 transition-colors"
               >
                 Cancel
               </button>

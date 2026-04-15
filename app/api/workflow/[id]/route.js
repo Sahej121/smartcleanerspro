@@ -65,7 +65,7 @@ export async function PUT(request, { params }) {
         
         if (customerRes.rows.length > 0) {
           const customer = customerRes.rows[0];
-          const message = `Hi ${customer.name}! Your order #${customer.order_number} is now READY for pickup/delivery at CleanFlow. See you soon!`;
+          const message = `Hi ${customer.name}! Your order #${customer.order_number} is now READY for pickup/delivery at DrycleanersFlow. See you soon!`;
           await sendWhatsAppMessage(customer.phone, message);
           
           // Log notification event for frontdesk

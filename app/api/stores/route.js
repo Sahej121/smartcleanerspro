@@ -3,6 +3,7 @@ import { query, getClient } from '@/lib/db/db';
 import { verifyToken, hashPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { canCreateStore } from '@/lib/tier-config';
+import { reconcileStoreLimits } from '@/lib/tier-enforcement';
 
 function generatePassword(length = 8) {
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -170,7 +171,8 @@ export async function POST(req) {
         success: true,
         store_id: newStoreId,
         store_name,
-        admin_email: admin_email || payload.email,
+        owner_id: targetOwnerId,
+        admin_email: admin_email || null,
         tempPassword,
         tempPin,
         manager: managerDetails
@@ -241,6 +243,59 @@ export async function GET(request) {
 
       return NextResponse.json(owners);
     }
+    
+    // --- SELF-HEALING HOOK ---
+    // If the user is an owner, ensure their fleet is consistent
+    if (payload.role === 'owner') {
+      try {
+        const client = await getClient();
+        try {
+          // 1. Check for tier mismatch or missing NZ country data
+          const checkRes = await client.query(`
+            SELECT id, subscription_tier, store_name, country 
+            FROM stores 
+            WHERE owner_id = $1 
+            ORDER BY created_at ASC`, 
+            [payload.id]
+          );
+          
+          if (checkRes.rows.length > 0) {
+            const primaryTier = checkRes.rows[0].subscription_tier;
+            const needsAlignment = checkRes.rows.some(s => s.subscription_tier !== primaryTier);
+            const needsNZFix = checkRes.rows.some(s => 
+              (s.store_name.toLowerCase().includes('auckland') || s.store_name.toLowerCase().replace(' ', '').includes('newzealand')) && 
+              s.country !== 'New Zealand'
+            );
+
+            if (needsAlignment || needsNZFix) {
+              await client.query('BEGIN');
+              
+              // Apply Tier Alignment
+              if (needsAlignment) {
+                await reconcileStoreLimits({ query: (text, params) => client.query(text, params) }, payload.id, primaryTier);
+              }
+              
+              // Apply Regional Correction (NZ Fix)
+              if (needsNZFix) {
+                await client.query(`
+                  UPDATE stores 
+                  SET country = 'New Zealand' 
+                  WHERE owner_id = $1 
+                  AND (store_name ILIKE '%Auckland%' OR store_name ILIKE '%NewZealand%' OR store_name ILIKE '%New Zealand%')`,
+                  [payload.id]
+                );
+              }
+              
+              await client.query('COMMIT');
+            }
+          }
+        } finally {
+          client.release();
+        }
+      } catch (err) {
+        console.error('[Self-Healing] Failed to align fleet:', err);
+      }
+    }
 
     // Regular owners/managers see their own stores flat
     let queryStr;
@@ -262,7 +317,7 @@ export async function GET(request) {
                (SELECT COALESCE(sum(total_amount), 0) FROM orders WHERE store_id = s.id AND payment_status = 'paid') as total_revenue
         FROM stores s
         WHERE s.owner_id = $1
-        ORDER BY s.created_at DESC
+        ORDER BY s.created_at ASC
       `;
       queryParams = [payload.id];
     }

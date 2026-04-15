@@ -109,7 +109,7 @@ export default function PricingPage() {
         ) : (
           <div className="space-y-6">
             {Object.entries(grouped).map(([garment, items], idx) => (
-              <div key={garment} className="bg-surface rounded-[2.5rem] border border-theme-border p-8 shadow-sm group hover:border-slate-700 transition-colors animate-fade-in-up" style={{ animationDelay: \`\${idx * 50}ms\` }}>
+              <div key={garment} className="bg-surface rounded-[2.5rem] border border-theme-border p-8 shadow-sm group hover:border-slate-700 transition-colors animate-fade-in-up" style={{ animationDelay: `${idx * 50}ms` }}>
                 <div className="flex items-center gap-3 mb-6 pb-6 border-b border-theme-border/50">
                   <span className="text-[10px] font-black bg-background text-theme-text-muted border border-theme-border px-3 py-1.5 rounded-[1rem] uppercase tracking-[0.2em] group-hover:text-amber-500 group-hover:border-amber-500/30 transition-colors">
                     Garment Code
@@ -119,9 +119,9 @@ export default function PricingPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {items.map(item => (
-                    <div key={item.id} className={\`p-5 rounded-[1.5rem] border transition-all \${
+                    <div key={item.id} className={`p-5 rounded-[1.5rem] border transition-all ${
                       editingId === item.id ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'bg-background border-theme-border hover:border-amber-500/30 group/item'
-                    }\`}>
+                    }`}>
                       <div className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-3 flex items-center gap-2">
                         <span className="material-symbols-outlined text-[14px]">sell</span>
                         {item.service_type}

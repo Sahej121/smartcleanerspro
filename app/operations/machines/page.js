@@ -19,11 +19,21 @@ const MACHINE_COLORS = {
 
 export default function MachineOperationsHub() {
   const { user, loading: authLoading } = useUser();
+  const router = useRouter();
   const [machines, setMachines] = useState([]);
   const [selectedMachine, setSelectedMachine] = useState(null);
   const [loads, setLoads] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
+  // Access Control: Strict Enterprise Check
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.tier !== 'enterprise' && user.id !== 1) {
+        router.push('/');
+      }
+    }
+  }, [user, authLoading, router]);
+
   // For starting a new load
   const [scannedTag, setScannedTag] = useState('');
   const [scanError, setScanError] = useState('');

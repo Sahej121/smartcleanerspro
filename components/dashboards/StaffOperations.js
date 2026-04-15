@@ -8,6 +8,7 @@ export default function StaffOperations({ user }) {
   const [loading, setLoading] = useState(true);
   const [updatingItem, setUpdatingItem] = useState(null);
   const [activeBroadcast, setActiveBroadcast] = useState(null);
+  const [drivers, setDrivers] = useState([]);
 
   const fetchData = async () => {
     try {
@@ -30,16 +31,31 @@ export default function StaffOperations({ user }) {
     }
   };
 
+  const fetchDrivers = async () => {
+    try {
+      const res = await fetch('/api/staff?role=driver');
+      if (res.ok) {
+        const data = await res.json();
+        setDrivers(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch drivers:', err);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30s
+    if (['owner', 'manager', 'admin'].includes(user?.role)) {
+      fetchDrivers();
+    }
+    const interval = setInterval(fetchData, 30000); 
     return () => clearInterval(interval);
   }, []);
 
   const handleAdvanceItem = async (itemId) => {
     setUpdatingItem(itemId);
     try {
-      const res = await fetch('/api/workflow/update', {
+      const res = await fetch('/api/workflow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemId })
@@ -66,6 +82,21 @@ export default function StaffOperations({ user }) {
       }
     } catch (err) {
       console.error('Failed to toggle task:', err);
+    }
+  };
+
+  const handleAssignDriver = async (orderId, driverId) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}/logistics`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'delivery', status: 'scheduled', driverId })
+      });
+      if (res.ok) {
+        fetchData();
+      }
+    } catch (err) {
+      console.error('Failed to assign driver:', err);
     }
   };
 
@@ -107,14 +138,14 @@ export default function StaffOperations({ user }) {
       {/* Header Section */}
       <div className="mb-10 flex justify-between items-end animate-fade-in-up">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-on-surface mb-1 font-headline">Operations Monitor</h2>
-          <p className="text-on-surface-variant font-medium">
+          <h2 className="text-4xl font-black tracking-tighter text-theme-text mb-1 font-headline italic">Operations Monitor</h2>
+          <p className="text-theme-text-muted font-bold tracking-tight">
             {isFrontdesk ? 'Customer In-take & Retail Service' : isDriver ? 'Logistics & Dispatch Queue' : 'BOH Workflow & Live Production Stats'}
           </p>
         </div>
         <div className="flex gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-xl text-emerald-700 font-bold text-sm shadow-sm border border-emerald-100/30">
-            <span className="material-symbols-outlined text-sm status-dot-pulse">visibility</span>
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 rounded-2xl text-primary font-black text-[11px] uppercase tracking-widest border border-primary/20 shadow-lg shadow-primary/5">
+            <span className="material-symbols-outlined text-sm">visibility</span>
             {user?.role?.toUpperCase()} Mode Active
           </div>
         </div>
@@ -124,15 +155,15 @@ export default function StaffOperations({ user }) {
       <div className="grid grid-cols-12 gap-6">
         {/* Production Queue Observer */}
         <section className="col-span-12 lg:col-span-8 space-y-6">
-          <div className="bg-surface-container-lowest p-6 rounded-3xl shadow-sm border border-outline-variant/10 animate-fade-in-up">
-            <div className="flex justify-between items-center mb-6">
+          <div className="bg-theme-surface-container p-8 rounded-[3rem] shadow-sm border border-theme-border animate-fade-in-up relative overflow-hidden">
+            <div className="flex justify-between items-center mb-8 relative z-10">
               <div>
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-600">monitor</span>
+                <h3 className="text-xl font-black flex items-center gap-3 text-theme-text tracking-tighter italic">
+                  <span className="material-symbols-outlined text-primary scale-125">monitor</span>
                   Production Queue
                 </h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                  Active workflow for your current role
+                <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.3em] mt-2 opacity-60">
+                   Active workflow for {user?.role || 'operator'} identity
                 </p>
               </div>
             </div>
@@ -141,32 +172,32 @@ export default function StaffOperations({ user }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[500px] overflow-y-auto lg:overflow-hidden">
               {/* Stage: In-Take (received + sorting) - Visible to Frontdesk and Staff */}
               {(isFrontdesk || isStaff || isFullAccess) && (
-                <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between px-2">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">In-Take</span>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 w-6 h-6 rounded-lg flex items-center justify-center">
+                <div className="flex flex-col gap-5">
+                <div className="flex items-center justify-between px-3">
+                  <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">In-Take</span>
+                  <span className="text-[11px] font-black text-primary bg-primary/10 w-8 h-8 rounded-xl flex items-center justify-center border border-primary/20 shadow-inner">
                     {(getStageItems('received').length + getStageItems('sorting').length).toString().padStart(2, '0')}
                   </span>
                 </div>
-                <div className="space-y-3 overflow-y-auto no-scrollbar pb-4">
+                <div className="space-y-4 overflow-y-auto no-scrollbar pb-4 px-1">
                   {[...getStageItems('received'), ...getStageItems('sorting')].map((item, i) => (
                     <div 
                       key={item.id} 
                       onClick={() => handleAdvanceItem(item.id)}
-                      className={`p-4 bg-surface rounded-2xl border-l-4 border-emerald-500 shadow-sm animate-fade-in-up cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
+                      className={`p-5 bg-theme-surface rounded-[2rem] border border-theme-border border-l-4 border-l-primary shadow-sm animate-fade-in-up cursor-pointer hover:border-primary/50 hover:-translate-y-1 active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
                       style={{ animationDelay: `${i * 100}ms` }}
                     >
                       {updatingItem === item.id && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-2xl z-20">
-                           <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[2rem] z-20 backdrop-blur-sm">
+                           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                         </div>
                       )}
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] font-extrabold text-primary">{item.order_number}</span>
-                        <span className="material-symbols-outlined text-sm text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+                      <div className="flex justify-between items-start mb-3">
+                        <span className="text-[11px] font-black text-primary tracking-widest uppercase">{item.order_number}</span>
+                        <span className="material-symbols-outlined text-sm text-theme-text-muted opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">arrow_forward</span>
                       </div>
-                      <p className="text-sm font-bold text-on-surface mb-1">{item.garment_type}</p>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.service_type}</p>
+                      <p className="text-base font-black text-theme-text mb-1 tracking-tight">{item.garment_type}</p>
+                      <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest opacity-60">{item.service_type}</p>
                     </div>
                   ))}
                 </div>
@@ -175,33 +206,33 @@ export default function StaffOperations({ user }) {
 
               {/* Stage: Processing (washing + dry_cleaning + drying) - Visible to Staff */}
               {(isStaff || isFullAccess) && (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Processing</span>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 w-6 h-6 rounded-lg flex items-center justify-center">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between px-3">
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Processing</span>
+                    <span className="text-[11px] font-black text-secondary bg-secondary/10 w-8 h-8 rounded-xl flex items-center justify-center border border-secondary/20 shadow-inner">
                       {(getStageItems('washing').length + getStageItems('dry_cleaning').length + getStageItems('drying').length).toString().padStart(2, '0')}
                     </span>
                   </div>
-                  <div className="space-y-3 overflow-y-auto no-scrollbar pb-4">
+                  <div className="space-y-4 overflow-y-auto no-scrollbar pb-4 px-1">
                     {[...getStageItems('washing'), ...getStageItems('dry_cleaning'), ...getStageItems('drying')].map((item, i) => (
                       <div 
                         key={item.id} 
                         onClick={() => handleAdvanceItem(item.id)}
-                        className={`p-4 bg-emerald-50/20 rounded-2xl border-l-4 border-secondary shadow-sm animate-fade-in-up cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
+                        className={`p-5 bg-theme-surface rounded-[2rem] border border-theme-border border-l-4 border-l-secondary shadow-sm animate-fade-in-up cursor-pointer hover:border-secondary/50 hover:-translate-y-1 active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
                         style={{ animationDelay: `${i * 100}ms` }}
                       >
                         {updatingItem === item.id && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-2xl z-20">
-                             <div className="w-5 h-5 border-2 border-secondary border-t-transparent rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[2rem] z-20 backdrop-blur-sm">
+                             <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin"></div>
                           </div>
                         )}
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-[10px] font-extrabold text-secondary">{item.order_number}</span>
-                          <span className="material-symbols-outlined text-[14px] text-secondary group-hover:animate-spin">sync</span>
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-[11px] font-black text-secondary tracking-widest uppercase">{item.order_number}</span>
+                          <span className="material-symbols-outlined text-[16px] text-secondary group-hover:rotate-180 transition-transform duration-500">sync</span>
                         </div>
-                        <p className="text-sm font-bold text-on-surface mb-1">{item.garment_type}</p>
-                        <div className="w-full bg-secondary/10 h-1.5 rounded-full mt-3 overflow-hidden">
-                          <div className="bg-secondary h-full rounded-full" style={{ width: '45%' }}></div>
+                        <p className="text-base font-black text-theme-text mb-1 tracking-tight">{item.garment_type}</p>
+                        <div className="w-full bg-secondary/10 h-1.5 rounded-full mt-4 overflow-hidden border border-secondary/5">
+                          <div className="bg-secondary h-full rounded-full shadow-[0_0_10px_rgba(199,199,188,0.3)] animate-pulse" style={{ width: '45%' }}></div>
                         </div>
                       </div>
                     ))}
@@ -211,34 +242,34 @@ export default function StaffOperations({ user }) {
 
               {/* Stage: Quality (ironing + quality_check) - Visible to Staff */}
               {(isStaff || isFullAccess) && (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Finishing</span>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 w-6 h-6 rounded-lg flex items-center justify-center">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between px-3">
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Finishing</span>
+                    <span className="text-[11px] font-black text-emerald-500 bg-emerald-500/10 w-8 h-8 rounded-xl flex items-center justify-center border border-emerald-500/20 shadow-inner">
                       {(getStageItems('ironing').length + getStageItems('quality_check').length).toString().padStart(2, '0')}
                     </span>
                   </div>
-                  <div className="space-y-3 overflow-y-auto no-scrollbar pb-4">
+                  <div className="space-y-4 overflow-y-auto no-scrollbar pb-4 px-1">
                     {[...getStageItems('ironing'), ...getStageItems('quality_check')].map((item, i) => (
                       <div 
                         key={item.id} 
                         onClick={() => handleAdvanceItem(item.id)}
-                        className={`p-4 bg-surface rounded-2xl border-l-4 border-emerald-300 shadow-sm animate-fade-in-up cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
+                        className={`p-5 bg-theme-surface rounded-[2rem] border border-theme-border border-l-4 border-l-emerald-500 shadow-sm animate-fade-in-up cursor-pointer hover:border-emerald-500/50 hover:-translate-y-1 active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
                         style={{ animationDelay: `${i * 100}ms` }}
                       >
                         {updatingItem === item.id && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-2xl z-20">
-                             <div className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[2rem] z-20 backdrop-blur-sm">
+                             <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                           </div>
                         )}
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-[10px] font-extrabold text-emerald-700">{item.order_number}</span>
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-[11px] font-black text-emerald-600 tracking-widest uppercase">{item.order_number}</span>
                           <span className="material-symbols-outlined text-sm text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity">check_circle</span>
                         </div>
-                        <p className="text-sm font-bold text-on-surface mb-1">{item.garment_type}</p>
-                        <div className="flex items-center gap-1 mt-2">
-                          <span className="material-symbols-outlined text-emerald-500 text-[14px]">verified</span>
-                          <span className="text-[10px] font-bold text-emerald-600 uppercase">QC Stage</span>
+                        <p className="text-base font-black text-theme-text mb-1 tracking-tight">{item.garment_type}</p>
+                        <div className="flex items-center gap-2 mt-3 p-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                          <span className="material-symbols-outlined text-emerald-500 text-[16px]">verified</span>
+                          <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">QC Induction</span>
                         </div>
                       </div>
                     ))}
@@ -248,28 +279,44 @@ export default function StaffOperations({ user }) {
 
               {/* Stage: Logistics (Ready items for Dispatch) - Visible to Driver and Production */}
               {(isDriver || isProduction) && (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Logistics Dispatch</span>
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 w-6 h-6 rounded-lg flex items-center justify-center">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between px-3">
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Logistics Dispatch</span>
+                    <span className="text-[11px] font-black text-blue-500 bg-blue-500/10 w-8 h-8 rounded-xl flex items-center justify-center border border-blue-500/20 shadow-inner">
                       {getStageItems('ready').filter(i => i.delivery_status === 'pending').length.toString().padStart(2, '0')}
                     </span>
                   </div>
-                  <div className="space-y-3 overflow-y-auto no-scrollbar pb-4">
+                  <div className="space-y-4 overflow-y-auto no-scrollbar pb-4 px-1">
                     {getStageItems('ready').filter(i => i.delivery_status === 'pending').map((item, i) => (
                       <div 
                         key={item.id} 
                         onClick={() => handleAdvanceItem(item.id)}
-                        className={`p-4 bg-blue-50/20 rounded-2xl border-l-4 border-blue-500 shadow-sm animate-fade-in-up cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
+                        className={`p-5 bg-theme-surface rounded-[2rem] border border-theme-border border-l-4 border-l-blue-500 shadow-sm animate-fade-in-up cursor-pointer hover:border-blue-500/50 hover:-translate-y-1 active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
                         style={{ animationDelay: `${i * 100}ms` }}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-[10px] font-extrabold text-blue-700">{item.order_number}</span>
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-[11px] font-black text-blue-600 tracking-widest uppercase">{item.order_number}</span>
                           <span className="material-symbols-outlined text-sm text-blue-500">local_shipping</span>
                         </div>
-                        <p className="text-sm font-bold text-on-surface mb-1">{item.garment_type}</p>
-                        <div className="flex items-center gap-1 mt-2">
-                           <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest bg-blue-100/50 px-2 py-0.5 rounded">Dispatch Ready</span>
+                        <p className="text-base font-black text-theme-text mb-1 tracking-tight">{item.garment_type}</p>
+                        
+                        {isFullAccess && (
+                          <div className="mt-4 pt-4 border-t border-theme-border/30">
+                            <select 
+                              onChange={(e) => handleAssignDriver(item.order_id, e.target.value)}
+                              className="w-full bg-theme-surface border border-theme-border rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest text-theme-text-muted outline-none focus:border-primary transition-colors"
+                              value={item.driver_id || ""}
+                            >
+                              <option value="">{item.driver_id ? 'Reassign Driver' : 'Assign Driver'}</option>
+                              {drivers.map(d => (
+                                <option key={d.id} value={d.id}>{d.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1 mt-3">
+                           <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] bg-blue-500/5 px-3 py-1 rounded-xl border border-blue-500/10">Dispatch Ready</span>
                         </div>
                       </div>
                     ))}
@@ -279,33 +326,33 @@ export default function StaffOperations({ user }) {
 
               {/* Stage: Retail Check (Pickup) - Visible to Frontdesk and Admins */}
               {(isFrontdesk || isFullAccess) && (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Retail Queue</span>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 w-6 h-6 rounded-lg flex items-center justify-center">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between px-3">
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Retail Queue</span>
+                    <span className="text-[11px] font-black text-primary bg-primary/10 w-8 h-8 rounded-xl flex items-center justify-center border border-primary/20 shadow-inner">
                       {getStageItems('ready').length.toString().padStart(2, '0')}
                     </span>
                   </div>
-                  <div className="space-y-3 overflow-y-auto no-scrollbar pb-4">
+                  <div className="space-y-4 overflow-y-auto no-scrollbar pb-4 px-1">
                     {getStageItems('ready').map((item, i) => (
                       <div 
                         key={item.id} 
                         onClick={() => handleAdvanceItem(item.id)}
-                        className={`p-4 bg-primary/5 rounded-2xl border-l-4 border-primary shadow-sm animate-fade-in-up cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
+                        className={`p-5 bg-theme-surface rounded-[2rem] border border-theme-border border-l-4 border-l-primary shadow-sm animate-fade-in-up cursor-pointer hover:border-primary/50 hover:-translate-y-1 active:scale-95 transition-all group relative ${updatingItem === item.id ? 'opacity-50 pointer-events-none' : ''}`}
                         style={{ animationDelay: `${i * 100}ms` }}
                       >
                         {updatingItem === item.id && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-white/40 rounded-2xl z-20">
-                             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[2rem] z-20 backdrop-blur-sm">
+                             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                           </div>
                         )}
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-[10px] font-extrabold text-primary">{item.order_number}</span>
-                          <span className="material-symbols-outlined text-sm text-primary group-hover:animate-bounce">shopping_bag</span>
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-[11px] font-black text-primary tracking-widest uppercase">{item.order_number}</span>
+                          <span className="material-symbols-outlined text-sm text-primary group-hover:scale-125 transition-transform">shopping_bag</span>
                         </div>
-                        <p className="text-sm font-bold text-on-surface mb-1">{item.garment_type}</p>
-                        <div className="flex items-center gap-1 mt-2">
-                           <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded">{item.customer_name || 'Retail Client'}</span>
+                        <p className="text-base font-black text-theme-text mb-1 tracking-tight">{item.garment_type}</p>
+                        <div className="flex items-center gap-1 mt-3">
+                           <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] bg-primary/5 px-3 py-1 rounded-xl border border-primary/10">{item.customer_name || 'Retail Client'}</span>
                         </div>
                       </div>
                     ))}
@@ -323,14 +370,14 @@ export default function StaffOperations({ user }) {
               { id: 'Dryer 01', type: 'Active', cycle: 'High Heat', time: '12:00', status: 'active', icon: 'mode_fan' },
               { id: 'Dryer 02', type: 'Idle', cycle: 'No load', time: '--:--', status: 'maintenance', icon: 'mode_fan' },
             ].map((machine, i) => (
-              <div key={i} className="p-4 rounded-3xl border border-outline-variant/10 bg-white opacity-80 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+              <div key={i} className="p-5 rounded-[2.5rem] border border-theme-border bg-theme-surface shadow-sm animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                 <div className="flex justify-between mb-4">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{machine.id}</span>
-                  <div className={`w-2 h-2 rounded-full ${machine.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                  <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.2em]">{machine.id}</span>
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_8px] ${machine.status === 'active' ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-theme-border'}`}></div>
                 </div>
-                <span className="material-symbols-outlined text-slate-400 text-xl mb-2">{machine.icon}</span>
-                <p className="text-xs font-black text-on-surface uppercase tracking-tight">{machine.type}</p>
-                <div className="text-lg font-black tracking-tighter text-on-surface mt-2">{machine.time}</div>
+                <span className="material-symbols-outlined text-theme-text-muted text-2xl mb-3 opacity-40">{machine.icon}</span>
+                <p className="text-[11px] font-black text-theme-text uppercase tracking-widest mb-1 italic opacity-80">{machine.type}</p>
+                <div className="text-2xl font-black tracking-tighter text-theme-text">{machine.time}</div>
               </div>
             ))}
           </div>
@@ -339,23 +386,23 @@ export default function StaffOperations({ user }) {
         {/* Sidebar: Shift Tasks & Status */}
         <aside className="col-span-12 lg:col-span-4 space-y-6">
           {/* Shift Checklist (FUNCTIONAL) */}
-          <div className="bg-surface-container-low p-6 rounded-3xl border border-outline-variant/10 animate-fade-in-up">
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-emerald-600">assignment</span>
-              My Shift Tasks
+          <div className="bg-theme-surface-container p-8 rounded-[3rem] border border-theme-border animate-fade-in-up">
+            <h3 className="text-xl font-black mb-8 flex items-center gap-3 text-theme-text italic tracking-tighter">
+              <span className="material-symbols-outlined text-primary scale-110">assignment</span>
+              Shift Objectives
             </h3>
-            <div className="space-y-4 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
+            <div className="space-y-5 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
               {tasks.length === 0 ? (
-                <p className="text-xs font-medium text-slate-400 text-center py-4">No tasks assigned for today.</p>
+                <p className="text-xs font-black text-theme-text-muted text-center py-6 opacity-40 uppercase tracking-widest">No primary tasks assigned</p>
               ) : tasks.map((item, i) => (
-                <label key={item.id} className="flex items-center gap-4 group cursor-pointer animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                <label key={item.id} className="flex items-center gap-5 group cursor-pointer animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                   <div 
                     onClick={() => toggleTask(item.id, item.is_completed)}
-                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${item.is_completed ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' : 'border-emerald-300 group-hover:bg-emerald-50 group-hover:border-emerald-400'}`}
+                    className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${item.is_completed ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'border-theme-border bg-theme-surface group-hover:border-primary/50'}`}
                   >
-                    {item.is_completed && <span className="material-symbols-outlined text-sm font-extrabold">check</span>}
+                    {item.is_completed && <span className="material-symbols-outlined text-base font-black">check</span>}
                   </div>
-                  <span className={`text-sm font-semibold transition-colors ${item.is_completed ? 'line-through text-slate-400' : 'text-on-surface group-hover:text-emerald-700'}`}>
+                  <span className={`text-sm font-black tracking-tight transition-colors ${item.is_completed ? 'line-through text-theme-text-muted opacity-40' : 'text-theme-text group-hover:text-primary'}`}>
                     {item.task_description}
                   </span>
                 </label>
@@ -364,28 +411,28 @@ export default function StaffOperations({ user }) {
           </div>
 
           {/* Shift Metrics (Visible) */}
-          <div className="bg-surface-container-low p-6 rounded-3xl border border-outline-variant/10 animate-fade-in-up">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6">Floor Metrics</h3>
-            <div className="space-y-6">
+          <div className="bg-theme-surface-container p-8 rounded-[3rem] border border-theme-border animate-fade-in-up">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-8 opacity-60 italic">Floor Intelligence</h3>
+            <div className="space-y-8">
               <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-xs font-bold text-on-surface">Shift Completion</span>
-                  <span className="text-xs font-bold text-emerald-600">
+                <div className="flex justify-between mb-3 items-end">
+                  <span className="text-[11px] font-black text-theme-text uppercase tracking-widest">Shift Completion</span>
+                  <span className="text-xl font-black text-primary tracking-tighter">
                     {tasks.length > 0 ? Math.round((tasks.filter(t => t.is_completed).length / tasks.length) * 100) : 0}%
                   </span>
                 </div>
-                <div className="w-full bg-white/50 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.is_completed).length / tasks.length) * 100 : 0}%` }}></div>
+                <div className="w-full bg-theme-surface h-2.5 rounded-full overflow-hidden border border-theme-border">
+                  <div className="bg-primary h-full transition-all duration-700 shadow-[0_0_15px_rgba(16,185,129,0.4)]" style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.is_completed).length / tasks.length) * 100 : 0}%` }}></div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-white rounded-2xl border border-outline-variant/5">
-                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Items Out</p>
-                  <p className="text-xl font-black text-on-surface">124</p>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="p-5 bg-theme-surface rounded-[2rem] border border-theme-border">
+                  <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-2 opacity-60">Cycle Yield</p>
+                  <p className="text-3xl font-black text-theme-text tracking-tighter italic">124</p>
                 </div>
-                <div className="p-4 bg-white rounded-2xl border border-outline-variant/5">
-                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Active items</p>
-                  <p className="text-xl font-black text-emerald-600">
+                <div className="p-5 bg-theme-surface rounded-[2rem] border border-theme-border">
+                  <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-2 opacity-60">Live Items</p>
+                  <p className="text-3xl font-black text-primary tracking-tighter italic">
                     {[...Object.values(workflow)].flat().filter(i => i.status !== 'ready').length}
                   </p>
                 </div>
@@ -394,20 +441,22 @@ export default function StaffOperations({ user }) {
           </div>
 
           {/* Critical Alerts (Static) */}
-          <div className="bg-emerald-900 text-white p-6 rounded-3xl shadow-xl overflow-hidden relative group animate-fade-in-up">
-            <div className="relative z-10">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined" style={{ color: '#fbbf24', fontVariationSettings: "'FILL' 1" }}>priority_high</span>
+          <div className="bg-red-600/10 text-red-500 p-8 rounded-[3rem] border border-red-500/20 relative group animate-fade-in-up overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+               <span className="material-symbols-outlined text-6xl rotate-12">warning</span>
+            </div>
+            <div className="relative z-10 font-black">
+              <h3 className="text-lg font-black mb-5 flex items-center gap-3 tracking-tighter italic">
+                <span className="material-symbols-outlined scale-110" style={{ fontVariationSettings: "'FILL' 1" }}>priority_high</span>
                 Critical Alerts
               </h3>
               <div className="space-y-4">
-                <div className="p-3 bg-white/10 rounded-2xl border border-white/20">
-                  <p className="text-[10px] font-bold uppercase text-emerald-300 tracking-widest mb-1">Equipment</p>
-                  <p className="text-xs font-semibold">Dryer 04: Heat sensor error. Check required.</p>
+                <div className="p-4 bg-red-600/5 rounded-[1.5rem] border border-red-500/10">
+                  <p className="text-[10px] uppercase tracking-widest mb-2 opacity-80">Equipment Fault</p>
+                  <p className="text-sm tracking-tight font-black text-red-400">Dryer 04: Heat sensor error. Manual override blocked.</p>
                 </div>
               </div>
             </div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-400/20 rounded-full blur-3xl"></div>
           </div>
         </aside>
       </div>

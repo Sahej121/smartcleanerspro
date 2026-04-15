@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/currency-utils';
 
 function AnimatedCounter({ value, prefix = '', suffix = '', duration = 1200 }) {
   const [display, setDisplay] = useState(0);
@@ -47,7 +48,9 @@ export default function MasterControl({ user }) {
     admin_email: '', 
     admin_phone: '', 
     subscription_tier: 'software_only',
-    owner_id: '' 
+    owner_id: '',
+    manager_name: '',
+    manager_email: ''
   });
   const [credentialsModal, setCredentialsModal] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -171,9 +174,21 @@ export default function MasterControl({ user }) {
       // If existing owner mode, ensure owner_id is set
       const payload = { ...newStore };
       if (provisionMode === 'existing') {
-        payload.admin_name = ''; // Clear redundant fields
+        if (!newStore.owner_id) {
+          setErrorMessage('Please select an existing business owner.');
+          return;
+        }
+        if (!newStore.manager_name || !newStore.manager_email) {
+          setErrorMessage('Manager details are required for provisioning a new node to an existing business.');
+          return;
+        }
+        payload.admin_name = ''; 
         payload.admin_email = '';
       } else {
+        if (!newStore.admin_name || !newStore.admin_email) {
+          setErrorMessage('Owner name and email are required for new business provisioning.');
+          return;
+        }
         payload.owner_id = '';
       }
 
@@ -185,8 +200,14 @@ export default function MasterControl({ user }) {
       if (res.ok) {
         const data = await res.json();
         setShowCreateModal(false);
-        setNewStore({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'software_only', owner_id: '' });
-        setCredentialsModal({ storeName: data.store_name, email: data.admin_email, password: data.tempPassword, pin: data.tempPin });
+        setNewStore({ store_name: '', city: '', admin_name: '', admin_email: '', admin_phone: '', subscription_tier: 'software_only', owner_id: '', manager_name: '', manager_email: '' });
+        setCredentialsModal({ 
+          storeName: data.store_name, 
+          email: data.manager?.email || data.admin_email, 
+          password: data.manager?.tempPassword || data.tempPassword, 
+          pin: data.manager?.tempPin || data.tempPin,
+          isManager: !!data.manager
+        });
         fetchData();
       } else {
         const err = await res.json();
@@ -241,13 +262,7 @@ export default function MasterControl({ user }) {
     setIsDeleting(false);
   };
 
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      maximumFractionDigits: 0
-    }).format(val || 0);
-  };
+
 
   const getTimeAgo = (dateStr) => {
     const date = new Date(dateStr);
@@ -350,7 +365,6 @@ export default function MasterControl({ user }) {
               <div key={i} className="flex-1 rounded-t-lg bg-emerald-200 group-hover:bg-emerald-500 transition-all duration-500" style={{ height: `${h * 100}%`, transitionDelay: `${i * 50}ms` }}></div>
             ))}
           </div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl opacity-60 -translate-y-16 translate-x-16"></div>
         </div>
 
         <div className="bg-white rounded-3xl p-8 flex flex-col justify-between border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
@@ -392,7 +406,7 @@ export default function MasterControl({ user }) {
                            {store.status}
                         </span>
                       </td>
-                      <td className="py-5 text-right font-black text-sm">{formatCurrency(store.total_revenue)}</td>
+                      <td className="py-5 text-right font-black text-sm">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -442,7 +456,6 @@ export default function MasterControl({ user }) {
               Comprehensive Log Stream
             </button>
           </div>
-          <div className="absolute bottom-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl opacity-40 translate-x-16 translate-y-16"></div>
         </div>
       </div>
     </div>
@@ -514,7 +527,7 @@ export default function MasterControl({ user }) {
                               </span>
                            </td>
                            <td className="py-8 text-right font-black text-sm text-on-surface">
-                              {formatCurrency(owner.total_revenue)}
+                              {formatCurrency(owner.total_revenue, 'United Kingdom')}
                            </td>
                            <td className="py-8 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-end gap-3">
@@ -559,7 +572,7 @@ export default function MasterControl({ user }) {
                                                       {store.status}
                                                    </span>
                                                 </td>
-                                                <td className="py-4 px-6 text-right font-black text-xs text-on-surface">{formatCurrency(store.total_revenue)}</td>
+                                                <td className="py-4 px-6 text-right font-black text-xs text-on-surface">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
                                                 <td className="py-4 px-6 text-right">
                                                    <div className="flex items-center justify-end gap-2">
                                                       <button 
@@ -623,7 +636,7 @@ export default function MasterControl({ user }) {
                                {store.status === 'active' ? 'Operational' : 'Suspended'}
                             </span>
                          </td>
-                         <td className="py-6 text-right font-black text-sm text-on-surface">{formatCurrency(store.total_revenue)}</td>
+                         <td className="py-6 text-right font-black text-sm text-on-surface">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
                          <td className="py-6 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button 
@@ -678,7 +691,6 @@ export default function MasterControl({ user }) {
                    <span>Projected Growth +18%</span>
                 </div>
              </div>
-             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-40 translate-x-32 -translate-y-32"></div>
           </div>
 
           <div className="bg-theme-surface-container rounded-[2.5rem] p-10 relative overflow-hidden shadow-sm border border-theme-border">
@@ -705,7 +717,6 @@ export default function MasterControl({ user }) {
                    ))}
                 </div>
              </div>
-             <div className="absolute bottom-0 right-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl opacity-30 translate-x-32 translate-y-32"></div>
           </div>
        </div>
     </div>
@@ -888,7 +899,6 @@ export default function MasterControl({ user }) {
       {/* Global Command Bar */}
       <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-6 animate-fade-in-up">
         <div className="relative w-full max-w-2xl group cursor-pointer" onClick={() => router.push('/')}>
-           <div className="absolute inset-0 bg-emerald-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
            <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-emerald-600 z-10 font-bold scale-125">terminal</span>
            <div className="w-full bg-white/40 backdrop-blur-md border border-emerald-100/30 rounded-[2.5rem] py-5 pl-16 pr-8 text-sm font-black text-slate-300 shadow-xl shadow-slate-200/50 relative z-10 select-none flex items-center gap-1.5 overflow-hidden">
               <span className="animate-pulse">_</span>
@@ -924,11 +934,10 @@ export default function MasterControl({ user }) {
       {showCreateModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xl animate-fade-in">
            <div className="bg-white rounded-[3rem] w-full max-w-2xl p-6 lg:p-12 shadow-2xl relative animate-fade-in-up border border-white max-h-[90vh] overflow-y-auto no-scrollbar">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-60 -translate-y-20 translate-x-20"></div>
               
               <div className="relative z-10">
                  <h2 className="text-4xl font-black font-headline uppercase italic leading-none mb-2">Provision Node</h2>
-                 <p className="text-slate-500 font-medium italic mb-8 text-lg">Deploying a new multi-tenant node to CleanFlow network.</p>
+                 <p className="text-slate-500 font-medium italic mb-8 text-lg">Deploying a new multi-tenant node to DrycleanersFlow network.</p>
 
                  {/* Mode Selector */}
                  <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl mb-8">
@@ -1030,6 +1039,33 @@ export default function MasterControl({ user }) {
                           </div>
                        </div>
                     )}
+                    
+                    {/* Manager Info (Optional for new, but encouraged for existing) */}
+                    <div className="grid grid-cols-2 gap-6 animate-fade-in shadow-sm bg-slate-50/30 p-4 rounded-3xl border border-slate-100">
+                       <div className={`col-span-2 text-[10px] font-black uppercase tracking-[0.2em] mb-1 ml-4 italic ${provisionMode === 'existing' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {provisionMode === 'existing' ? 'Provision Local Store Manager (Required)' : 'Local Manager (Optional override)'}
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Manager Name</label>
+                          <input 
+                            type="text" 
+                            placeholder="Full Name" 
+                            className="w-full bg-white border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                            value={newStore.manager_name}
+                            onChange={(e) => setNewStore({...newStore, manager_name: e.target.value})}
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Manager Email</label>
+                          <input 
+                            type="email" 
+                            placeholder="manager@branch.com" 
+                            className="w-full bg-white border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                            value={newStore.manager_email}
+                            onChange={(e) => setNewStore({...newStore, manager_email: e.target.value})}
+                          />
+                       </div>
+                    </div>
                  </div>
 
                  <div className="flex gap-4 mt-12">
@@ -1080,25 +1116,39 @@ export default function MasterControl({ user }) {
       {credentialsModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
           <div className="bg-white rounded-[3rem] w-full max-w-md p-6 lg:p-12 shadow-2xl animate-fade-in-up border-4 border-emerald-500/20 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-50 rounded-full blur-3xl opacity-60"></div>
              
              <div className="relative z-10 text-center">
                 <div className="w-20 h-20 bg-emerald-500 text-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl rotate-3">
                    <span className="material-symbols-outlined text-4xl">cloud_done</span>
                 </div>
                 <h2 className="text-3xl font-black font-headline uppercase italic text-on-surface leading-none mb-2">Nexus Linked</h2>
-                <p className="text-slate-500 font-medium italic mb-10">Credentials generated for <strong>{credentialsModal.storeName}</strong>.</p>
+                <p className="text-slate-500 font-medium italic mb-10">
+                  {credentialsModal.isManager ? 'Manager credentials' : 'Root Owner credentials'} generated for <strong>{credentialsModal.storeName}</strong>.
+                </p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all">
-                     <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Temporary Password</p>
-                     <p className="text-sm font-black text-slate-900 font-mono select-all">{credentialsModal.password}</p>
+                {(credentialsModal.password || credentialsModal.pin) ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all">
+                       <p className="text-[10px] font-black uppercase text-slate-400 mb-1">
+                          {credentialsModal.isManager ? 'Manager Password' : 'Store Admin Password'}
+                       </p>
+                       <p className="text-sm font-black text-on-surface font-mono select-all">
+                          {credentialsModal.password || 'EXISTING_AUTH'}
+                       </p>
+                    </div>
+                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 group hover:border-emerald-400 transition-all">
+                       <p className="text-[10px] font-black uppercase text-emerald-600 mb-1">Floor Access PIN</p>
+                       <p className="text-xl font-black text-emerald-900 font-mono tracking-widest select-all">
+                          {credentialsModal.pin || '####'}
+                       </p>
+                    </div>
                   </div>
-                  <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 group hover:border-emerald-400 transition-all">
-                     <p className="text-[10px] font-black uppercase text-emerald-600 mb-1">Floor Access PIN</p>
-                     <p className="text-xl font-black text-emerald-900 font-mono tracking-widest select-all">{credentialsModal.pin}</p>
+                ) : (
+                  <div className="mb-10 p-6 bg-slate-50 rounded-3xl border border-slate-100 text-center">
+                    <p className="text-xs font-bold text-slate-500 italic uppercase">Node linked to existing credentials</p>
+                    <p className="text-[10px] text-slate-400 font-medium mt-1">Use your existing owner/manager login for this branch.</p>
                   </div>
-               </div>
+                )}
 
                 <div className="bg-amber-50 p-4 rounded-2xl flex gap-3 text-left mb-10">
                    <span className="material-symbols-outlined text-amber-600">warning</span>

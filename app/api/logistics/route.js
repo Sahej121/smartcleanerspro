@@ -8,10 +8,13 @@ export async function GET(request) {
   if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
-    // Determine the user's store context if needed. 
-    // Usually multi-tenant, so driver sees orders for their store_id, unless they are owner.
-    // For simplicity, we just fetch active logistics tasks for the user's store.
-    const storeIdFilter = auth.user.role === 'owner' ? '' : `AND o.store_id = ${auth.user.store_id || 1}`;
+    // For drivers, we only show tasks assigned to them OR unassigned tasks for their store.
+    let logisticsFilter = '';
+    if (auth.user.role === 'driver') {
+      logisticsFilter = `AND (o.driver_id = ${auth.user.id} OR o.driver_id IS NULL) AND o.store_id = ${auth.user.store_id || 1}`;
+    } else if (auth.user.role !== 'owner') {
+      logisticsFilter = `AND o.store_id = ${auth.user.store_id || 1}`;
+    }
 
     const { rows } = await query(`
       SELECT 
@@ -22,6 +25,9 @@ export async function GET(request) {
         o.pickup_date, 
         o.delivery_date, 
         o.logistics_notes,
+        o.driver_id,
+        o.signature_data,
+        o.proof_photo_url,
         c.name as customer_name,
         c.phone as customer_phone,
         c.address as customer_address
@@ -29,7 +35,7 @@ export async function GET(request) {
       JOIN customers c ON o.customer_id = c.id
       WHERE (o.pickup_status IN ('pending', 'scheduled', 'in_transit')
          OR o.delivery_status IN ('pending', 'scheduled', 'in_transit'))
-      ${storeIdFilter}
+      ${logisticsFilter}
       ORDER BY 
         CASE 
           WHEN o.pickup_status IN ('in_transit') OR o.delivery_status IN ('in_transit') THEN 1
