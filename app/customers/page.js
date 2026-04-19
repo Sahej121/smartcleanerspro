@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
 
 export default function CustomersPage() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -35,14 +37,14 @@ export default function CustomersPage() {
       setError('');
       fetchCustomers();
     } else {
-      setError(result.error || 'Failed to register customer');
+      setError(result.error || t('failed_register_customer'));
     }
   };
 
   const getTier = (points) => {
-    if (points > 1000) return { name: 'GOLD', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
-    if (points > 500) return { name: 'SILVER', color: 'bg-slate-500/10 text-theme-text border-slate-500/20' };
-    return { name: 'NEW', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' };
+    if (points > 1000) return { name: t('gold'), color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
+    if (points > 500) return { name: t('silver'), color: 'bg-slate-500/10 text-theme-text border-slate-500/20' };
+    return { name: t('new_tier'), color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' };
   };
 
   // Mock avatars
@@ -72,16 +74,16 @@ export default function CustomersPage() {
              </div>
              <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">Clientele</span>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">{t('clientele')}</span>
                 </div>
-                <h1 className="text-4xl font-black text-theme-text tracking-tighter">Customer Registry</h1>
-                <p className="text-theme-text-muted font-medium text-sm mt-1">Manage your atelier's elite clientele and loyalty memberships.</p>
+                <h1 className="text-4xl font-black text-theme-text tracking-tighter">{t('customer_registry')}</h1>
+                <p className="text-theme-text-muted font-medium text-sm mt-1">{t('customer_registry_desc')}</p>
              </div>
           </div>
           
           <div className="flex gap-3 relative z-10 w-full md:w-auto">
              <div className="bg-background px-6 py-4 rounded-3xl border border-theme-border text-center flex-1 md:flex-none">
-                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Total Users</p>
+                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('total_users')}</p>
                 <p className="text-2xl font-black text-theme-text leading-none">
                   {customers.length || '—'}
                 </p>
@@ -95,7 +97,7 @@ export default function CustomersPage() {
             <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-theme-text-muted group-focus-within:text-emerald-500 transition-colors">search</span>
             <input
               className="w-full bg-surface border border-theme-border rounded-[1.5rem] py-4 pl-14 pr-6 text-sm font-bold text-theme-text placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50 transition-all shadow-sm"
-              placeholder="Search by name, email or garment"
+              placeholder={t('search_customers_placeholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -124,7 +126,7 @@ export default function CustomersPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
                <div className="w-12 h-12 rounded-full border-4 border-theme-border border-t-emerald-500 animate-spin"></div>
-               <p className="text-[10px] font-black text-theme-text-muted animate-pulse uppercase tracking-widest">Accessing Matrix...</p>
+               <p className="text-[10px] font-black text-theme-text-muted animate-pulse uppercase tracking-widest">{t('accessing_matrix')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -153,11 +155,11 @@ export default function CustomersPage() {
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-3 w-full mb-6">
                       <div className="bg-background rounded-2xl py-3 border border-theme-border/50 text-center">
-                         <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">Orders</p>
+                         <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">{t('orders')}</p>
                          <p className="text-lg font-black text-theme-text">{c.order_count || Math.floor(Math.random() * 50) + 1}</p>
                       </div>
                       <div className="bg-background rounded-2xl py-3 border border-theme-border/50 text-center">
-                         <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">Points</p>
+                         <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest mb-1">{t('points')}</p>
                          <p className="text-lg font-black text-emerald-400">{c.loyalty_points || Math.floor(Math.random() * 2000)}</p>
                       </div>
                     </div>
@@ -178,8 +180,8 @@ export default function CustomersPage() {
                 <div className="w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-emerald-500 bg-emerald-500/10 mb-4 group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined text-2xl">person_add</span>
                 </div>
-                <h3 className="text-sm font-black text-theme-text mb-2 uppercase tracking-widest">Register New Client</h3>
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Grow your atelier base</p>
+                <h3 className="text-sm font-black text-theme-text mb-2 uppercase tracking-widest">{t('register_new_client_stub')}</h3>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{t('grow_atelier_base')}</p>
               </button>
             </div>
           )}
@@ -197,8 +199,8 @@ export default function CustomersPage() {
                      <span className="material-symbols-outlined text-3xl">person_add</span>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-theme-text tracking-tighter">Identity Registration</h2>
-                    <p className="text-[10px] text-emerald-500 font-black mt-2 uppercase tracking-[0.3em]">New Atelier Profile</p>
+                    <h2 className="text-3xl font-black text-theme-text tracking-tighter">{t('identity_registration')}</h2>
+                    <p className="text-[10px] text-emerald-500 font-black mt-2 uppercase tracking-[0.3em]">{t('new_atelier_profile')}</p>
                   </div>
                </div>
                <button onClick={() => setShowModal(false)} className="absolute top-10 right-10 w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors text-slate-400 hover:text-theme-text flex items-center justify-center">
@@ -216,7 +218,7 @@ export default function CustomersPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                 <div className="md:col-span-2 space-y-3">
-                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Client Full Identity</label>
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">{t('client_full_identity')}</label>
                   <input 
                     autoFocus
                     className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
@@ -227,7 +229,7 @@ export default function CustomersPage() {
                 </div>
                 
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Telecommunication</label>
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">{t('telecommunication')}</label>
                   <input 
                     className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
                     value={newCustomer.phone} 
@@ -236,7 +238,7 @@ export default function CustomersPage() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Digital Identity</label>
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">{t('digital_identity')}</label>
                   <input 
                     className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
                     value={newCustomer.email} 
@@ -246,7 +248,7 @@ export default function CustomersPage() {
                 </div>
 
                 <div className="md:col-span-2 space-y-3">
-                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">Residential Reference</label>
+                  <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.2em] ml-4">{t('residential_reference')}</label>
                   <input 
                     className="w-full bg-background border border-theme-border rounded-[1.5rem] py-5 px-6 text-sm font-bold text-theme-text focus:outline-none focus:border-emerald-500/50 placeholder:text-slate-700 transition-colors" 
                     value={newCustomer.address} 

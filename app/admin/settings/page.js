@@ -401,7 +401,7 @@ export default function SettingsPage() {
             <div className="space-y-8 animate-fade-in">
               <div>
                 <h2 className="text-2xl font-black text-theme-text font-headline mb-1">{t('appearance') || 'Appearance'}</h2>
-                <p className="text-sm font-medium text-theme-text-muted">Manage your system's visual identity and branding guidelines.</p>
+                <p className="text-sm font-medium text-theme-text-muted">{t('appearance_desc')}</p>
               </div>
 
               <div className="space-y-6 max-w-2xl">
@@ -411,13 +411,13 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex-1 space-y-2">
                     <h3 className="font-bold text-theme-text text-lg">{systemName || 'DrycleanersFlow Atelier'}</h3>
-                    <p className="text-xs font-medium text-theme-text-muted">Current active branding. These elements appear on the sidebar and customer receipts.</p>
+                    <p className="text-xs font-medium text-theme-text-muted">{t('active_branding_desc')}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1 font-label">System Title</label>
+                    <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1 font-label">{t('system_title')}</label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg">text_fields</span>
                       <input 
@@ -429,7 +429,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1 font-label">System Icon (Emoji/Char)</label>
+                    <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1 font-label">{t('system_icon')}</label>
                     <div className="relative">
                       <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg">emoji_emotions</span>
                       <input 
@@ -451,8 +451,8 @@ export default function SettingsPage() {
             <div className="space-y-8 animate-fade-in">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black text-theme-text font-headline mb-1">Store Management</h2>
-                  <p className="text-sm font-medium text-theme-text-muted">Manage all your stores across locations.</p>
+                  <h2 className="text-2xl font-black text-theme-text font-headline mb-1">{t('store_management')}</h2>
+                  <p className="text-sm font-medium text-theme-text-muted">{t('store_management_desc')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
@@ -481,7 +481,7 @@ export default function SettingsPage() {
               {!canAdd && (
                 <div className="bg-amber-50 border border-amber-100 text-amber-800 px-6 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-sm">
                   <span className="material-symbols-outlined text-amber-600">lock</span>
-                  Your {tierConfig.label} plan supports up to {tierConfig.maxStores} store(s). 
+                  {t('plan_limit_msg').replace('{tier}', tierConfig.label).replace('{max}', tierConfig.maxStores)} 
                   {stores[0] && (
                     <button 
                       onClick={() => setShowAdminUpgradeModal({ storeId: stores[0].id, storeName: stores[0].store_name, currentTier: stores[0].subscription_tier })} 
@@ -496,7 +496,7 @@ export default function SettingsPage() {
               {/* Add Store Modal */}
               {showAddStore && (
                 <div className="bg-theme-surface-container border border-theme-border rounded-3xl p-8 space-y-6 animate-fade-in">
-                  <h3 className="text-lg font-black text-theme-text font-headline">Register New Store</h3>
+                  <h3 className="text-lg font-black text-theme-text font-headline">{t('register_new_store')}</h3>
                   {storeError && (
                     <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-2xl font-bold text-sm flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm">error</span>
@@ -524,7 +524,7 @@ export default function SettingsPage() {
                       </div>
                     ))}
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1">Country / Region</label>
+                      <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1">{t('country_region')}</label>
                       <div className="relative">
                         <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg">public</span>
                         <select 
@@ -550,7 +550,7 @@ export default function SettingsPage() {
                       disabled={storeLoading || !newStore.store_name || !newStore.city}
                       className="px-6 py-3 primary-gradient text-white rounded-2xl font-black text-sm shadow-lg shadow-emerald-900/10 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {storeLoading ? 'Creating...' : 'Create Store'}
+                      {storeLoading ? t('creating') : t('create_store_btn')}
                     </button>
                     <button onClick={() => { setShowAddStore(false); setStoreError(''); }} className="px-6 py-3 bg-theme-border text-theme-text-muted rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all">
                       Cancel
@@ -568,14 +568,14 @@ export default function SettingsPage() {
                                       'bg-blue-50 text-blue-700 border-blue-200/60';
                   
                   return (
-                  <div key={store.id || store.owner_id || i} className={`group relative p-6 rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:shadow-theme-text/5 hover:-translate-y-1 ${store.status === 'suspended' ? 'bg-red-50/20 border-red-200 grayscale-[0.3]' : i === 0 ? 'bg-gradient-to-br from-emerald-50/40 to-white border-emerald-200 ring-4 ring-emerald-50/50' : 'bg-theme-surface border-theme-border hover:border-theme-border'}`}>
+                  <div key={store.id || store.owner_id || i} className={`group relative p-6 rounded-3xl border transition-all duration-300 hover:shadow-2xl hover:shadow-theme-text/5 hover:-translate-y-1 ${store.status === 'suspended' ? 'bg-red-50/20 border-red-200 grayscale-[0.3]' : 'bg-theme-surface border-theme-border hover:border-emerald-200 hover:bg-emerald-50/30'}`}>
                     {store.status === 'suspended' && (
                        <div className="absolute top-0 right-8 -translate-y-1/2 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg shadow-red-600/20 flex items-center gap-2">
                          <span className="material-symbols-outlined text-[14px]">warning</span>
                          Suspended by Plan
                        </div>
                     )}
-                    {i === 0 && store.status !== 'suspended' && <div className="absolute top-0 right-8 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-emerald-600/20">Primary Store</div>}
+                    {i === 0 && store.status !== 'suspended' && <div className="absolute top-0 right-8 -translate-y-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-emerald-600/20">{t('primary_store')}</div>}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="flex items-start gap-4">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black shadow-sm shrink-0 transition-transform group-hover:scale-105 ${
@@ -607,7 +607,7 @@ export default function SettingsPage() {
                       <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 border-t md:border-t-0 border-theme-border pt-4 md:pt-0">
                         <div className="text-left md:text-right">
                         <div className="text-2xl font-black text-theme-text tracking-tight">{formatCurrency(parseFloat(store.total_revenue) || 0, store.country)}</div>
-                          <div className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mt-0.5">{store.order_count || 0} Orders</div>
+                          <div className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mt-0.5">{store.order_count || 0} {t('orders')}</div>
                         </div>
                          <div className="flex items-center gap-2">
                            {i === 0 && (
@@ -622,7 +622,7 @@ export default function SettingsPage() {
                              </button>
                            )}
                           <button 
-                            onClick={(e) => { e.stopPropagation(); handleResetManagerPin(store); }}
+                            onClick={(e) => { e.stopPropagation(); setConfirmPinResetModal(store); }}
                             className="flex items-center gap-1.5 px-3 py-2 bg-theme-surface hover:bg-theme-surface-container text-theme-text-muted rounded-xl text-xs font-bold border border-theme-border shadow-sm active:scale-95 transition-all"
                             title="Reset Manager PIN"
                           >
@@ -654,8 +654,8 @@ export default function SettingsPage() {
                   <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span className="material-symbols-outlined text-4xl">vpn_key</span>
                   </div>
-                  <h2 className="text-2xl font-black text-theme-text font-headline">Manager PIN Regenerated</h2>
-                  <p className="text-sm font-medium text-theme-text-muted">A new access PIN has been issued for the manager of <strong>{pinDetailsModal.storeName}</strong>.</p>
+                  <h2 className="text-2xl font-black text-theme-text font-headline">{t('manager_pin_regenerated')}</h2>
+                  <p className="text-sm font-medium text-theme-text-muted">{t('new_pin_issued_desc').replace('{store}', pinDetailsModal.storeName)}</p>
                   
                   <div className="bg-theme-surface-container p-6 rounded-3xl text-left space-y-3 border border-theme-border">
                     <div>
@@ -664,7 +664,7 @@ export default function SettingsPage() {
                       <div className="text-xs text-theme-text-muted font-medium">{pinDetailsModal.managerEmail}</div>
                     </div>
                     <div className="pt-3 border-t border-theme-border/60">
-                      <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest block mb-1">New Access PIN</label>
+                      <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest block mb-1">{t('new_access_pin')}</label>
                       <div className="text-4xl font-black text-emerald-600 tracking-[12px] py-2">{pinDetailsModal.newPin}</div>
                     </div>
                   </div>
@@ -701,9 +701,9 @@ export default function SettingsPage() {
                   <div className="w-20 h-20 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span className="material-symbols-outlined text-4xl">lock_reset</span>
                   </div>
-                  <h2 className="text-2xl font-black text-theme-text font-headline">Regenerate Manager PIN?</h2>
+                  <h2 className="text-2xl font-black text-theme-text font-headline">{t('regenerate_pin_title')}</h2>
                   <p className="text-sm font-medium text-theme-text-muted px-2">
-                    Are you sure you want to regenerate the Manager PIN for <strong>"{confirmPinResetModal.store_name}"</strong>? 
+                    {t('regenerate_pin_desc').replace('{store}', confirmPinResetModal.store_name)} 
                     <br/><br/>
                     The current PIN will stop working immediately, and the manager will need the new credentials to access the dashboard.
                   </p>
@@ -735,15 +735,15 @@ export default function SettingsPage() {
                   <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span className="material-symbols-outlined text-4xl">credit_card</span>
                   </div>
-                  <h2 className="text-2xl font-black text-theme-text font-headline">Secure Checkout</h2>
+                  <h2 className="text-2xl font-black text-theme-text font-headline">{t('secure_checkout')}</h2>
                   <p className="text-sm font-medium text-theme-text-muted px-2">
-                    You are upgrading to the <strong>{showPaymentModal.tierLabel}</strong> plan.
+                    {t('upgrading_to').replace('{tier}', showPaymentModal.tierLabel)}
                     <br/>
                     Total: <strong className="text-emerald-600">{showPaymentModal.price}</strong>
                   </p>
                   
                   <div className="bg-theme-surface-container p-4 rounded-2xl border border-theme-border text-left mt-4">
-                    <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest block mb-1">Card Number</label>
+                    <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest block mb-1">{t('card_number')}</label>
                     <input disabled value="**** **** **** 4242" className="w-full bg-theme-border border-none rounded-xl py-2 px-3 text-sm font-bold text-theme-text-muted" />
                   </div>
 
@@ -775,7 +775,7 @@ export default function SettingsPage() {
                   <div className="w-20 h-20 bg-purple-50 text-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <span className="material-symbols-outlined text-4xl">admin_panel_settings</span>
                   </div>
-                  <h2 className="text-2xl font-black text-theme-text font-headline">Manage Node Tier</h2>
+                  <h2 className="text-2xl font-black text-theme-text font-headline">{t('manage_node_tier')}</h2>
                   <p className="text-sm font-medium text-theme-text-muted px-2">
                     {currentUser?.id === 1 ? `Superadmin override for store` : `Select the new tier for store`} <strong>{showAdminUpgradeModal.storeName}</strong>.
                   </p>

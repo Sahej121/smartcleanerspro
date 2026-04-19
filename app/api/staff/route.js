@@ -66,11 +66,35 @@ export async function POST(request) {
     const tempPassword = generatePassword();
     const hashedPassword = await hashPassword(tempPassword);
 
+    const authIdRes = await query('SELECT gen_random_uuid() as id');
+    const authId = authIdRes.rows[0].id;
+
+    await query(`
+      INSERT INTO auth.users (
+        instance_id, id, email, encrypted_password, email_confirmed_at, 
+        created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, 
+        aud, role
+      ) VALUES (
+        '00000000-0000-0000-0000-000000000000', $1::uuid, $2::text, crypt($3::text, gen_salt('bf')), NOW(),
+        NOW(), NOW(), '{"provider":"email","providers":["email"]}', 
+        format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, false,
+        'authenticated', 'authenticated'
+      )
+    `, [authId, email, tempPassword]);
+    
+    await query(`
+      INSERT INTO auth.identities (
+        id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at, email
+      ) VALUES (
+        gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW(), $2
+      )
+    `, [authId, email]);
+
     const res = await query(
-      `INSERT INTO users (name, email, phone, password_hash, pin_hash, role, store_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO users (name, email, phone, password_hash, pin_hash, role, store_id, auth_id) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, name, email, phone, role, created_at`,
-      [name, email, phone || '', hashedPassword, pinHash, role || 'staff', session.store_id]
+      [name, email, phone || '', hashedPassword, pinHash, role || 'staff', session.store_id, authId]
     );
 
     return NextResponse.json({ ...res.rows[0], pin: plainPin }, { status: 201 });

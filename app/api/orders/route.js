@@ -236,20 +236,31 @@ export async function POST(request) {
     const initialPayments = body.payments || [];
     let totalPaid = 0;
     
+    let hasOnlinePayment = false;
     for (const p of initialPayments) {
       const pAmount = parseFloat(p.amount || 0);
       if (pAmount > 0) {
-        totalPaid += pAmount;
-        await client.query(
-          `INSERT INTO payments (order_id, amount, payment_method, payment_status, idempotency_key) VALUES ($1, $2, $3, 'completed', $4)`,
-          [orderId, pAmount, p.method || 'cash', idempotencyKey ? `${idempotencyKey}_${p.method}` : null]
-        );
+        const isOnline = p.method === 'online';
+        if (isOnline) {
+          hasOnlinePayment = true;
+          // Online payments are pending until Razorpay confirms via webhook
+          await client.query(
+            `INSERT INTO payments (order_id, amount, payment_method, payment_status, idempotency_key) VALUES ($1, $2, $3, 'pending', $4)`,
+            [orderId, pAmount, 'online', idempotencyKey ? `${idempotencyKey}_online` : null]
+          );
+        } else {
+          totalPaid += pAmount;
+          await client.query(
+            `INSERT INTO payments (order_id, amount, payment_method, payment_status, idempotency_key) VALUES ($1, $2, $3, 'completed', $4)`,
+            [orderId, pAmount, p.method || 'cash', idempotencyKey ? `${idempotencyKey}_${p.method}` : null]
+          );
+        }
       }
     }
 
-    // Update payment status based on total paid
+    // Update payment status based on total paid (online amounts not counted yet)
     let finalPaymentStatus = 'pending';
-    if (totalPaid >= totalAmount) {
+    if (!hasOnlinePayment && totalPaid >= totalAmount) {
       finalPaymentStatus = 'paid';
     } else if (totalPaid > 0) {
       finalPaymentStatus = 'partial';
@@ -286,7 +297,7 @@ export async function POST(request) {
       [orderId]
     );
 
-    return NextResponse.json(orderResult.rows[0], { status: 201 });
+    return NextResponse.json({ ...orderResult.rows[0], requires_online_payment: hasOnlinePayment }, { status: 201 });
   } catch (error) {
     await client.query('ROLLBACK');
     return NextResponse.json({ error: error.message }, { status: 500 });

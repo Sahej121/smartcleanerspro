@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { createMiddlewareSupabase } from '@/lib/supabase-middleware';
+import { verifyPinTokenEdge } from '@/lib/auth-edge';
 
 // Simple in-memory rate limiting map
 // Note: In production with multiple server instances, use Redis.
@@ -97,34 +98,49 @@ export async function middleware(request) {
     pathname === '/contact' ||
     pathname === '/policy'
   ) {
-    return addSecurityHeaders(NextResponse.next());
+    // Still refresh the Supabase session for public routes (token rotation)
+    const { response } = createMiddlewareSupabase(request);
+    return addSecurityHeaders(response);
   }
 
   // Auth pages
   const isAuthPage = pathname === '/login' || pathname === '/signup';
 
-  // Get session cookie
-  const token = request.cookies.get('cleanflow_session')?.value;
-  const payload = token ? await verifyToken(token) : null;
+  // --- Supabase Session Verification ---
+  const { supabase, response } = createMiddlewareSupabase(request);
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // No session, trying to access protected route
-  if (!payload && !isAuthPage) {
+  // --- PIN Session Fallback (Shadow Auth) ---
+  const pinToken = request.cookies.get('cleanflow_pin_session')?.value;
+  const pinUser = pinToken ? await verifyPinTokenEdge(pinToken) : null;
+
+  if (pathname === '/' || pathname.startsWith('/login')) {
+    console.log(`[MW] Path: ${pathname}, User: ${user?.id || 'none'}, PIN User: ${pinUser?.id || 'none'}`);
+  }
+
+  // No session (neither Supabase nor PIN), trying to access protected route
+  if (!user && !pinUser && !isAuthPage) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   // Has session, trying to access auth pages
-  if (payload && isAuthPage) {
+  // We remove this redirect so that even if a session persists (but is invalid for the app),
+  // the user can always reach the login page to re-authenticate.
+  /*
+  if ((user || pinUser) && isAuthPage) {
     return NextResponse.redirect(new URL('/', request.url));
   }
+  */
 
   // --- 3. Tier-Based Feature Gating ---
-  // Block access to routes the user's subscription tier doesn't include.
-  // The tier is embedded in the JWT payload at login time.
-  if (payload && !isAuthPage) {
-    const tier = normalizeTierMw(payload.tier);
+  // Read tier from either Supabase user_metadata or PIN JWT payload
+  if ((user || pinUser) && !isAuthPage) {
+    const tier = normalizeTierMw(user?.user_metadata?.tier || pinUser?.tier);
+    const appRole = user?.user_metadata?.role || pinUser?.role;
+    const appId = user?.user_metadata?.app_user_id || pinUser?.id;
 
     // SaaS owner (id=1, role=owner) bypasses all tier restrictions
-    const isSaasOwner = payload.role === 'owner' && payload.id === 1;
+    const isSaasOwner = appRole === 'owner' && appId === 1;
 
     if (!isSaasOwner && !canAccessRouteMw(tier, pathname)) {
       // If it's an API request, return JSON 403 instead of redirecting to an HTML page
@@ -135,11 +151,12 @@ export async function middleware(request) {
         );
       }
       // Redirect to dashboard — the gated page should not be visible at all
+      console.log(`[MW] Gated Redirect: ${pathname} -> / (Tier: ${tier})`);
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
-  return addSecurityHeaders(NextResponse.next());
+  return addSecurityHeaders(response);
 }
 
 function addSecurityHeaders(response) {

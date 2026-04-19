@@ -96,7 +96,7 @@ export default function CustomerDetail({ params }) {
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 bg-background font-sans">
       <div className="w-12 h-12 rounded-full border-4 border-theme-border border-t-emerald-500 animate-spin mb-4"></div>
-      <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest text-center animate-pulse">Loading Client Data</p>
+      <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest text-center animate-pulse">{t('loading_client_data')}</p>
     </div>
   );
   
@@ -105,7 +105,7 @@ export default function CustomerDetail({ params }) {
       <div className="w-16 h-16 bg-surface border border-theme-border rounded-full flex items-center justify-center mb-4 text-theme-text-muted">
         <span className="material-symbols-outlined text-4xl">no_accounts</span>
       </div>
-      <h3 className="text-xl font-bold text-theme-text tracking-tighter">Client Profile Not Found</h3>
+      <h3 className="text-xl font-bold text-theme-text tracking-tighter">{t('profile_not_found')}</h3>
     </div>
   );
 
@@ -189,11 +189,11 @@ export default function CustomerDetail({ params }) {
                <div className="w-12 h-12 rounded-[1.25rem] bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
                   <span className="material-symbols-outlined text-2xl">receipt_long</span>
                </div>
-               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">History</span>
+               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('history')}</span>
             </div>
             <div>
               <h2 className="text-3xl font-black text-theme-text tracking-tighter">{customer.order_count || 0}</h2>
-              <p className="text-[10px] text-theme-text-muted font-bold mt-1 uppercase tracking-widest">Total Orders</p>
+              <p className="text-[10px] text-theme-text-muted font-bold mt-1 uppercase tracking-widest">{t('total_orders')}</p>
             </div>
           </div>
   
@@ -205,12 +205,12 @@ export default function CustomerDetail({ params }) {
                <div className="w-12 h-12 rounded-[1.25rem] bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                   <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
                </div>
-               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500">LTV</span>
+               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500">{t('ltv')}</span>
             </div>
             <div className="relative z-10">
                <span className="text-emerald-500 font-black mr-1">₹</span>
                <span className="text-4xl font-black text-theme-text tracking-tighter">{(customer.total_spent || 0).toLocaleString('en-IN')}</span>
-              <p className="text-[10px] text-emerald-500 border border-emerald-500/20 bg-emerald-500/10 w-max px-2 py-0.5 rounded mt-2 font-bold uppercase tracking-widest">Lifetime Value</p>
+              <p className="text-[10px] text-emerald-500 border border-emerald-500/20 bg-emerald-500/10 w-max px-2 py-0.5 rounded mt-2 font-bold uppercase tracking-widest">{t('lifetime_value')}</p>
             </div>
           </div>
   
@@ -219,11 +219,11 @@ export default function CustomerDetail({ params }) {
                <div className="w-12 h-12 rounded-[1.25rem] bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20">
                   <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
                </div>
-               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted group-hover:text-amber-500 transition-colors">Rewards</span>
+               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted group-hover:text-amber-500 transition-colors">{t('rewards')}</span>
             </div>
             <div>
               <h2 className="text-3xl font-black text-amber-400 tracking-tighter drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">{customer.loyalty_points || 0}</h2>
-              <p className="text-[10px] text-theme-text-muted group-hover:text-amber-500/70 font-bold mt-1 uppercase tracking-widest transition-colors">Loyalty Points</p>
+              <p className="text-[10px] text-theme-text-muted group-hover:text-amber-500/70 font-bold mt-1 uppercase tracking-widest transition-colors">{t('loyalty_points')}</p>
             </div>
           </div>
   
@@ -232,11 +232,11 @@ export default function CustomerDetail({ params }) {
                <div className="w-12 h-12 rounded-[1.25rem] bg-slate-800 text-slate-400 flex items-center justify-center border border-slate-700">
                   <span className="material-symbols-outlined text-2xl">calendar_month</span>
                </div>
-               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Tenure</span>
+               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('tenure')}</span>
             </div>
             <div>
               <h2 className="text-2xl font-black text-theme-text tracking-tighter leading-tight pr-4">{formatDate(customer.created_at)}</h2>
-              <p className="text-[10px] text-theme-text-muted font-bold mt-1 uppercase tracking-widest">Customer Since</p>
+              <p className="text-[10px] text-theme-text-muted font-bold mt-1 uppercase tracking-widest">{t('customer_since')}</p>
             </div>
           </div>
         </div>
@@ -282,10 +282,10 @@ export default function CustomerDetail({ params }) {
                 <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
                     <tr className="border-b border-theme-border text-[9px] uppercase tracking-[0.2em] font-black text-theme-text-muted bg-background/30">
-                      <th className="py-4 px-8">Order ID</th>
-                      <th className="py-4 px-6 text-center">Items</th>
-                      <th className="py-4 px-6 text-right">Total</th>
-                      <th className="py-4 px-8 text-center">Status</th>
+                      <th className="py-4 px-8">{t('order_id')}</th>
+                      <th className="py-4 px-6 text-center">{t('items')}</th>
+                      <th className="py-4 px-6 text-right">{t('total')}</th>
+                      <th className="py-4 px-8 text-center">{t('status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
@@ -293,7 +293,7 @@ export default function CustomerDetail({ params }) {
                       <tr>
                         <td colSpan="4" className="py-20 text-center text-theme-text-muted">
                           <span className="material-symbols-outlined text-5xl mb-4 text-slate-700">receipt_long</span>
-                          <p className="text-[10px] font-black uppercase tracking-widest">No previous transactions</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest">{t('no_transactions')}</p>
                         </td>
                       </tr>
                     ) : (
@@ -334,8 +334,8 @@ export default function CustomerDetail({ params }) {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-surface rounded-[3rem] w-[95%] max-w-lg shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-theme-border animate-scale-in flex flex-col max-h-[90vh]">
               <div className="p-8 md:p-10 border-b border-theme-border/50 relative shrink-0">
-                 <h2 className="text-2xl font-black text-theme-text tracking-tighter mb-1">Refine Profile</h2>
-                 <p className="text-[10px] text-theme-text-muted font-black uppercase tracking-widest">Update identity records for {customer.name}</p>
+                 <h2 className="text-2xl font-black text-theme-text tracking-tighter mb-1">{t('refine_profile')}</h2>
+                 <p className="text-[10px] text-theme-text-muted font-black uppercase tracking-widest">t('update_records_for').replace('{name}', customer.name)</p>
                  <button onClick={() => setShowEditModal(false)} className="absolute top-8 right-8 w-10 h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-theme-text rounded-full flex items-center justify-center transition-all">
                     <span className="material-symbols-outlined text-[18px]">close</span>
                  </button>
@@ -344,32 +344,32 @@ export default function CustomerDetail({ params }) {
               <div className="p-8 md:p-10 overflow-y-auto no-scrollbar shrink">
                 <form id="editForm" onSubmit={handleUpdate} className="space-y-6">
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">Name</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">{t('name')}</label>
                     <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-background border border-theme-border rounded-[1.5rem] py-4 px-6 text-sm font-bold text-theme-text focus:border-emerald-500/50 transition-all outline-none" required />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">Phone</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">{t('phone')}</label>
                       <input type="text" value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} className="w-full bg-background border border-theme-border rounded-[1.5rem] py-4 px-6 text-sm font-bold text-theme-text focus:border-emerald-500/50 transition-all outline-none" required />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">Email</label>
+                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">{t('email')}</label>
                       <input type="email" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="w-full bg-background border border-theme-border rounded-[1.5rem] py-4 px-6 text-sm font-bold text-theme-text focus:border-emerald-500/50 transition-all outline-none" />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">Address</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">{t('address')}</label>
                     <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} className="w-full bg-background border border-theme-border rounded-[1.5rem] py-4 px-6 text-sm font-bold text-theme-text focus:border-emerald-500/50 transition-all outline-none" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">Notes</label>
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted ml-4">{t('notes')}</label>
                     <textarea value={editForm.notes} onChange={e => setEditForm({...editForm, notes: e.target.value})} className="w-full bg-background border border-theme-border rounded-[1.5rem] py-4 px-6 text-sm font-bold text-theme-text focus:border-emerald-500/50 transition-all outline-none h-24 no-scrollbar resize-none" />
                   </div>
                 </form>
               </div>
 
               <div className="p-8 md:p-10 shrink-0 bg-background/50 border-t border-theme-border/50 flex gap-4 mt-auto">
-                 <button type="button" onClick={() => setShowEditModal(false)} className="flex-[1] py-4 bg-surface border border-theme-border text-slate-400 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">Discard</button>
+                 <button type="button" onClick={() => setShowEditModal(false)} className="flex-[1] py-4 bg-surface border border-theme-border text-slate-400 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">{t('discard')}</button>
                  <button form="editForm" type="submit" disabled={isSaving} className="flex-[2] py-4 bg-emerald-600 border border-emerald-500 text-theme-text rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(16,185,129,0.2)] active:scale-95 transition-all disabled:opacity-50">
                     {isSaving ? 'Syncing...' : 'Synchronize'}
                  </button>
@@ -383,8 +383,8 @@ export default function CustomerDetail({ params }) {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-fade-in">
             <div className="bg-surface rounded-[3rem] w-[95%] max-w-lg shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-theme-border animate-scale-in flex flex-col max-h-[90vh]">
               <div className="p-8 md:p-10 border-b border-theme-border/50 relative shrink-0">
-                 <h2 className="text-2xl font-black text-amber-500 tracking-tighter mb-1">Consolidate Records</h2>
-                 <p className="text-[10px] text-theme-text-muted font-black uppercase tracking-widest">Merge {customer.name} into another profile</p>
+                 <h2 className="text-2xl font-black text-amber-500 tracking-tighter mb-1">{t('consolidate_records')}</h2>
+                 <p className="text-[10px] text-theme-text-muted font-black uppercase tracking-widest">{t('merge_into_another').replace('{name}', customer.name)}</p>
                  <button onClick={() => setShowMergeModal(false)} className="absolute top-8 right-8 w-10 h-10 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-theme-text rounded-full flex items-center justify-center transition-all">
                     <span className="material-symbols-outlined text-[18px]">close</span>
                  </button>
@@ -415,19 +415,19 @@ export default function CustomerDetail({ params }) {
                          <button 
                            onClick={() => handleMerge(c.id)}
                            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-theme-text rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-[0_0_15px_rgba(217,119,6,0.2)]"
-                         >Select</button>
+                         >{t('select')}</button>
                       </div>
                     ))}
                     {mergeSearch.length > 2 && mergeResults.length === 0 && (
                       <div className="py-8 text-center bg-background border border-theme-border border-dashed rounded-2xl">
-                         <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">No matching records found</p>
+                         <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">{t('no_matching_records')}</p>
                       </div>
                     )}
                  </div>
               </div>
               
               <div className="p-8 md:p-10 shrink-0 bg-background/50 border-t border-theme-border/50 flex mt-auto">
-                 <button onClick={() => setShowMergeModal(false)} className="w-full py-5 bg-surface border border-theme-border text-slate-400 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">Abort Consolidation</button>
+                 <button onClick={() => setShowMergeModal(false)} className="w-full py-5 bg-surface border border-theme-border text-slate-400 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all">{t('abort_consolidation')}</button>
               </div>
             </div>
           </div>

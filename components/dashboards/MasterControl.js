@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency-utils';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 function AnimatedCounter({ value, prefix = '', suffix = '', duration = 1200 }) {
   const [display, setDisplay] = useState(0);
@@ -33,6 +34,7 @@ function AnimatedCounter({ value, prefix = '', suffix = '', duration = 1200 }) {
 }
 
 export default function MasterControl({ user }) {
+  const { t } = useLanguage();
   const [masterStats, setMasterStats] = useState(null);
   const [owners, setOwners] = useState([]); // Hierarchical data for SuperAdmin
   const [stores, setStores] = useState([]); // Flat data for non-SuperAdmin
@@ -98,7 +100,7 @@ export default function MasterControl({ user }) {
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
-      fetch('/api/system/logs').then(r => r.json()).then(data => setLogs(data));
+      fetch('/api/system/logs').then(r => r.json()).then(data => setLogs(Array.isArray(data) ? data : []));
       fetch('/api/system/health').then(r => r.json()).then(data => setHealth(data));
     }, 15000);
 
@@ -161,7 +163,7 @@ export default function MasterControl({ user }) {
         } else {
           setStores(stores.map(s => s.id === storeId ? { ...s, status: newStatus } : s));
         }
-        fetch('/api/system/logs').then(r => r.json()).then(data => setLogs(data));
+        fetch('/api/system/logs').then(r => r.json()).then(data => setLogs(Array.isArray(data) ? data : []));
       }
     } catch (err) {
       console.error('Failed to toggle store status:', err);
@@ -232,7 +234,7 @@ export default function MasterControl({ user }) {
       });
       if (res.ok) {
         setBroadcastMessage('');
-        fetch('/api/system/logs').then(r => r.json()).then(data => setLogs(data));
+        fetch('/api/system/logs').then(r => r.json()).then(data => setLogs(Array.isArray(data) ? data : []));
       }
     } catch (err) {
       console.error('Broadcast failed:', err);
@@ -267,11 +269,11 @@ export default function MasterControl({ user }) {
   const getTimeAgo = (dateStr) => {
     const date = new Date(dateStr);
     const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return 'JUST NOW';
+    if (seconds < 60) return t('just_now');
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} MINS AGO`;
+    if (minutes < 60) return `${minutes} ${t('mins_ago')}`;
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} HOURS AGO`;
+    if (hours < 24) return `${hours} ${t('hours_ago')}`;
     return date.toLocaleDateString();
   };
 
@@ -279,7 +281,7 @@ export default function MasterControl({ user }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <div className="w-12 h-12 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse">Syncing Master Control...</p>
+        <p className="text-slate-500 font-medium animate-pulse">{t('syncing_master_control')}</p>
       </div>
     );
   }
@@ -291,8 +293,8 @@ export default function MasterControl({ user }) {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-fade-in-up">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2 font-headline uppercase leading-none">Global Oversight</h1>
-          <p className="text-on-surface-variant font-medium text-lg italic">Master Instance: {totalStores} Nodes Online</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2 font-headline uppercase leading-none">{t('global_oversight')}</h1>
+          <p className="text-on-surface-variant font-medium text-lg italic">{t('master_instance')}: {totalStores} {t('nodes_online')}</p>
         </div>
         <div className="flex flex-wrap gap-4 mt-4 md:mt-0">
           <button 
@@ -300,14 +302,14 @@ export default function MasterControl({ user }) {
             className="px-6 py-3 premium-gradient text-white rounded-2xl font-bold text-sm shadow-md shadow-emerald-900/10 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-lg">add</span>
-            Provision Node
+            {t('provision_node')}
           </button>
           <button 
             onClick={fetchData}
             className="px-6 py-3 rounded-2xl bg-emerald-600 text-white font-bold text-sm shadow-md shadow-emerald-900/10 hover:bg-emerald-700 transition-all active:scale-95 flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-sm">sync</span>
-            Sync System
+            {t('sync_system')}
           </button>
         </div>
       </div>
@@ -316,7 +318,7 @@ export default function MasterControl({ user }) {
       <div className="bg-emerald-50/50 p-4 rounded-[2rem] border border-emerald-100/50 flex flex-col md:flex-row items-center gap-4 animate-fade-in-up">
          <div className="flex items-center gap-3 px-4">
             <span className="material-symbols-outlined text-emerald-600 animate-pulse">campaign</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 whitespace-nowrap">Global Broadcast</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 whitespace-nowrap">{t('global_broadcast')}</span>
          </div>
          <div className="flex-1 w-full flex gap-2">
             <select 
@@ -324,13 +326,13 @@ export default function MasterControl({ user }) {
               onChange={(e) => setBroadcastSeverity(e.target.value)}
               className="bg-white border-none rounded-xl px-4 text-[10px] font-black uppercase tracking-widest text-slate-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
             >
-               <option value="info">INFO</option>
-               <option value="warning">WARNING</option>
-               <option value="error">CRITICAL</option>
+               <option value="info">{t('info')}</option>
+               <option value="warning">{t('warning')}</option>
+               <option value="error">{t('critical')}</option>
             </select>
             <input 
               type="text"
-              placeholder="Announce system maintenance or updates to all nodes..."
+              placeholder={t('broadcast_placeholder')}
               className="flex-1 bg-white border-none rounded-xl py-3 px-6 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none shadow-sm"
               value={broadcastMessage}
               onChange={(e) => setBroadcastMessage(e.target.value)}
@@ -341,7 +343,7 @@ export default function MasterControl({ user }) {
               disabled={isBroadcasting || !broadcastMessage.trim()}
               className="px-8 py-3 bg-theme-accent text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 disabled:opacity-50 transition-all shadow-lg"
             >
-               {isBroadcasting ? 'Sending...' : 'Transmit'}
+               {isBroadcasting ? t('sending') : t('transmit')}
             </button>
          </div>
       </div>
@@ -351,7 +353,7 @@ export default function MasterControl({ user }) {
         <div className="md:col-span-2 bg-white rounded-3xl p-8 flex flex-col justify-between border border-slate-100 shadow-sm animate-fade-in-up relative overflow-hidden group">
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Global Revenue</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('total_global_revenue')}</span>
               <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 rounded-full text-[9px] font-black">
                 <span className="material-symbols-outlined text-[12px]">trending_up</span> +12%
               </span>
@@ -370,7 +372,7 @@ export default function MasterControl({ user }) {
         <div className="bg-white rounded-3xl p-8 flex flex-col justify-between border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all">
           <span className="material-symbols-outlined text-emerald-700 text-2xl mb-4 group-hover:scale-110 transition-transform">dns</span>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Nodes</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('active_nodes_count')}</p>
             <h2 className="text-5xl font-black font-headline">{stores.length}</h2>
           </div>
         </div>
@@ -378,7 +380,7 @@ export default function MasterControl({ user }) {
         <div className={`${health?.status === 'OPERATIONAL' ? 'bg-primary' : 'bg-amber-700'} text-white rounded-3xl p-8 flex flex-col justify-between shadow-xl shadow-emerald-900/10`}>
           <span className="material-symbols-outlined text-white text-2xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>shield_heart</span>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-100 opacity-70">SLA Uptime</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-100 opacity-70">{t('sla_uptime')}</p>
             <h2 className="text-5xl font-black font-headline">{health?.uptime || '99.9%'}</h2>
           </div>
         </div>
@@ -387,14 +389,14 @@ export default function MasterControl({ user }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-8">
         <div className="col-span-2 space-y-8">
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm overflow-hidden">
-            <h3 className="text-xl font-bold font-headline mb-6 border-b border-slate-50 pb-4">Recent Store Activity</h3>
+            <h3 className="text-xl font-bold font-headline mb-6 border-b border-slate-50 pb-4">{t('recent_store_activity')}</h3>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[500px]">
                 <thead>
                   <tr className="text-[10px] uppercase font-black text-slate-400 border-b border-slate-50">
-                    <th className="py-4 text-left">Node Identify</th>
-                    <th className="py-4 text-left">Status</th>
-                    <th className="py-4 text-right">Revenue</th>
+                    <th className="py-4 text-left">{t('node_identity')}</th>
+                    <th className="py-4 text-left">{t('status')}</th>
+                    <th className="py-4 text-right">{t('revenue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -413,7 +415,7 @@ export default function MasterControl({ user }) {
               </table>
             </div>
             <button onClick={() => router.push('/master/nodes')} className="w-full mt-6 py-4 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all font-headline">
-              Enter Cluster Management →
+              {t('enter_cluster_mgmt')}
             </button>
           </div>
           
@@ -438,10 +440,10 @@ export default function MasterControl({ user }) {
         <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm h-full relative overflow-hidden">
           <h3 className="text-lg font-black font-headline uppercase mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-emerald-600">terminal</span>
-            Security Audit
+            {t('security_audit')}
           </h3>
           <div className="space-y-6 relative z-10">
-            {logs.slice(0, 6).map((log) => (
+            {Array.isArray(logs) && logs.slice(0, 6).map((log) => (
               <div key={log.id} className="flex gap-4 group">
                 <div className={`w-1.5 h-1.5 mt-2 rounded-full shrink-0 ${log.severity === 'error' ? 'bg-red-500' : log.severity === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'} group-hover:scale-150 transition-transform`}></div>
                 <div>
@@ -469,15 +471,15 @@ export default function MasterControl({ user }) {
     <div className="space-y-8 animate-fade-in">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
-             <h1 className="text-4xl font-black font-headline uppercase leading-none">Manage Nodes</h1>
-             <p className="text-slate-500 italic mt-2">Total of {totalStores} store instances provisioned.</p>
+             <h1 className="text-4xl font-black font-headline uppercase leading-none">{t('manage_nodes')}</h1>
+             <p className="text-slate-500 italic mt-2">{t('total_of')} {totalStores} {t('provisioned_nodes')}</p>
           </div>
-          <button onClick={() => {
-            setProvisionMode('new');
-            setShowCreateModal(true);
-          }} className="px-8 py-4 premium-gradient text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-             Provision New Cluster Instance
-          </button>
+             <button onClick={() => {
+               setProvisionMode('new');
+               setShowCreateModal(true);
+             }} className="px-8 py-4 premium-gradient text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                {t('provision_new_instance')}
+             </button>
        </div>
        
        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm overflow-x-auto">
@@ -485,11 +487,11 @@ export default function MasterControl({ user }) {
              <table className="w-full min-w-[700px]">
                 <thead>
                    <tr className="text-[10px] font-black uppercase text-slate-400 border-b border-slate-100">
-                      <th className="py-6 text-left">Business Owner</th>
-                      <th className="py-6 text-left">Tier Access</th>
-                      <th className="py-6 text-center">Nodes</th>
-                      <th className="py-6 text-right">Revenue Contrib</th>
-                      <th className="py-6 text-right">Management Actions</th>
+                      <th className="py-6 text-left">{t('business_owner')}</th>
+                      <th className="py-6 text-left">{t('tier_access')}</th>
+                      <th className="py-6 text-center">{t('nodes')}</th>
+                      <th className="py-6 text-right">{t('revenue_contrib')}</th>
+                      <th className="py-6 text-right">{t('mgmt_actions')}</th>
                    </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -516,9 +518,9 @@ export default function MasterControl({ user }) {
                                 onChange={(e) => handleUpdateTier(owner.owner_id, e.target.value)}
                                 className="bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border-none focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer hover:bg-emerald-100 transition-all"
                               >
-                                 <option value="software_only">Software Only</option>
-                                 <option value="hardware_bundle">Hardware Bundle</option>
-                                 <option value="enterprise">Enterprise</option>
+                                 <option value="software_only">{t('software_only')}</option>
+                                 <option value="hardware_bundle">{t('hardware_bundle')}</option>
+                                 <option value="enterprise">{t('enterprise')}</option>
                               </select>
                            </td>
                            <td className="py-8 text-center">
@@ -555,11 +557,11 @@ export default function MasterControl({ user }) {
                                     <table className="w-full">
                                        <thead className="bg-slate-50/50">
                                           <tr className="text-[9px] font-black uppercase text-slate-400 border-b border-slate-100">
-                                             <th className="py-4 px-6 text-left">Node ID</th>
-                                             <th className="py-4 px-6 text-left">Location</th>
+                                             <th className="py-4 px-6 text-left">{t('node_id')}</th>
+                                             <th className="py-4 px-6 text-left">{t('location')}</th>
                                              <th className="py-4 px-6 text-left">Status</th>
                                              <th className="py-4 px-6 text-right">Revenue</th>
-                                             <th className="py-4 px-6 text-right">Actions</th>
+                                             <th className="py-4 px-6 text-right">{t('actions')}</th>
                                           </tr>
                                        </thead>
                                        <tbody className="divide-y divide-slate-50">
@@ -579,7 +581,7 @@ export default function MasterControl({ user }) {
                                                         onClick={() => toggleStoreStatus(store.id, store.status)}
                                                         className={`text-[9px] font-black uppercase tracking-widest ${store.status === 'active' ? 'text-red-500' : 'text-emerald-600'}`}
                                                       >
-                                                         {store.status === 'active' ? 'Suspend' : 'Restrat'}
+                                                         {store.status === 'active' ? t('suspend') : t('restart')}
                                                       </button>
                                                       <button 
                                                         onClick={() => setDeleteStoreModal({ id: store.id, name: store.store_name, step: 1, confirmText: '' })}
@@ -612,10 +614,10 @@ export default function MasterControl({ user }) {
              <table className="w-full min-w-[700px]">
                 <thead>
                    <tr className="text-[10px] font-black uppercase text-slate-400 border-b border-slate-100">
-                      <th className="py-6 text-left">Identity</th>
-                      <th className="py-6 text-left">Location Index</th>
-                      <th className="py-6 text-left">Health Status</th>
-                      <th className="py-6 text-right">Revenue Contrib</th>
+                      <th className="py-6 text-left">{t('identity')}</th>
+                      <th className="py-6 text-left">{t('location_index')}</th>
+                      <th className="py-6 text-left">{t('health_status')}</th>
+                      <th className="py-6 text-right">{t('revenue_contrib')}</th>
                       <th className="py-6 text-right">Service Control</th>
                    </tr>
                 </thead>
@@ -633,7 +635,7 @@ export default function MasterControl({ user }) {
                          <td className="py-6 text-xs font-bold text-slate-400 uppercase tracking-widest">{store.city}</td>
                          <td className="py-6 flex flex-col items-start gap-1">
                             <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${store.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                               {store.status === 'active' ? 'Operational' : 'Suspended'}
+                               {store.status === 'active' ? t('operational') : t('suspended')}
                             </span>
                          </td>
                          <td className="py-6 text-right font-black text-sm text-on-surface">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
@@ -643,7 +645,7 @@ export default function MasterControl({ user }) {
                                 onClick={() => toggleStoreStatus(store.id, store.status)}
                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${store.status === 'active' ? 'text-red-500 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                               >
-                                 {store.status === 'active' ? 'Suspend Access' : 'Restore Service'}
+                                 {store.status === 'active' ? t('suspend_access') : t('restore_service')}
                               </button>
                             </div>
                          </td>
@@ -661,19 +663,19 @@ export default function MasterControl({ user }) {
     <div className="space-y-8 animate-fade-in">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
-             <h1 className="text-4xl font-black font-headline uppercase leading-none">System Insights</h1>
-             <p className="text-slate-500 italic mt-2">Advanced global performance analytics.</p>
+             <h1 className="text-4xl font-black font-headline uppercase leading-none">{t('system_insights')}</h1>
+             <p className="text-slate-500 italic mt-2">{t('advanced_analytics_desc')}</p>
           </div>
           <div className="flex gap-2">
-             <button className="px-6 py-3 bg-white border border-slate-100 rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:bg-slate-50 transition-all">Export XML</button>
-             <button className="px-6 py-3 bg-theme-accent text-white rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:scale-105 transition-all">Detailed PDF Dispatch</button>
+             <button className="px-6 py-3 bg-white border border-slate-100 rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:bg-slate-50 transition-all">{t('export_xml')}</button>
+             <button className="px-6 py-3 bg-theme-accent text-white rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:scale-105 transition-all">{t('export_pdf')}</button>
           </div>
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
              <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Revenue Velocity (Global)</p>
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">{t('revenue_velocity')}</p>
                 <h2 className="text-5xl font-black font-headline mb-8 text-on-surface">
                    <AnimatedCounter value={masterStats?.total_revenue || 0} prefix="$" />
                 </h2>
@@ -695,7 +697,7 @@ export default function MasterControl({ user }) {
 
           <div className="bg-theme-surface-container rounded-[2.5rem] p-10 relative overflow-hidden shadow-sm border border-theme-border">
              <div className="relative z-10">
-                <p className="text-[10px] font-black uppercase text-primary/80 tracking-widest mb-2">Network Load Distribution</p>
+                <p className="text-[10px] font-black uppercase text-primary/80 tracking-widest mb-2">{t('network_load_dist')}</p>
                 <h2 className="text-5xl font-black font-headline mb-8 italic tracking-tighter text-on-surface">84,290 req/min</h2>
                 
                 <div className="space-y-6">
@@ -726,29 +728,29 @@ export default function MasterControl({ user }) {
     <div className="space-y-8 animate-fade-in flex flex-col h-[75vh]">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-             <h1 className="text-4xl font-black font-headline uppercase leading-none">Global Logs</h1>
-             <p className="text-slate-500 italic mt-2">Real-time system event stream & archival.</p>
+             <h1 className="text-4xl font-black font-headline uppercase leading-none">{t('global_logs')}</h1>
+             <p className="text-slate-500 italic mt-2">{t('real_time_logs_desc')}</p>
           </div>
           <div className="flex gap-4">
              <div className="relative w-72 group">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
                 <input 
                   type="text" 
-                  placeholder="Filter global event stream..." 
+                  placeholder={t('filter_logs_placeholder')} 
                   className="w-full bg-white border border-slate-100 rounded-2xl py-3.5 pl-12 pr-6 text-xs font-bold focus:ring-4 focus:ring-emerald-500/10 outline-none shadow-sm transition-all"
                 />
              </div>
-             <button className="px-8 py-3 bg-theme-accent text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all">Export Data Hub</button>
+             <button className="px-8 py-3 bg-theme-accent text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all">{t('export_data_hub')}</button>
           </div>
        </div>
 
        <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
           <div className="bg-slate-50/50 px-10 py-5 border-b border-slate-100">
              <div className="grid grid-cols-12 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <div className="col-span-2">Timestamp</div>
-                <div className="col-span-2">Source / Type</div>
-                <div className="col-span-6">Description Payload</div>
-                <div className="col-span-2 text-right">Severity Index</div>
+                <div className="col-span-2">{t('timestamp')}</div>
+                <div className="col-span-2">{t('source_type')}</div>
+                <div className="col-span-6">{t('description_payload')}</div>
+                <div className="col-span-2 text-right">{t('severity_index')}</div>
              </div>
           </div>
           <div className="flex-1 overflow-y-auto px-10 py-4 space-y-2 no-scrollbar">
@@ -781,13 +783,13 @@ export default function MasterControl({ user }) {
     <div className="space-y-8 animate-fade-in font-sans">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-             <h1 className="text-4xl font-black font-headline uppercase leading-none italic tracking-tight">Security & Health</h1>
-             <p className="text-slate-500 italic mt-2">Global infrastructure protection & multi-tenant isolation audit.</p>
+             <h1 className="text-4xl font-black font-headline uppercase leading-none italic tracking-tight">{t('security_health')}</h1>
+             <p className="text-slate-500 italic mt-2">{t('security_desc')}</p>
           </div>
           <div className="flex items-center gap-4 px-8 py-4 bg-theme-surface-container rounded-[2rem] border border-primary/20 shadow-sm">
              <div className="flex items-center gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"></div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Network Shield: Active</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">{t('network_shield_active')}</span>
              </div>
           </div>
        </div>
@@ -796,7 +798,7 @@ export default function MasterControl({ user }) {
           <div className="lg:col-span-2 space-y-8">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden group">
-                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-8 font-headline">Service Resource Usage</h4>
+                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-8 font-headline">{t('resource_usage')}</h4>
                    <div className="space-y-8">
                       {[
                          { label: 'Multi-tenant DB Load', val: 32, icon: 'database' },
@@ -820,13 +822,13 @@ export default function MasterControl({ user }) {
                 </div>
 
                 <div className="bg-theme-surface-container rounded-[2.5rem] p-10 shadow-sm border border-theme-border relative overflow-hidden">
-                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-8 font-headline">Threat Intelligence</h4>
+                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-8 font-headline">{t('threat_intelligence')}</h4>
                    <div className="flex items-end gap-3 mb-8">
                       <span className="text-6xl font-black italic tracking-tighter leading-none">00</span>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 leading-tight">Critical Security<br/>Incidents Thwarted</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 leading-tight">{t('security_incidents')}</p>
                    </div>
                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Recent Lockdown Index</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{t('lockdown_index')}</p>
                       <div className="flex gap-1 h-8 items-end">
                          {[...Array(12)].map((_, i) => (
                             <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-[2px]" style={{ height: `${20 + Math.random() * 80}%` }}></div>
@@ -838,13 +840,13 @@ export default function MasterControl({ user }) {
 
              <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm group">
                 <div className="flex justify-between items-center mb-8">
-                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 font-headline">Infrastructure Broadcast Dispatch</h4>
+                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 font-headline">{t('infrastructure_broadcast')}</h4>
                    <span className="material-symbols-outlined text-red-500 animate-pulse text-xl">emergency_home</span>
                 </div>
                 <div className="flex gap-4 p-2 bg-slate-50 rounded-[2.2rem] border border-slate-100 ring-4 ring-transparent focus-within:ring-red-500/5 transition-all">
                    <input 
                      type="text" 
-                     placeholder="Enter high-priority system alert for all cluster nodes..."
+                     placeholder={t('broadcast_placeholder_emergency')}
                      className="flex-1 bg-transparent border-none py-5 px-8 text-sm font-bold focus:ring-0 outline-none placeholder:text-slate-400"
                      value={broadcastMessage}
                      onChange={(e) => setBroadcastMessage(e.target.value)}
@@ -854,7 +856,7 @@ export default function MasterControl({ user }) {
                      disabled={isBroadcasting || !broadcastMessage.trim()}
                      className="px-10 py-5 bg-red-600 text-white rounded-[1.8rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-red-900/10 active:scale-95 disabled:opacity-50 transition-all hover:bg-red-700"
                    >
-                      {isBroadcasting ? 'Dispatching...' : 'Transmit Emergency'}
+                      {isBroadcasting ? 'Dispatching...' : t('transmit_emergency')}
                    </button>
                 </div>
              </div>
@@ -863,12 +865,12 @@ export default function MasterControl({ user }) {
           <div className="space-y-8">
              <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl relative overflow-hidden flex flex-col justify-between h-full">
                 <div>
-                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-10 font-headline">Global Health Index</h4>
+                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-10 font-headline">{t('global_health_index')}</h4>
                    <div className="space-y-12">
                       {[
-                         { l: 'Auth Gateway', s: 'Operational', h: 99.99, c: 'bg-emerald-500' },
-                         { l: 'Workflow Cluster', s: 'Operational', h: 100, c: 'bg-emerald-400' },
-                         { l: 'Primary Postgres', s: 'Operational', h: 99.98, c: 'bg-emerald-600' },
+                         { l: 'Auth Gateway', s: t('operational'), h: 99.99, c: 'bg-emerald-500' },
+                         { l: 'Workflow Cluster', s: t('operational'), h: 100, c: 'bg-emerald-400' },
+                         { l: 'Primary Postgres', s: t('operational'), h: 99.98, c: 'bg-emerald-600' },
                          { l: 'S3 Asset Pool', s: 'Notice', h: 98.4, c: 'bg-amber-500' },
                       ].map((x, i) => (
                          <div key={i} className="group cursor-default">
@@ -885,7 +887,7 @@ export default function MasterControl({ user }) {
                 </div>
                 <div className="mt-12 pt-8 border-t border-slate-50">
                    <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.3em] leading-relaxed text-center italic">
-                      Verified Infrastructure Status:<br/>
+                      {t('verified_infrastructure_status')}:<br/>
                       {new Date().toLocaleString()}
                    </p>
                 </div>
@@ -912,8 +914,8 @@ export default function MasterControl({ user }) {
         
         <div className="flex items-center gap-6">
            <div className="text-right hidden md:block">
-              <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.2em] mb-0.5">Identity Protocol</p>
-              <p className="text-sm font-black text-on-surface tracking-tight">Root Admin: Sahej</p>
+              <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.2em] mb-0.5">{t('identity_protocol')}</p>
+              <p className="text-sm font-black text-on-surface tracking-tight">{t('root_admin')}</p>
            </div>
            <button onClick={() => router.push('/')} className="w-12 h-12 rounded-[1.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center text-slate-400 hover:text-emerald-700 hover:scale-110 active:scale-90 transition-all">
               <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>grid_view</span>
@@ -936,8 +938,8 @@ export default function MasterControl({ user }) {
            <div className="bg-white rounded-[3rem] w-full max-w-2xl p-6 lg:p-12 shadow-2xl relative animate-fade-in-up border border-white max-h-[90vh] overflow-y-auto no-scrollbar">
               
               <div className="relative z-10">
-                 <h2 className="text-4xl font-black font-headline uppercase italic leading-none mb-2">Provision Node</h2>
-                 <p className="text-slate-500 font-medium italic mb-8 text-lg">Deploying a new multi-tenant node to DrycleanersFlow network.</p>
+                 <h2 className="text-4xl font-black font-headline uppercase italic leading-none mb-2">{t('provision_node')}</h2>
+                 <p className="text-slate-500 font-medium italic mb-8 text-lg">{t('deploying_new_node')}</p>
 
                  {/* Mode Selector */}
                  <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl mb-8">
@@ -958,7 +960,7 @@ export default function MasterControl({ user }) {
                  <div className="space-y-8">
                     {provisionMode === 'existing' && (
                        <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100/50 space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 ml-4">Select Existing Owner</label>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 ml-4">{t('select_existing_owner')}</label>
                           <select 
                             className="w-full bg-white border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none appearance-none cursor-pointer"
                             value={newStore.owner_id}
@@ -971,7 +973,7 @@ export default function MasterControl({ user }) {
                               });
                             }}
                           >
-                            <option value="">-- Choose Owner --</option>
+                            <option value="">{t('choose_owner')}</option>
                             {owners.map(o => (
                                <option key={o.owner_id} value={o.owner_id}>{o.name} ({o.email})</option>
                             ))}
@@ -980,10 +982,10 @@ export default function MasterControl({ user }) {
                     )}
 
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Node Identify Name</label>
+                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t('node_identity_name')}</label>
                        <input 
                          type="text" 
-                         placeholder="e.g. London flagship Cluster" 
+                         placeholder={t('node_name_placeholder')} 
                          className="w-full bg-slate-50 border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
                          value={newStore.store_name}
                          onChange={(e) => setNewStore({...newStore, store_name: e.target.value})}
@@ -991,7 +993,7 @@ export default function MasterControl({ user }) {
                     </div>
                     <div className="grid grid-cols-2 gap-6">
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Geo-Location Index</label>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t('geo_location_index')}</label>
                           <input 
                             type="text" 
                             placeholder="e.g. London, UK" 
@@ -1001,16 +1003,16 @@ export default function MasterControl({ user }) {
                           />
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Subscription Tier</label>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t('subscription_tier')}</label>
                           <select 
                             className="w-full bg-slate-50 border-none rounded-[1.8rem] py-5 px-8 text-sm font-black text-slate-900 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none appearance-none cursor-pointer"
                             value={newStore.subscription_tier}
                             onChange={(e) => setNewStore({...newStore, subscription_tier: e.target.value})}
                             disabled={provisionMode === 'existing'} 
                           >
-                            <option value="software_only">Software Only (£25/mo)</option>
-                            <option value="hardware_bundle">Hardware Bundle (£35/mo)</option>
-                            <option value="enterprise">Enterprise (£99/mo)</option>
+                            <option value="software_only">{`${t('software_only')} (£25/mo)`}</option>
+                            <option value="hardware_bundle">{`${t('hardware_bundle')} (£35/mo)`}</option>
+                            <option value="enterprise">{`${t('enterprise')} (£99/mo)`}</option>
                           </select>
                        </div>
                     </div>
@@ -1018,7 +1020,7 @@ export default function MasterControl({ user }) {
                     {provisionMode === 'new' && (
                        <div className="grid grid-cols-2 gap-6 animate-fade-in">
                           <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Admin Entity</label>
+                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t('admin_entity')}</label>
                              <input 
                                type="text" 
                                placeholder="Full Name" 
@@ -1028,7 +1030,7 @@ export default function MasterControl({ user }) {
                              />
                           </div>
                           <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Contact Protocol</label>
+                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t('contact_protocol')}</label>
                              <input 
                                type="email" 
                                placeholder="Email Address" 
@@ -1046,7 +1048,7 @@ export default function MasterControl({ user }) {
                           {provisionMode === 'existing' ? 'Provision Local Store Manager (Required)' : 'Local Manager (Optional override)'}
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Manager Name</label>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t('manager_name')}</label>
                           <input 
                             type="text" 
                             placeholder="Full Name" 
@@ -1056,7 +1058,7 @@ export default function MasterControl({ user }) {
                           />
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Manager Email</label>
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">{t('manager_email')}</label>
                           <input 
                             type="email" 
                             placeholder="manager@branch.com" 
@@ -1085,7 +1087,7 @@ export default function MasterControl({ user }) {
                            <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
                            Syncing Nexus...
                          </>
-                       ) : 'Execute Deployment'}
+                       ) : t('execute_deployment')}
                     </button>
                  </div>
               </div>
@@ -1100,7 +1102,7 @@ export default function MasterControl({ user }) {
             <div className="w-20 h-20 rounded-3xl bg-red-50 flex items-center justify-center text-red-600 mx-auto mb-8 shadow-inner">
               <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
             </div>
-            <h3 className="text-xl font-black text-center text-slate-900 mb-2 uppercase tracking-tighter">System Alert</h3>
+            <h3 className="text-xl font-black text-center text-slate-900 mb-2 uppercase tracking-tighter">{t('system_alert')}</h3>
             <p className="text-slate-500 text-center font-medium italic mb-10 leading-relaxed text-sm">{errorMessage}</p>
             <button 
               onClick={() => setErrorMessage(null)}
@@ -1121,7 +1123,7 @@ export default function MasterControl({ user }) {
                 <div className="w-20 h-20 bg-emerald-500 text-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl rotate-3">
                    <span className="material-symbols-outlined text-4xl">cloud_done</span>
                 </div>
-                <h2 className="text-3xl font-black font-headline uppercase italic text-on-surface leading-none mb-2">Nexus Linked</h2>
+                <h2 className="text-3xl font-black font-headline uppercase italic text-on-surface leading-none mb-2">{t('nexus_linked')}</h2>
                 <p className="text-slate-500 font-medium italic mb-10">
                   {credentialsModal.isManager ? 'Manager credentials' : 'Root Owner credentials'} generated for <strong>{credentialsModal.storeName}</strong>.
                 </p>
@@ -1133,7 +1135,7 @@ export default function MasterControl({ user }) {
                           {credentialsModal.isManager ? 'Manager Password' : 'Store Admin Password'}
                        </p>
                        <p className="text-sm font-black text-on-surface font-mono select-all">
-                          {credentialsModal.password || 'EXISTING_AUTH'}
+                          {credentialsModal.password}
                        </p>
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 group hover:border-emerald-400 transition-all">
@@ -1176,7 +1178,7 @@ export default function MasterControl({ user }) {
                   <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-black font-headline uppercase tracking-tighter">Node Termination</h3>
+                  <h3 className="text-xl font-black font-headline uppercase tracking-tighter">{t('node_termination')}</h3>
                   <p className="text-[10px] font-black uppercase tracking-widest text-red-400">Step {deleteStoreModal.step} of 3</p>
                 </div>
               </div>
@@ -1209,7 +1211,7 @@ export default function MasterControl({ user }) {
                      </p>
                   </div>
                   <div className="flex gap-3">
-                    <button onClick={() => setDeleteStoreModal({ ...deleteStoreModal, step: 3 })} className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-900/10 active:scale-95 transition-all">Confirm Irreversible Action</button>
+                    <button onClick={() => setDeleteStoreModal({ ...deleteStoreModal, step: 3 })} className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-red-900/10 active:scale-95 transition-all">{t('confirm_irreversible')}</button>
                     <button onClick={() => setDeleteStoreModal({ ...deleteStoreModal, step: 1 })} className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all">Go Back</button>
                   </div>
                 </div>
@@ -1218,7 +1220,7 @@ export default function MasterControl({ user }) {
               {deleteStoreModal.step === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">Final Confirmation Protocol</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">{t('final_confirmation_protocol')}</label>
                     <p className="text-xs font-bold text-slate-500 mb-2">Type <span className="bg-slate-100 px-1.5 py-0.5 rounded text-red-600 font-mono">DELETE {deleteStoreModal.name}</span> to finalize node termination.</p>
                     <input 
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none text-red-600 transition-all font-mono"
@@ -1239,7 +1241,7 @@ export default function MasterControl({ user }) {
                           <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
                           Terminating Node...
                         </span>
-                      ) : 'Execute Node Termination'}
+                      ) : t('execute_node_termination')}
                     </button>
                     <button onClick={() => setDeleteStoreModal(null)} className="py-4 px-8 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all">Abort</button>
                   </div>

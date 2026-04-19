@@ -1,27 +1,30 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
 import { useUser, ROLES } from '@/lib/UserContext';
 import { hasFeature, TIERS } from '@/lib/tier-config';
 
 // Premium Visual Constants
 const STAGE_LABELS = {
-  received: 'Received', sorting: 'Sorting', washing: 'Washing',
-  dry_cleaning: 'Dry Cleaning', drying: 'Drying', ironing: 'Ironing',
-  quality_check: 'Quality Check', ready: 'Ready', delivered: 'Delivered',
+  received: 'received', sorting: 'sorting', washing: 'washing',
+  dry_cleaning: 'dry_cleaning', drying: 'drying', ironing: 'ironing',
+  quality_check: 'quality_check', ready: 'ready', delivered: 'delivered',
 };
 
-const STATIONS = [
-  { id: 'S1', name: 'Sorting Area A', icon: 'category' },
-  { id: 'W1', name: 'Washer 01 (Heavy)', icon: 'local_laundry_service' },
-  { id: 'W2', name: 'Washer 02 (Delicate)', icon: 'local_laundry_service' },
-  { id: 'D1', name: 'Dryer 01', icon: 'air' },
-  { id: 'I1', name: 'Ironing Station A', icon: 'iron' },
-  { id: 'Q1', name: 'QC / Finishing', icon: 'fact_check' },
-  { id: 'PK', name: 'Packing & Bagging', icon: 'inventory_2' },
-];
 
 export default function PremiumAssemblyPage() {
+  const { t } = useLanguage();
+
+  const STATIONS = [
+    { id: 'S1', name: t('sorting_area_a'), icon: 'category' },
+    { id: 'W1', name: t('washer_heavy'), icon: 'local_laundry_service' },
+    { id: 'W2', name: t('washer_delicate'), icon: 'local_laundry_service' },
+    { id: 'D1', name: t('dryer_01'), icon: 'air' },
+    { id: 'I1', name: t('ironing_station_a'), icon: 'iron' },
+    { id: 'Q1', name: t('qc_finishing'), icon: 'fact_check' },
+    { id: 'PK', name: t('packing_bagging'), icon: 'inventory_2' },
+  ];
   const { user, role, loading: authLoading } = useUser();
   const [data, setData] = useState({ active: [], completed: [], stats: {} });
   const [loading, setLoading] = useState(true);
@@ -61,13 +64,13 @@ export default function PremiumAssemblyPage() {
     e.preventDefault();
     if (!scanValue.trim()) return;
     if (!station) {
-      setScanStatus({ type: 'error', message: 'Select a Station first' });
+      setScanStatus({ type: 'error', message: t('select_station_first') });
       return;
     }
 
     const tagId = scanValue.trim();
     setScanValue('');
-    setScanStatus({ type: 'loading', message: 'Scanning...' });
+    setScanStatus({ type: 'loading', message: t('scanning_msg') });
 
     try {
       const res = await fetch('/api/operations/scan-to-advance', {
@@ -82,7 +85,7 @@ export default function PremiumAssemblyPage() {
 
         setScanStatus({ 
           type: 'success', 
-          message: `Advanced ${result.item.garment_type} to ${STAGE_LABELS[result.nextStatus]}`,
+          message: `${t('advanced')} ${result.item.garment_type} ${t('to')} ${t(result.nextStatus || 'ready')}`,
           item: result.item
         });
         
@@ -102,7 +105,7 @@ export default function PremiumAssemblyPage() {
       }
     } catch (err) {
       new Audio('/sounds/error.mp3').play().catch(e => console.error('Audio play failed', e));
-      setScanStatus({ type: 'error', message: 'System Error. Check Network.' });
+      setScanStatus({ type: 'error', message: t('system_error_msg') });
     }
   };
 
@@ -117,7 +120,7 @@ export default function PremiumAssemblyPage() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-8 relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="relative z-10 w-16 h-16 rounded-full border-4 border-theme-border border-t-primary animate-spin mb-6 shadow-[0_0_30px_rgba(16,185,129,0.3)]"></div>
-      <p className="relative z-10 text-sm font-black text-theme-text-muted uppercase tracking-widest animate-pulse">Initializing Control Room</p>
+      <p className="relative z-10 text-sm font-black text-theme-text-muted uppercase tracking-widest animate-pulse">{t('initializing_control_room')}</p>
     </div>
   );
 
@@ -141,7 +144,7 @@ export default function PremiumAssemblyPage() {
            <div className="space-y-6">
               <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary mb-2 shadow-inner">
                 <span className="material-symbols-outlined text-sm">workspace_premium</span>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Professional Tier Required</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t('pro_tier_required')}</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-black text-theme-text tracking-tighter italic leading-none block">
                 THE POWER OF <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-300">PREMIUM ASSEMBLY</span>
@@ -153,9 +156,9 @@ export default function PremiumAssemblyPage() {
 
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
               {[
-                { title: 'Scan-To-Advance', desc: 'Hardware barcode support for 0.1s stage updates.', icon: 'barcode_scanner' },
-                { title: 'Audit Trail', desc: 'Precise worker accountability logs for every scan.', icon: 'history_edu' },
-                { title: 'Bottleneck AI', desc: 'Auto-detect late garments stuck in production.', icon: 'analytics' }
+                { title: t('scan_to_advance_label'), desc: t('scan_to_advance_desc'), icon: 'barcode_scanner' },
+                { title: t('audit_trail'), desc: t('audit_trail_desc'), icon: 'history_edu' },
+                { title: t('bottleneck_ai'), desc: t('bottleneck_ai_desc'), icon: 'analytics' }
               ].map((f, i) => (
                 <div key={i} className="p-8 rounded-[2rem] bg-theme-surface-container border border-theme-border group hover:bg-surface hover:border-primary/30 transition-all duration-500 hover:-translate-y-2 shadow-lg hover:shadow-primary/10">
                   <div className="w-12 h-12 rounded-xl primary-gradient text-white flex items-center justify-center mb-6 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
@@ -201,8 +204,8 @@ export default function PremiumAssemblyPage() {
             <Link href="/operations" className="absolute -left-12 lg:-left-20 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-theme-border hover:border-primary/50 transition-all shadow-sm">
               <span className="material-symbols-outlined text-sm">arrow_back</span>
             </Link>
-            <h2 className="text-5xl font-black text-theme-text tracking-tighter italic uppercase text-shadow-sm">Floor Control Room</h2>
-            <p className="text-theme-text-muted font-black tracking-[0.3em] text-xs uppercase px-4 py-1.5 rounded-full bg-theme-surface-container inline-block border border-theme-border border-b-0">Initialize Hardware Target</p>
+            <h2 className="text-5xl font-black text-theme-text tracking-tighter italic uppercase text-shadow-sm">{t('floor_control_room')}</h2>
+            <p className="text-theme-text-muted font-black tracking-[0.3em] text-xs uppercase px-4 py-1.5 rounded-full bg-theme-surface-container inline-block border border-theme-border border-b-0">{t('initialize_hardware_target')}</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -253,7 +256,7 @@ export default function PremiumAssemblyPage() {
                 </Link>
                 <span className="text-xs font-black text-primary uppercase tracking-[0.3em] bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">{station.id}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                <span className="text-xs font-black text-theme-text-muted uppercase tracking-widest">Live Flow Tracking</span>
+                <span className="text-xs font-black text-theme-text-muted uppercase tracking-widest">{t('live_flow_tracking')}</span>
               </div>
               <h1 className="text-4xl font-black text-theme-text tracking-tighter italic">{station.name}</h1>
               <button 
@@ -274,7 +277,7 @@ export default function PremiumAssemblyPage() {
               <input
                 ref={scanInputRef}
                 type="text"
-                placeholder="Scan Tag or Code..."
+                placeholder={t('scan_tag_placeholder')}
                 autoFocus
                 className={`w-full pl-16 pr-6 py-5 bg-theme-surface-container border text-lg font-black text-theme-text placeholder:text-theme-text-muted focus:outline-none transition-all duration-500 rounded-full ${
                   scanStatus?.type === 'error' ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.2)] focus:border-amber-500' : 'border-theme-border focus:border-primary/50 focus:ring-4 focus:ring-primary/10 shadow-lg'
@@ -294,11 +297,11 @@ export default function PremiumAssemblyPage() {
 
              <div className="flex items-center gap-4">
                 <div className="bg-surface p-5 rounded-[1.5rem] border border-theme-border text-center min-w-[100px] shadow-sm">
-                  <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.2em] mb-1">Queue</p>
+                  <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.2em] mb-1">{t('queue')}</p>
                   <p className="text-3xl font-black text-theme-text leading-none">{data.stats?.received_count || 0}</p>
                 </div>
                 <div className={`bg-surface p-5 rounded-[1.5rem] border text-center min-w-[100px] shadow-sm transition-colors ${data.active?.filter(i => i.is_bottleneck).length > 0 ? 'border-red-500/30 bg-red-950/10' : 'border-theme-border'}`}>
-                  <p className="text-[9px] font-black text-red-500 uppercase tracking-[0.2em] mb-1">Bottlenecks</p>
+                  <p className="text-[9px] font-black text-red-500 uppercase tracking-[0.2em] mb-1">{t('bottlenecks')}</p>
                   <p className={`text-3xl font-black leading-none ${data.active?.filter(i => i.is_bottleneck).length > 0 ? 'text-red-500 animate-pulse' : 'text-theme-text'}`}>
                     {data.active?.filter(i => i.is_bottleneck).length || 0}
                   </p>
@@ -317,7 +320,7 @@ export default function PremiumAssemblyPage() {
                </h3>
                <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
                   <span className="material-symbols-outlined text-[14px] text-primary">sensors</span>
-                  <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">Real-time Sync</span>
+                  <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">{t('real_time_sync')}</span>
                </div>
              </div>
  
@@ -327,8 +330,8 @@ export default function PremiumAssemblyPage() {
                    <div className="w-24 h-24 rounded-[2rem] bg-theme-surface-container flex items-center justify-center mx-auto mb-6 shadow-inner border border-theme-border">
                      <span className="material-symbols-outlined text-5xl text-theme-text-muted">done_all</span>
                    </div>
-                   <h4 className="text-3xl font-black text-theme-text italic">Floor Clear</h4>
-                   <p className="text-theme-text-muted font-bold tracking-[0.2em] uppercase text-xs mt-3">All garments processed efficiently</p>
+                   <h4 className="text-3xl font-black text-theme-text italic">{t('floor_clear')}</h4>
+                   <p className="text-theme-text-muted font-bold tracking-[0.2em] uppercase text-xs mt-3">{t('floor_clear_desc')}</p>
                  </div>
                ) : (
                  data.active?.map((item, idx) => {
@@ -391,7 +394,7 @@ export default function PremiumAssemblyPage() {
                        <div className="flex items-center gap-6 shrink-0 md:justify-end w-full sm:w-auto">
                           {item.customer_name && (
                             <div className="text-right hidden sm:block">
-                              <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${isScanned ? 'text-primary' : 'text-theme-text-muted'}`}>Client Auth</p>
+                              <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${isScanned ? 'text-primary' : 'text-theme-text-muted'}`}>{t('client_auth')}</p>
                               <p className={`text-xs font-black ${isScanned ? 'text-theme-text' : 'text-theme-text'}`}>{item.customer_name}</p>
                             </div>
                           )}
@@ -420,7 +423,7 @@ export default function PremiumAssemblyPage() {
                       <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-2 flex items-center gap-2">
                          <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span> Critical Alert
                       </p>
-                      <h4 className="text-2xl font-black text-theme-text tracking-tighter">Action Required</h4>
+                      <h4 className="text-2xl font-black text-theme-text tracking-tighter">{t('action_required')}</h4>
                     </div>
                     <div className="w-12 h-12 flex items-center justify-center bg-red-500/10 text-red-500 border border-red-500/20 rounded-[1rem]">
                       <span className="material-symbols-outlined text-lg">warning</span>
@@ -504,9 +507,9 @@ export default function PremiumAssemblyPage() {
  
                  <div className="pt-6 border-t border-theme-border/50 flex justify-between items-center">
                     <div className="flex flex-col">
-                       <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.3em] mb-1">Order Integrity</p>
+                       <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.3em] mb-1">{t('order_integrity')}</p>
                        <p className={`text-xs font-black uppercase tracking-widest ${checklist.items.every(i => i.status === checklist.items[0].status) ? 'text-primary' : 'text-amber-500'}`}>
-                         {checklist.items.every(i => i.status === checklist.items[0].status) ? 'Batch Synchronized' : 'Desync Detected'}
+                         {checklist.items.every(i => i.status === checklist.items[0].status) ? t('batch_synchronized') : t('desync_detected')}
                        </p>
                     </div>
                  </div>
@@ -535,18 +538,18 @@ export default function PremiumAssemblyPage() {
                 <div className="grid grid-cols-2 gap-6 relative z-10">
                    <div className="space-y-2">
                       <p className="text-4xl font-black text-theme-text tracking-tighter">{data.stats?.received_count || 0}</p>
-                      <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.2em]">Processed Today</p>
+                      <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.2em]">{t('processed_today')}</p>
                    </div>
                    <div className="space-y-2">
                       <p className="text-4xl font-black text-primary tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">100%</p>
-                      <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.2em]">Target Rate</p>
+                      <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-[0.2em]">{t('target_rate')}</p>
                    </div>
                 </div>
  
                 <div className="space-y-3 relative z-10 pt-2 border-t border-theme-border/50">
                    <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.3em]">
-                      <span className="text-theme-text-muted">Efficiency Radar</span>
-                      <span className="text-primary animate-pulse">Nominal</span>
+                      <span className="text-theme-text-muted">{t('efficiency_radar')}</span>
+                      <span className="text-primary animate-pulse">{t('nominal')}</span>
                    </div>
                    <div className="h-2 bg-surface rounded-full overflow-hidden p-0.5 border border-theme-border shadow-inner">
                       <div className="h-full bg-primary rounded-full w-[80%] animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>

@@ -1,4 +1,4 @@
--- CleanFlow Database Schema (PostgreSQL)
+-- CleanFlow Database Schema (PostgreSQL / Supabase)
 
 CREATE TABLE IF NOT EXISTS stores (
   id SERIAL PRIMARY KEY,
@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS system_logs (
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
+  auth_id UUID UNIQUE,
   name TEXT NOT NULL,
   email TEXT UNIQUE,
   phone TEXT,
@@ -182,3 +183,42 @@ CREATE TABLE IF NOT EXISTS volume_discounts (
   store_id INTEGER REFERENCES stores(id) DEFAULT 1,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migrations (applied conditionally via IF NOT EXISTS / ADD COLUMN IF NOT EXISTS)
+
+CREATE TABLE IF NOT EXISTS whatsapp_sessions (
+  phone_number TEXT PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  state TEXT DEFAULT 'REQUIRE_PIN',
+  context JSONB DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  store_id INTEGER REFERENCES stores(id)
+);
+
+DO $$ BEGIN
+  ALTER TABLE order_items ADD COLUMN IF NOT EXISTS image_url TEXT;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS driver_id INTEGER REFERENCES users(id);
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS signature_data TEXT;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_photo_url TEXT;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS logistics_last_updated TIMESTAMPTZ DEFAULT NOW();
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+-- Sequence for order numbers
+CREATE SEQUENCE IF NOT EXISTS order_number_seq START WITH 2000;

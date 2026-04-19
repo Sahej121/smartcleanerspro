@@ -2,10 +2,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 const STATUS_TABS = ['all', 'received', 'processing', 'ready', 'delivered', 'cancelled'];
 
 export default function OrdersPage() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,17 +59,17 @@ export default function OrdersPage() {
              </div>
              <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">Operations</span>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">{t('operations')}</span>
                 </div>
-                <h1 className="text-4xl font-black text-theme-text tracking-tighter">Order Ledger</h1>
-                <p className="text-theme-text-muted font-medium text-sm mt-1">Internal registry of all dry cleaning transactions and logistics.</p>
+                <h1 className="text-4xl font-black text-theme-text tracking-tighter">{t('order_ledger')}</h1>
+                <p className="text-theme-text-muted font-medium text-sm mt-1">{t('order_ledger_desc')}</p>
              </div>
           </div>
           
           <div className="flex gap-4 relative z-10 w-full md:w-auto">
              <Link href="/orders/new" className="w-full md:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                New Walk-In Pickup
+                {t('new_walkin_pickup')}
              </Link>
           </div>
         </div>
@@ -85,7 +87,7 @@ export default function OrdersPage() {
                 }`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab.replace('_', ' ')}
+                {t(tab)}
               </button>
             ))}
           </div>
@@ -94,7 +96,7 @@ export default function OrdersPage() {
             <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${search ? 'text-emerald-500' : 'text-theme-text-muted group-focus-within:text-emerald-500'}`}>search</span>
             <input
               className="w-full bg-surface border border-theme-border rounded-[1.5rem] py-4 pl-14 pr-6 text-sm font-bold text-theme-text placeholder:text-theme-text-muted outline-none transition-all duration-300 focus:border-emerald-500/50"
-              placeholder="Search by order ID or name"
+              placeholder={t('search_orders_placeholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -106,20 +108,20 @@ export default function OrdersPage() {
           {loading ? (
             <div className="flex flex-col justify-center items-center h-64 space-y-4">
                <div className="w-12 h-12 rounded-full border-4 border-theme-border border-t-emerald-500 animate-spin"></div>
-               <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest animate-pulse">Syncing Ledger...</p>
+               <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest animate-pulse">{t('syncing_ledger')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto overflow-y-auto no-scrollbar flex-1 p-2">
               <table className="w-full text-left border-collapse min-w-[800px]">
                 <thead>
                   <tr className="text-[9px] uppercase tracking-[0.2em] font-black text-theme-text-muted border-b border-theme-border bg-theme-bg/50">
-                    <th className="px-8 py-5">Order Tracking</th>
-                    <th className="px-8 py-5">Origin/Customer</th>
-                    <th className="px-8 py-5 text-center">Logistics Status</th>
-                    <th className="px-8 py-5 text-center">Settlement</th>
-                    <th className="px-8 py-5 text-right">Value</th>
-                    <th className="px-8 py-5">Timestamp</th>
-                    <th className="px-8 py-5 text-right">Action</th>
+                    <th className="px-8 py-5">{t('order_tracking')}</th>
+                    <th className="px-8 py-5">{t('origin_customer')}</th>
+                    <th className="px-8 py-5 text-center">{t('logistics_status')}</th>
+                    <th className="px-8 py-5 text-center">{t('settlement')}</th>
+                    <th className="px-8 py-5 text-right">{t('value')}</th>
+                    <th className="px-8 py-5">{t('timestamp')}</th>
+                    <th className="px-8 py-5 text-right">{t('action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-theme-border/50">
@@ -130,7 +132,7 @@ export default function OrdersPage() {
                           <div className="w-16 h-16 bg-theme-bg border border-theme-border border-dashed rounded-[1.5rem] flex items-center justify-center text-theme-text-muted mb-4 text-opacity-30">
                             <span className="material-symbols-outlined text-3xl">inventory_2</span>
                           </div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted opacity-60">No logs found in this sector</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted opacity-60">{t('no_logs_found')}</p>
                         </div>
                       </td>
                     </tr>
@@ -163,27 +165,27 @@ export default function OrdersPage() {
                             {order.customer_name?.charAt(0) || 'W'}
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-theme-text transition-colors">{order.customer_name || 'Walk-in Profile'}</p>
-                            <p className="text-[9px] text-theme-text-muted font-bold uppercase tracking-wider">{order.customer_phone || 'Immediate'}</p>
+                            <p className="text-sm font-bold text-theme-text transition-colors">{order.customer_name || t('walkin_profile')}</p>
+                            <p className="text-[9px] text-theme-text-muted font-bold uppercase tracking-wider">{order.customer_phone || t('immediate')}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-center">
                         <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border ${statusColorMap[order.status] || 'bg-slate-100 text-slate-400 border-slate-200'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${statusDotMap[order.status] || 'bg-slate-500'}`}></span>
-                          {order.status}
+                          {t(order.status)}
                         </span>
                       </td>
                       <td className="px-8 py-6 text-center">
                         <span className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] border inline-block ${
                           order.payment_status === 'paid' ? 'border-emerald-500/20 text-emerald-600 bg-emerald-500/10' : 'border-amber-500/20 text-amber-600 bg-amber-500/10'
                         }`}>
-                          {order.payment_status}
+                          {t(order.payment_status)}
                         </span>
                       </td>
                       <td className="px-8 py-6 text-right">
                         <p className="text-sm font-black text-theme-text">{formatCurrency(order.total_amount)}</p>
-                        <p className="text-[9px] text-theme-text-muted font-bold uppercase tracking-widest">{order.item_count} Items</p>
+                        <p className="text-[9px] text-theme-text-muted font-bold uppercase tracking-widest">{order.item_count} {t('items')}</p>
                       </td>
                       <td className="px-8 py-6 text-[10px] font-bold text-theme-text-muted uppercase tracking-widest">
                         {formatDate(order.created_at)}

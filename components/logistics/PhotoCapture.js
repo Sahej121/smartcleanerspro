@@ -1,13 +1,18 @@
 'use client';
 import React, { useState } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function PhotoCapture({
   onCapture,
   onCancel,
-  title = 'Proof of Delivery',
-  helperText = 'Take a photo of the package at the destination',
-  confirmLabel = 'Confirm Photo',
+  title,
+  helperText,
+  confirmLabel,
 }) {
+  const { t } = useLanguage();
+  const displayTitle = title || t('proof_of_delivery');
+  const displayHelper = helperText || t('photo_helper_text');
+  const displayConfirm = confirmLabel || t('confirm_photo');
   const [preview, setPreview] = useState(null);
 
   const handleFileChange = (e) => {
@@ -33,7 +38,7 @@ export default function PhotoCapture({
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-black tracking-tighter italic flex items-center gap-3">
             <span className="material-symbols-outlined text-emerald-500">photo_camera</span>
-            {title}
+            {displayTitle}
           </h3>
           <button onClick={onCancel} className="w-10 h-10 rounded-full bg-theme-surface-container flex items-center justify-center">
             <span className="material-symbols-outlined">close</span>
@@ -47,7 +52,7 @@ export default function PhotoCapture({
             <div className="text-center p-8">
               <span className="material-symbols-outlined text-4xl text-theme-text-muted mb-4 opacity-40">image</span>
               <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest leading-relaxed">
-                {helperText}
+                {displayHelper}
               </p>
             </div>
           )}
@@ -63,7 +68,7 @@ export default function PhotoCapture({
 
         <div className="flex gap-4">
           <label className="flex-1 py-4 bg-theme-surface-container rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-theme-border transition-all cursor-pointer text-center">
-            {preview ? 'Retake Photo' : 'Open Camera'}
+            {preview ? t('retake_photo') : t('open_camera')}
             <input 
               type="file" 
               accept="image/*" 
@@ -81,7 +86,7 @@ export default function PhotoCapture({
                 : 'bg-theme-border text-theme-text-muted cursor-not-allowed'
             }`}
           >
-            {confirmLabel}
+            {displayConfirm}
           </button>
         </div>
       </div>

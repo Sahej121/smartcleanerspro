@@ -1,44 +1,46 @@
 'use client';
 
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { Section } from '@/components/marketing/MarketingSection';
 
 export default function ContactPage() {
+  const { t } = useLanguage();
   return (
     <div className="min-h-screen bg-[#f8faf9]">
       <MarketingNavbar />
       <Section
-        eyebrow="Contact"
-        title="Talk to the DrycleanersFlow team"
-        description="Share your store setup and we will help you pick the right workflow, roles, and tier."
+        eyebrow={t('contact_label')}
+        title={t('contact_title')}
+        description={t('contact_desc')}
       >
         <div className="grid gap-6 md:grid-cols-2">
           <article className="rounded-3xl border border-emerald-100 bg-white p-7 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900">Get Started Today</h3>
+            <h3 className="text-lg font-black text-slate-900">{t('get_started_today')}</h3>
             <p className="mt-3 text-sm text-slate-600">
-              Launch your workspace in minutes and configure operations for front desk, production, and logistics.
+              {t('contact_setup_desc')}
             </p>
             <div className="mt-6 flex gap-3">
               <Link href="/signup" className="rounded-full px-5 py-2 text-sm font-semibold text-white primary-gradient">
-                Start Free Trial
+                {t('start_free_trial')}
               </Link>
               <Link href="/pricing" className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700">
-                View Pricing
+                {t('view_pricing')}
               </Link>
             </div>
           </article>
           <article className="rounded-3xl border border-emerald-100 bg-white p-7 shadow-sm">
-            <h3 className="text-lg font-black text-slate-900">Support and Sales</h3>
-            <p className="mt-3 text-sm text-slate-600">Need help with migration or operations design? Reach us through the app support flow.</p>
+            <h3 className="text-lg font-black text-slate-900">{t('support_sales')}</h3>
+            <p className="mt-3 text-sm text-slate-600">{t('migration_help_desc')}</p>
             <ul className="mt-5 space-y-2 text-sm text-slate-600">
-              <li>• In-app support center: `/support`</li>
-              <li>• Priority support on higher tiers</li>
-              <li>• Operations onboarding available</li>
+              <li>• {t('in_app_support')}</li>
+              <li>• {t('priority_support_msg')}</li>
+              <li>• {t('ops_onboarding_msg')}</li>
             </ul>
             <Link href="/support" className="mt-6 inline-flex rounded-full px-5 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
-              Open Support
+              {t('open_support')}
             </Link>
           </article>
         </div>

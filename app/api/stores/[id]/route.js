@@ -5,14 +5,11 @@ import { cookies } from 'next/headers';
 
 export async function PATCH(req, { params }) {
   try {
-    const cookieStore = await cookies();
-    const token = (await cookieStore).get('cleanflow_session')?.value;
+    const payload = await verifyToken();
 
-    if (!token) {
+    if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const payload = await verifyToken(token);
 
     // Only owners or the manager of this store should be able to edit it
     if (!payload || (payload.role !== 'owner' && payload.role !== 'manager')) {
@@ -80,18 +77,15 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const cookieStore = await cookies();
-    const token = (await cookieStore).get('cleanflow_session')?.value;
+    const payload = await verifyToken();
 
-    if (!token) {
+    if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const payload = await verifyToken(token);
     const { id } = await params;
 
     // Strict Superadmin Check
-    if (!payload || payload.email !== 'sahej@cleanflow.com') {
+    if (!payload || parseInt(payload.id) !== 1) {
       return NextResponse.json({ error: 'Forbidden: Only the Superadmin can delete nodes' }, { status: 403 });
     }
 

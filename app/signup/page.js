@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { useUser, ROLES } from '@/lib/UserContext';
 import Link from 'next/link';
 
 export default function SignupPage() {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,10 +35,10 @@ export default function SignupPage() {
         await fetchUser();
         router.push('/');
       } else {
-        setError(data.error || 'Identity creation failed');
+        setError(data.error || t('signup_failed'));
       }
     } catch (err) {
-      setError('A secure connection error occurred');
+      setError(t('network_error'));
     } finally {
       setLoading(false);
     }
@@ -59,8 +61,8 @@ export default function SignupPage() {
             <div className="w-16 h-16 rounded-[1.5rem] primary-gradient flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-emerald-900/20 mx-auto mb-6 transition-transform hover:scale-110">
               C
             </div>
-            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">Join {typeof window !== 'undefined' ? (localStorage.getItem('cleanflow_system_name') || 'DrycleanersFlow') : 'DrycleanersFlow'}</h1>
-            <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">Create Atelier Profile</p>
+            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">{t('join')} {typeof window !== 'undefined' ? (localStorage.getItem('cleanflow_system_name') || 'DrycleanersFlow') : 'DrycleanersFlow'}</h1>
+            <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">{t('create_atelier_profile')}</p>
           </div>
 
           {error && (
@@ -72,7 +74,7 @@ export default function SignupPage() {
 
           <form onSubmit={handleSignup} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Full Name</label>
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">{t('full_name')}</label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">person</span>
                 <input 
@@ -87,7 +89,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Digital Identity</label>
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">{t('digital_identity')}</label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">mail</span>
                 <input 
@@ -102,7 +104,7 @@ export default function SignupPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Security Key</label>
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">{t('security_key')}</label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">lock</span>
                 <input 
@@ -118,7 +120,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Workspace Role</label>
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">{t('workspace_role')}</label>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 text-lg">admin_panel_settings</span>
                 <select 
@@ -126,8 +128,8 @@ export default function SignupPage() {
                   value={role} 
                   onChange={e => setRole(e.target.value)}
                 >
-                  <option value={ROLES.ADMIN}>Atelier Manager (Admin)</option>
-                  <option value={ROLES.STAFF}>Floor Specialist (Staff)</option>
+                  <option value={ROLES.ADMIN}>{t('role_admin_label')}</option>
+                  <option value={ROLES.STAFF}>{t('role_staff_label')}</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">expand_more</span>
               </div>
@@ -138,17 +140,17 @@ export default function SignupPage() {
               className="w-full primary-gradient text-white py-5 rounded-[2.5rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all mt-4 disabled:opacity-50 overflow-hidden relative group"
               disabled={loading}
             >
-              <span className="relative z-10">{loading ? 'CREATING IDENTITY...' : 'INITIALIZE PROFILE'}</span>
+              <span className="relative z-10">{loading ? t('creating_identity') : t('initialize_profile')}</span>
               <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500 skew-x-12"></div>
             </button>
           </form>
 
           <div className="text-center mt-10">
             <p className="text-[11px] font-bold text-slate-400">
-              Already have a profile? <button onClick={() => router.push('/login')} className="text-primary font-black hover:underline ml-1">SIGN IN</button>
+              Already have a profile? <button onClick={() => router.push('/login')} className="text-primary font-black hover:underline ml-1">{t('sign_in')}</button>
             </p>
             <p className="mt-2 text-[11px] font-bold text-slate-400">
-              Want to compare plans? <Link href="/pricing" className="text-primary font-black hover:underline ml-1">VIEW PRICING</Link>
+              Want to compare plans? <Link href="/pricing" className="text-primary font-black hover:underline ml-1">{t('view_pricing')}</Link>
             </p>
           </div>
         </div>

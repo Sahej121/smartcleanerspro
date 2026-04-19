@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/currency-utils';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 function AnimatedCounter({ value, prefix = '', suffix = '', duration = 1200 }) {
   const [display, setDisplay] = useState(0);
@@ -32,6 +33,7 @@ function AnimatedCounter({ value, prefix = '', suffix = '', duration = 1200 }) {
 }
 
 export default function StoreAdmin({ user }) {
+  const { t } = useLanguage();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
@@ -65,16 +67,16 @@ export default function StoreAdmin({ user }) {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Morning';
-    if (hour < 17) return 'Afternoon';
-    return 'Evening';
+    if (hour < 12) return t('greeting_morning');
+    if (hour < 17) return t('greeting_afternoon');
+    return t('greeting_evening');
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <div className="w-12 h-12 rounded-full border-4 border-theme-border border-t-emerald-600 animate-spin" />
-        <p className="text-theme-text-muted font-medium animate-pulse">Initializing Atelier POS...</p>
+        <p className="text-theme-text-muted font-medium animate-pulse">{t('init_pos')}</p>
       </div>
     );
   }
@@ -95,7 +97,7 @@ export default function StoreAdmin({ user }) {
           </div>
           <div className="flex-1">
             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 mb-1 flex items-center gap-2">
-               {activeBroadcast.severity === 'error' ? 'Global Emergency Transmit' : 'System Broadcast'} 
+               {activeBroadcast.severity === 'error' ? 'Global Emergency Transmit' : t('system_broadcast')} 
                <span className="w-1 h-1 rounded-full bg-current opacity-30"></span>
                {new Date(activeBroadcast.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </h4>
@@ -111,22 +113,22 @@ export default function StoreAdmin({ user }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-fade-in-up">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] px-3 py-1 bg-primary/10 rounded-full border border-primary/20">Operational Pulse</span>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] px-3 py-1 bg-primary/10 rounded-full border border-primary/20">{t('op_pulse')}</span>
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-theme-text italic leading-none">
             {getGreeting()}, <span className="inline-block px-3 text-transparent bg-clip-text bg-gradient-to-r from-theme-text to-theme-text-muted">{user?.name?.split(' ')[0] || 'Atelier'}</span>
           </h1>
-          <p className="text-theme-text-muted font-bold tracking-tight text-sm mt-2">Intelligent oversight for Pristine Atelier's daily logistics.</p>
+          <p className="text-theme-text-muted font-bold tracking-tight text-sm mt-2">{t('dash_tagline')}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link href="/orders/new?type=pickup" className="flex items-center justify-center gap-3 px-8 py-4 bg-theme-text text-theme-bg rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-theme-text/10 active:scale-95 transition-all hover:-translate-y-1">
             <span className="material-symbols-outlined text-lg">add_circle</span>
-            New Order
+            {t('nav_new_order')}
           </Link>
           <button className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-theme-border bg-theme-surface/30 backdrop-blur-md font-black text-[11px] uppercase tracking-widest text-theme-text-muted hover:text-theme-text hover:bg-theme-surface-container transition-all">
             <span className="material-symbols-outlined text-lg">tune</span>
-            Filters
+            {t('filters')}
           </button>
         </div>
       </div>
@@ -140,7 +142,7 @@ export default function StoreAdmin({ user }) {
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-2">Daily Revenue Matrix</p>
+                <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-2">{t('revenue_matrix')}</p>
                 <p className="text-5xl font-black tracking-tighter text-theme-text font-headline animate-count-up italic">
                   {formatCurrency(stats?.todayRevenue || 0, user?.country)}
                 </p>
@@ -149,7 +151,7 @@ export default function StoreAdmin({ user }) {
                 <span className="text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-1 mb-1">
                   <span className="material-symbols-outlined text-sm">trending_up</span> +12.4%
                 </span>
-                <span className="text-[9px] font-bold text-theme-text-muted">vs. prev session</span>
+                <span className="text-[9px] font-bold text-theme-text-muted">{t('vs_prev_session')}</span>
               </div>
             </div>
             
@@ -174,11 +176,11 @@ export default function StoreAdmin({ user }) {
             </div>
           </div>
           <div className="mt-8 relative z-10">
-            <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-1">Total Throughput</p>
+            <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-1">{t('analytics_throughput')}</p>
             <p className="text-4xl font-black tracking-tighter text-theme-text font-headline italic">
               <AnimatedCounter value={stats?.todayOrders || 0} />
             </p>
-            <p className="text-[9px] font-bold text-emerald-500 mt-2 uppercase tracking-widest">Awaiting Induction: 4</p>
+            <p className="text-[9px] font-bold text-emerald-500 mt-2 uppercase tracking-widest">{t('awaiting_induction')}: 4</p>
           </div>
         </div>
 
@@ -192,12 +194,12 @@ export default function StoreAdmin({ user }) {
             {stats?.pendingPickup > 0 && <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]"></span>}
           </div>
           <div className="mt-8 relative z-10">
-            <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-1">Ready for Rack</p>
+            <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-[0.3em] mb-1">{t('ready_for_rack')}</p>
             <p className="text-4xl font-black tracking-tighter text-theme-text font-headline italic">
               <AnimatedCounter value={stats?.pendingPickup || 0} />
             </p>
             <button className="mt-4 flex items-center gap-2 text-primary hover:text-emerald-400 text-[10px] font-black uppercase tracking-widest transition-colors">
-              Notify All <span className="material-symbols-outlined text-sm">send</span>
+              {t('notify_all')} <span className="material-symbols-outlined text-sm">send</span>
             </button>
           </div>
         </div>
@@ -207,9 +209,9 @@ export default function StoreAdmin({ user }) {
         {/* Recent Orders Section */}
         <div className="lg:col-span-2 space-y-6 animate-fade-in-up stagger-4">
           <div className="flex items-center justify-between px-2">
-            <h2 className="text-2xl font-black tracking-tighter text-theme-text font-headline italic">Recent Deliveries</h2>
+            <h2 className="text-2xl font-black tracking-tighter text-theme-text font-headline italic">{t('recent_deliveries')}</h2>
             <Link href="/orders" className="text-primary text-[10px] font-black uppercase tracking-widest hover:text-emerald-400 transition-colors flex items-center gap-2 group">
-              Audit Logs
+              {t('audit_logs')}
               <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
             </Link>
           </div>
@@ -217,11 +219,11 @@ export default function StoreAdmin({ user }) {
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="bg-theme-surface-container/30 border-b border-theme-border">
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Order ID</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Entity</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Allocation</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Vector</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted text-right">Valuation</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('order_id')}</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('entity')}</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('allocation')}</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('vector')}</th>
+                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted text-right">{t('valuation')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-theme-border">
@@ -248,11 +250,11 @@ export default function StoreAdmin({ user }) {
                           <div className="w-8 h-8 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-[10px] font-black text-theme-text-muted uppercase shadow-inner group-hover:border-primary/30 group-hover:text-primary transition-all">
                             {order.customer_name?.charAt(0) || 'W'}
                           </div>
-                          <span className="text-[11px] font-bold text-theme-text-muted group-hover:text-theme-text transition-colors">{order.customer_name || 'Walk-in'}</span>
+                          <span className="text-[11px] font-bold text-theme-text-muted group-hover:text-theme-text transition-colors">{order.customer_name || t('walkin')}</span>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-[10px] font-black text-theme-text-muted uppercase tracking-widest">
-                        {order.item_count || 1} Units
+                        {order.item_count || 1} {t('items')}
                       </td>
                       <td className="px-8 py-6">
                         <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${
@@ -279,7 +281,7 @@ export default function StoreAdmin({ user }) {
           {/* Staff Leaderboard */}
           <section className="animate-fade-in-up stagger-5">
             <div className="flex items-center justify-between mb-6 px-2">
-              <h2 className="text-xl font-black tracking-tighter text-theme-text font-headline italic">Performance</h2>
+              <h2 className="text-xl font-black tracking-tighter text-theme-text font-headline italic">{t('performance')}</h2>
               <button 
                 onClick={() => setShowAddStaffModal(true)}
                 className="w-10 h-10 rounded-xl bg-theme-surface-container border border-theme-border hover:border-primary/50 text-primary flex items-center justify-center transition-all shadow-sm"
@@ -306,7 +308,7 @@ export default function StoreAdmin({ user }) {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-theme-text italic leading-none">{staff.score}%</p>
-                    <p className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest mt-1">Efficiency</p>
+                    <p className="text-[9px] font-black text-emerald-500/50 uppercase tracking-widest mt-1">{t('analytics_efficiency')}</p>
                   </div>
                 </div>
               ))}
@@ -318,7 +320,7 @@ export default function StoreAdmin({ user }) {
             <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Target Achievement</p>
+                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">{t('target_achievement')}</p>
                    <h3 className="text-3xl font-black text-theme-text font-headline italic">71%</h3>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
@@ -330,7 +332,7 @@ export default function StoreAdmin({ user }) {
                 </div>
               </div>
               <p className="text-[11px] text-theme-text-muted font-bold tracking-tight">
-                <span className="text-theme-text">{stats?.todayOrders || 0}</span> / 200 Orders processed today.
+                <span className="text-theme-text">{stats?.todayOrders || 0}</span> / 200 {t('orders_processed_today')}
               </p>
             </div>
           </section>
@@ -340,7 +342,7 @@ export default function StoreAdmin({ user }) {
             <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Stock Integrity</p>
+                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">{t('stock_integrity')}</p>
                    <h3 className={`text-3xl font-black font-headline italic ${(stats?.stockHealth || 0) < 60 ? 'text-amber-500' : 'text-emerald-500'}`}>{stats?.stockHealth ?? 0}%</h3>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-theme-surface-container flex items-center justify-center text-theme-text-muted border border-theme-border">
@@ -351,7 +353,7 @@ export default function StoreAdmin({ user }) {
                 <div className={`h-full rounded-full shadow-sm progress-animate ${(stats?.stockHealth || 0) < 60 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${stats?.stockHealth ?? 0}%` }}></div>
               </div>
               <p className={`text-[11px] font-bold tracking-tight ${(stats?.inventoryAlerts || 0) > 0 ? 'text-amber-500' : 'text-theme-text-muted'}`}>
-                {(stats?.inventoryAlerts || 0) > 0 ? `${stats.lowStockItems} sectors require replenishment.` : 'All production material vectors are stable.'}
+                {(stats?.inventoryAlerts || 0) > 0 ? `${stats.lowStockItems} ${t('sectors_replenishment')}` : t('stock_stable')}
               </p>
             </div>
           </section>
@@ -367,14 +369,14 @@ export default function StoreAdmin({ user }) {
               <span className="material-symbols-outlined text-3xl">water_drop</span>
             </div>
             <div className="text-right">
-               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Solvent Integrity</p>
+               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">{t('solvent_integrity')}</p>
                <h3 className="text-3xl font-black text-theme-text font-headline italic">32%</h3>
             </div>
           </div>
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.6)]"></span>
-              <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Low Level Alert</p>
+              <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{t('low_level_alert')}</p>
             </div>
             <div className="flex items-end gap-1.5 h-12">
               {[0.6, 0.45, 0.32].map((h, i) => (
@@ -394,14 +396,14 @@ export default function StoreAdmin({ user }) {
               <span className="material-symbols-outlined text-3xl">inventory_2</span>
             </div>
             <div className="text-right">
-               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Packaging Reserve</p>
+               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">{t('packaging_reserve')}</p>
                <h3 className="text-3xl font-black text-emerald-500 font-headline italic">HIGH</h3>
             </div>
           </div>
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Supply Validated</p>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{t('supply_validated')}</p>
             </div>
             <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
@@ -417,14 +419,14 @@ export default function StoreAdmin({ user }) {
               <span className="material-symbols-outlined text-3xl">bolt</span>
             </div>
             <div className="text-right">
-               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Energy Efficiency</p>
+               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">{t('energy_efficiency')}</p>
                <h3 className="text-3xl font-black text-theme-text font-headline italic">A+</h3>
             </div>
           </div>
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Eco-Optimization Active</p>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{t('eco_active')}</p>
             </div>
             <div className="flex items-end gap-1.5 h-12">
               {[0.4, 0.7, 0.9, 1.0].map((h, i) => (
@@ -465,8 +467,8 @@ export default function StoreAdmin({ user }) {
                   <span className="material-symbols-outlined text-2xl">person_add</span>
                 </div>
                 <div>
-                  <h3 className="font-black text-theme-text text-xl tracking-tighter italic">Provision Staff</h3>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-theme-text-muted">Generate secure access credentials</p>
+                  <h3 className="font-black text-theme-text text-xl tracking-tighter italic">{t('provision_staff')}</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-theme-text-muted">{t('provision_desc')}</p>
                 </div>
               </div>
               <button 
@@ -479,7 +481,7 @@ export default function StoreAdmin({ user }) {
             
             <div className="p-8 space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Operator Identity</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">{t('op_identity')}</label>
                 <input 
                   type="text" 
                   autoFocus
@@ -490,7 +492,7 @@ export default function StoreAdmin({ user }) {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Enterprise Mailbox</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">{t('enterprise_mailbox')}</label>
                 <input 
                   type="email" 
                   className="w-full bg-theme-surface-container border border-theme-border rounded-2xl p-4 text-sm font-bold text-theme-text focus:border-primary/50 outline-none transition-all placeholder:text-theme-text-muted/30" 
@@ -501,7 +503,7 @@ export default function StoreAdmin({ user }) {
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Sector Assignment</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">{t('sector_assignment')}</label>
                   <select 
                     className="w-full bg-theme-surface-container border border-theme-border rounded-2xl p-4 text-sm font-bold text-theme-text focus:border-primary/50 outline-none transition-all appearance-none"
                     value={newStaff.role}
@@ -514,7 +516,7 @@ export default function StoreAdmin({ user }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">Security PIN</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted mb-2 block">{t('security_pin')}</label>
                   <input 
                     type="text" 
                     maxLength={4}
@@ -532,7 +534,7 @@ export default function StoreAdmin({ user }) {
                 onClick={() => setShowAddStaffModal(false)}
                 className="px-8 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-theme-text-muted hover:text-theme-text transition-colors"
               >
-                Abort
+                {t('abort')}
               </button>
               <button 
                 onClick={async () => {
@@ -557,7 +559,7 @@ export default function StoreAdmin({ user }) {
                 disabled={!newStaff.name || newStaff.pin.length < 4}
                 className="px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest text-theme-bg bg-theme-text shadow-xl shadow-theme-text/10 disabled:opacity-20 disabled:pointer-events-none active:scale-95 transition-all flex items-center gap-2"
               >
-                Execute Provision
+                {t('execute_provision')}
               </button>
             </div>
           </div>
@@ -573,16 +575,16 @@ export default function StoreAdmin({ user }) {
                    <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>lock_open</span>
                 </div>
                 
-                <h2 className="text-2xl font-black text-theme-text font-headline uppercase tracking-tighter mb-2">Staff Registered!</h2>
-                <p className="text-sm font-medium text-theme-text-muted mb-8 italic">Access PIN confirmed for <span className="text-theme-text font-bold">{staffCredentials.name}</span></p>
+                <h2 className="text-2xl font-black text-theme-text font-headline uppercase tracking-tighter mb-2">{t('staff_registered')}</h2>
+                <p className="text-sm font-medium text-theme-text-muted mb-8 italic">{t('pin_confirmed')} <span className="text-theme-text font-bold">{staffCredentials.name}</span></p>
                 
                 <div className="space-y-4 mb-8 text-left">
                   <div className="p-4 bg-theme-surface-container rounded-2xl border border-theme-border group">
-                    <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-1">Login Email/ID</p>
+                    <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-1">{t('login_id')}</p>
                     <p className="text-sm font-bold text-theme-text">{staffCredentials.email || 'Assigned to Store'}</p>
                   </div>
                   <div className="p-4 bg-theme-surface-container rounded-2xl border border-theme-border group">
-                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Assigned Access PIN</p>
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">{t('assigned_pin')}</p>
                     <div className="flex justify-between items-center">
                       <p className="text-2xl font-black text-theme-text tracking-[0.5em]">{staffCredentials.pin}</p>
                       <button className="text-emerald-400 hover:text-emerald-600 transition-colors">
@@ -596,7 +598,7 @@ export default function StoreAdmin({ user }) {
                   onClick={() => setStaffCredentials(null)}
                   className="w-full py-4 bg-theme-text text-theme-bg rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-sm active:scale-95 transition-all"
                 >
-                  Confirm & Close
+                  {t('confirm_close')}
                 </button>
              </div>
           </div>

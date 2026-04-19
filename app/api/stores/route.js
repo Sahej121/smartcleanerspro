@@ -41,14 +41,11 @@ const defaultInventory = [
 
 export async function POST(req) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('cleanflow_session')?.value;
+    const payload = await verifyToken();
 
-    if (!token) {
+    if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const payload = await verifyToken(token);
 
     // Only owners can create new stores
     if (!payload || payload.role !== 'owner') {
@@ -73,6 +70,8 @@ export async function POST(req) {
       let tempPassword = null;
       let tempPin = null;
       let managerDetails = null;
+      let mProvisionPassword = null;
+      let mProvisionPin = null;
 
       // 1. Handle Owner Creation (Superadmin only - for new business onboarding)
       if (isSuperadmin && !targetOwnerId) {
@@ -80,19 +79,53 @@ export async function POST(req) {
           throw new Error('Owner details (name and email) required for new provisioning.');
         }
 
-        // Check if user exists
-        const userCheck = await client.query('SELECT id FROM users WHERE email = $1', [admin_email]);
+        // Check if user exists in public.users
+        const userCheck = await client.query('SELECT id, auth_id FROM users WHERE email = $1', [admin_email]);
         if (userCheck.rows.length > 0) {
           targetOwnerId = userCheck.rows[0].id;
         } else {
-          tempPassword = generatePassword();
+          // Check if user exists in auth.users
+          const authCheck = await client.query('SELECT id FROM auth.users WHERE email = $1', [admin_email]);
+          let authId;
+
+          if (authCheck.rows.length > 0) {
+            authId = authCheck.rows[0].id;
+          } else {
+            // Provision new auth user
+            tempPassword = generatePassword();
+            const authIdRes = await client.query('SELECT gen_random_uuid() as id');
+            authId = authIdRes.rows[0].id;
+
+            await client.query(`
+              INSERT INTO auth.users (
+                instance_id, id, email, encrypted_password, email_confirmed_at, 
+                created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, 
+                aud, role, confirmation_token, email_change, email_change_token_new, recovery_token
+              ) VALUES (
+                '00000000-0000-0000-0000-000000000000', $1::uuid, $2::text, crypt($3::text, gen_salt('bf')), NOW(),
+                NOW(), NOW(), '{"provider":"email","providers":["email"]}', 
+                format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, false,
+                'authenticated', 'authenticated', '', '', '', ''
+              )
+            `, [authId, admin_email, tempPassword]);
+            
+            await client.query(`
+              INSERT INTO auth.identities (
+                id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at, email
+              ) VALUES (
+                gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW(), $2
+              )
+            `, [authId, admin_email]);
+          }
+
+          // Create public user entry
           tempPin = generatePin();
-          const pHash = await hashPassword(tempPassword);
+          const pHash = await hashPassword(tempPassword || 'reused_account');
           const pinHash = await hashPassword(tempPin);
 
           const userRes = await client.query(
-            `INSERT INTO users (name, email, role, password_hash, pin_hash) VALUES ($1, $2, 'owner', $3, $4) RETURNING id`,
-            [admin_name, admin_email, pHash, pinHash]
+            `INSERT INTO users (name, email, role, password_hash, pin_hash, auth_id) VALUES ($1, $2, 'owner', $3, $4, $5) RETURNING id`,
+            [admin_name, admin_email, pHash, pinHash, authId]
           );
           targetOwnerId = userRes.rows[0].id;
         }
@@ -132,20 +165,85 @@ export async function POST(req) {
 
       // 4. Handle Manager Provisioning (Optional)
       if (manager_email && manager_name) {
-        const managerPassword = generatePassword();
-        const managerPin = generatePin();
-        const pHash = await hashPassword(managerPassword);
-        const pinHash = await hashPassword(managerPin);
+        mProvisionPassword = generatePassword();
+        mProvisionPin = generatePin();
 
-        await client.query(
-          `INSERT INTO users (name, email, role, store_id, password_hash, pin_hash) VALUES ($1, $2, 'manager', $3, $4, $5)`,
-          [manager_name, manager_email, newStoreId, pHash, pinHash]
-        );
+        // Check if manager exists in public.users
+        const magUserCheck = await client.query('SELECT id, auth_id FROM users WHERE email = $1', [manager_email]);
+        let magAuthId;
+        
+        if (magUserCheck.rows.length > 0) {
+          magAuthId = magUserCheck.rows[0].auth_id;
+          
+          // Hash the new password and pin
+          const pHash = await hashPassword(mProvisionPassword);
+          const pinHash = await hashPassword(mProvisionPin);
+
+          // Reuse public user but update their store, role, and credentials
+          await client.query(
+            `UPDATE users SET store_id = $1, role = 'manager', password_hash = $3, pin_hash = $4 WHERE id = $2`,
+            [newStoreId, magUserCheck.rows[0].id, pHash, pinHash]
+          );
+
+          // Also reset Supabase Auth password for this existing user
+          await client.query(
+            `UPDATE auth.users SET encrypted_password = crypt($1::text, gen_salt('bf')), updated_at = NOW() WHERE id = $2`,
+            [mProvisionPassword, magAuthId]
+          );
+        } else {
+          // Check if manager exists in auth.users
+          const authCheck = await client.query('SELECT id FROM auth.users WHERE email = $1', [manager_email]);
+          if (authCheck.rows.length > 0) {
+            magAuthId = authCheck.rows[0].id;
+            // Force password update for existing account as per user request
+            await client.query(
+              `UPDATE auth.users SET encrypted_password = crypt($1::text, gen_salt('bf')), updated_at = NOW() WHERE id = $2`,
+              [mProvisionPassword, magAuthId]
+            );
+          } else {
+            // Provision new auth user
+            mProvisionPassword = generatePassword();
+            const magAuthIdRes = await client.query('SELECT gen_random_uuid() as id');
+            magAuthId = magAuthIdRes.rows[0].id;
+
+            await client.query(`
+              INSERT INTO auth.users (
+                instance_id, id, email, encrypted_password, email_confirmed_at, 
+                created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, 
+                aud, role, confirmation_token, email_change, email_change_token_new, recovery_token
+              ) VALUES (
+                '00000000-0000-0000-0000-000000000000', $1::uuid, $2::text, crypt($3::text, gen_salt('bf')), NOW(),
+                NOW(), NOW(), '{"provider":"email","providers":["email"]}', 
+                format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, false,
+                'authenticated', 'authenticated', '', '', '', ''
+              )
+            `, [magAuthId, manager_email, mProvisionPassword]);
+            
+            await client.query(`
+              INSERT INTO auth.identities (
+                id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at, email
+              ) VALUES (
+                gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW(), $2
+              )
+            `, [magAuthId, manager_email]);
+          }
+
+          // Create public user entry
+          mProvisionPin = generatePin();
+          const finalManagerPasswordHash = await hashPassword(mProvisionPassword || 'reused_account');
+          const finalManagerPinHash = await hashPassword(mProvisionPin);
+
+          await client.query(
+            `INSERT INTO users (name, email, role, store_id, password_hash, pin_hash, auth_id) VALUES ($1, $2, 'manager', $3, $4, $5, $6)`,
+            [manager_name, manager_email, newStoreId, finalManagerPasswordHash, finalManagerPinHash, magAuthId]
+          );
+        }
+
         managerDetails = {
           name: manager_name,
           email: manager_email,
-          tempPin: managerPin,
-          tempPassword: managerPassword
+          tempPin: mProvisionPin,
+          tempPassword: mProvisionPassword
         };
       }
 
@@ -194,14 +292,11 @@ export async function POST(req) {
 
 export async function GET(request) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('cleanflow_session')?.value;
+    const payload = await verifyToken();
 
-    if (!token) {
+    if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const payload = await verifyToken(token);
 
     if (!payload || (payload.role !== 'owner' && payload.role !== 'manager')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

@@ -87,7 +87,7 @@ function WaitingContent() {
       // Auto-redirect for login flow
       if (isLogin) {
         setTimeout(() => {
-          router.push('/admin');
+          router.push('/');
         }, 1000);
       }
     };

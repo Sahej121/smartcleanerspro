@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
 
 export default function QualityControlPage() {
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,8 +39,8 @@ export default function QualityControlPage() {
           <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>arrow_back</span>
         </Link>
         <div>
-          <h1 style={{ margin: 0 }}>Quality Control</h1>
-          <p style={{ margin: 0 }}>Review garments at the quality check stage</p>
+          <h1 style={{ margin: 0 }}>{t('quality_control')}</h1>
+          <p style={{ margin: 0 }}>{t('quality_control_desc')}</p>
         </div>
         <button className="btn btn-secondary" onClick={fetchItems}>🔄 Refresh</button>
       </div>
@@ -47,8 +49,8 @@ export default function QualityControlPage() {
         <div className="card">
           <div className="empty-state">
             <div className="empty-state-icon">✅</div>
-            <h3>All Clear!</h3>
-            <p>No garments pending quality inspection right now.</p>
+            <h3>{t('all_clear')}</h3>
+            <p>{t('no_qc_pending')}</p>
           </div>
         </div>
       ) : (
@@ -61,21 +63,21 @@ export default function QualityControlPage() {
                   <div style={{ fontSize: '18px', fontWeight: 700 }}>{item.garment_type}</div>
                   <div className="text-sm text-muted">{item.service_type}</div>
                 </div>
-                <span className="badge badge-quality_check">QC Pending</span>
+                <span className="badge badge-quality_check">{t('qc_pending')}</span>
               </div>
 
               <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', marginBottom: '16px' }}>
-                <div className="text-sm" style={{ fontWeight: 500, marginBottom: '4px' }}>Customer</div>
-                <div className="text-sm text-muted">{item.customer_name || 'Walk-in'}</div>
+                <div className="text-sm" style={{ fontWeight: 500, marginBottom: '4px' }}>{t('customer_label')}</div>
+                <div className="text-sm text-muted">{item.customer_name || t('walk_in')}</div>
               </div>
 
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                <strong>Checklist:</strong>
+                <strong>{t('checklist_label')}</strong>
                 <ul style={{ marginTop: '6px', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <li>Stains fully removed</li>
-                  <li>No fabric damage</li>
-                  <li>Ironing quality acceptable</li>
-                  <li>Proper folding/hanging</li>
+                  <li>{t('stains_removed')}</li>
+                  <li>{t('no_fabric_damage')}</li>
+                  <li>{t('ironing_quality')}</li>
+                  <li>{t('proper_folding')}</li>
                 </ul>
               </div>
 

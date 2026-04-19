@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
 import PhotoCapture from '@/components/logistics/PhotoCapture';
+import Script from 'next/script';
 
 function AnimatedTotal({ value, prefix = '₹' }) {
   const [display, setDisplay] = useState(0);
@@ -45,21 +47,23 @@ function getGarmentIcon(type) {
   return 'dry_cleaning';
 }
 
-// Category icons
-const CATEGORY_ICONS = {
-  'All': 'grid_view',
-  'Dry Clean': 'dry_cleaning',
-  'Laundry': 'local_laundry_service',
-  'Pressing': 'iron',
-  'Delicates': 'flare',
-  'Household': 'checkroom',
-};
-
-function getCategoryIcon(cat) {
-  return CATEGORY_ICONS[cat] || 'dry_cleaning';
-}
 
 export default function NewOrder() {
+  const { t } = useLanguage();
+  
+  // Category icons mapping
+  const CATEGORY_ICONS = {
+    [t('all_label')]: 'grid_view',
+    [t('dry_clean_label')]: 'dry_cleaning',
+    [t('laundry_label')]: 'local_laundry_service',
+    [t('pressing_label')]: 'iron',
+    [t('delicates_label')]: 'flare',
+    [t('household_label')]: 'checkroom',
+  };
+
+  const getCategoryIcon = (cat) => {
+    return CATEGORY_ICONS[cat] || 'dry_cleaning';
+  };
   const router = useRouter();
   const { user } = useUser();
   const [customers, setCustomers] = useState([]);
@@ -255,6 +259,87 @@ export default function NewOrder() {
     setNewCustomer({ name: '', phone: '', email: '', address: '' });
   };
 
+  const handlePayOnline = async (orderId, orderData) => {
+    try {
+      const res = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to initiate payment');
+      }
+
+      // Handle Zero-Amount or Discounted orders (provider: 'none')
+      if (data.provider === 'none') {
+        return { success: true };
+      }
+
+      if (data.provider === 'razorpay') {
+        return new Promise((resolve) => {
+          const options = {
+            key: data.key,
+            amount: data.amount,
+            currency: data.currency,
+            name: data.order_details.name,
+            description: data.order_details.description,
+            order_id: data.order_id,
+            handler: async function (response) {
+              // Called after successful payment on Razorpay side
+              await fetch('/api/webhooks/razorpay', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-razorpay-signature': response.razorpay_signature,
+                },
+                body: JSON.stringify({
+                  event: 'payment.captured',
+                  payload: {
+                    payment: {
+                      entity: {
+                        id: response.razorpay_payment_id,
+                        amount: data.amount,
+                        notes: { order_id: orderId },
+                      },
+                    },
+                  },
+                }),
+              });
+              resolve({ success: true });
+            },
+            modal: {
+              ondismiss: function () {
+                // User closed the popup — order stays pending
+                resolve({ success: false, dismissed: true });
+              },
+            },
+            prefill: {
+              name: selectedCustomer?.name || '',
+              contact: selectedCustomer?.phone || '',
+            },
+            theme: {
+              color: '#10b981',
+            },
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.on('payment.failed', function (resp) {
+            console.error('Razorpay Payment Failed:', resp.error);
+            resolve({ success: false, error: resp.error.description });
+          });
+          rzp.open();
+        });
+      }
+      
+      return { success: false, error: 'Unsupported payment provider' };
+    } catch (error) {
+      alert('Payment initialization failed: ' + error.message);
+      return { success: false, error: error.message };
+    }
+  };
+
   const handleSubmitOrder = async (force = false) => {
     if (!selectedCustomer) return alert('Select a customer');
 
@@ -303,6 +388,15 @@ export default function NewOrder() {
       const order = await res.json();
       if (editId) {
         router.push(`/orders/${editId}`);
+      } else if (order.requires_online_payment) {
+        // Trigger Razorpay checkout before showing success
+        const paymentResult = await handlePayOnline(order.id, order);
+        if (paymentResult?.success) {
+          setOrderComplete(order);
+        } else {
+          // Payment dismissed or failed — still show order but note pending payment
+          setOrderComplete({ ...order, payment_pending: true });
+        }
       } else {
         setOrderComplete(order);
       }
@@ -316,15 +410,23 @@ export default function NewOrder() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-8 animate-fade-in-up" style={{ animationDuration: '0.6s' }}>
         <div className="relative mb-6">
-          <div className="w-24 h-24 rounded-full bg-theme-surface-container text-emerald-500 flex items-center justify-center shadow-xl shadow-emerald-100 breathe-glow">
-            <span className="material-symbols-outlined text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+          <div className={`w-24 h-24 rounded-full bg-theme-surface-container flex items-center justify-center shadow-xl breathe-glow ${
+            orderComplete.payment_pending ? 'text-amber-500 shadow-amber-100' : 'text-emerald-500 shadow-emerald-100'
+          }`}>
+            <span className="material-symbols-outlined text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+              {orderComplete.payment_pending ? 'pending' : 'verified'}
+            </span>
           </div>
         </div>
-        <h1 className="text-4xl font-black text-theme-text mb-2 font-headline">Order Placed</h1>
-        <p className="text-xl text-theme-text-muted mb-10 font-medium">Receipt <span className="text-primary font-bold">#{orderComplete.order_number}</span> has been generated.</p>
+        <h1 className="text-4xl font-black text-theme-text mb-2 font-headline">{t('order_placed')}</h1>
+        {orderComplete.payment_pending ? (
+          <p className="text-xl text-amber-600 mb-10 font-medium">Receipt <span className="font-bold">#{orderComplete.order_number}</span> created. <br/><span className="text-base text-theme-text-muted">Online payment is still pending. You can collect it from the order detail page.</span></p>
+        ) : (
+          <p className="text-xl text-theme-text-muted mb-10 font-medium">Receipt <span className="text-primary font-bold">#{orderComplete.order_number}</span> has been generated.</p>
+        )}
         <div className="flex gap-4">
           <button 
-            onClick={() => { setOrderComplete(null); setCart([]); setSelectedCustomer(null); setCurrentStep(2); }}
+            onClick={() => { setOrderComplete(null); setCart([]); setSelectedCustomer(null); setPayments([]); setCurrentStep(2); }}
             className="px-10 py-4 premium-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all"
           >
             New Transaction
@@ -341,14 +443,16 @@ export default function NewOrder() {
   }
 
   const steps = [
-    { icon: 'person', label: 'Customer', step: 1 },
-    { icon: 'dry_cleaning', label: 'Service', step: 2 },
-    { icon: 'schedule', label: 'Schedule', step: 3 },
-    { icon: 'payments', label: 'Payment', step: 4 },
+    { icon: 'person', label: t('customer_sidebar'), step: 1 },
+    { icon: 'dry_cleaning', label: t('service_type_label'), step: 2 },
+    { icon: 'schedule', label: t('schedule'), step: 3 },
+    { icon: 'payments', label: t('payment'), step: 4 },
   ];
 
   return (
     <div className="flex flex-col gap-6 min-h-[calc(100vh-140px)] lg:h-[calc(100vh-140px)] lg:min-h-0">
+      {/* Razorpay Checkout Script */}
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       {/* Progress Stepper */}
       <div className="flex items-center justify-center animate-fade-in-up">
         <div className="flex items-center w-full max-w-2xl">
@@ -381,7 +485,7 @@ export default function NewOrder() {
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-y-auto lg:overflow-hidden pb-20 lg:pb-0">
           {/* Column 1: Service Categories (Horizontal on mobile) */}
         <div className="lg:col-span-2 flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto no-scrollbar animate-fade-in-up stagger-1 pb-2 shrink-0">
-          <h3 className="hidden lg:block text-xs font-black uppercase tracking-widest text-theme-text-muted/70 mb-2 px-1">Categories</h3>
+          <h3 className="hidden lg:block text-xs font-black uppercase tracking-widest text-theme-text-muted/70 mb-2 px-1">{t('categories')}</h3>
           {garmentTypes.map((cat, i) => (
             <button
               key={cat}
@@ -411,11 +515,11 @@ export default function NewOrder() {
         {/* Column 2: Garment Grid */}
         <div className="lg:col-span-6 flex flex-col overflow-hidden min-h-[400px] lg:min-h-0">
           <div className="flex items-center justify-between mb-4 px-1 animate-fade-in-up stagger-2">
-            <h3 className="text-xs font-black uppercase tracking-widest text-theme-text-muted/70">Select Garments</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-theme-text-muted/70">{t('select_garments')}</h3>
             <div className="flex gap-2">
-              <button onClick={() => setShowAddCategoryModal(true)} className="px-3 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase hover:bg-amber-600 transition flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">add</span>Category</button>
-              <button onClick={handleAddCustomGarment} className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase hover:bg-emerald-700 transition">+ Custom Item</button>
-              <button className="px-3 py-1 rounded-full bg-emerald-100 text-theme-text text-[10px] font-bold uppercase">Popular</button>
+              <button onClick={() => setShowAddCategoryModal(true)} className="px-3 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase hover:bg-amber-600 transition flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">add</span>{t('category_label')}</button>
+              <button onClick={handleAddCustomGarment} className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase hover:bg-emerald-700 transition">{t('custom_item_btn')}</button>
+              <button className="px-3 py-1 rounded-full bg-emerald-100 text-theme-text text-[10px] font-bold uppercase">{t('popular')}</button>
               <button className="px-3 py-1 rounded-full bg-theme-surface-container text-theme-text-muted text-[10px] font-bold uppercase">A-Z</button>
             </div>
           </div>
@@ -453,7 +557,7 @@ export default function NewOrder() {
             {/* Summary Header */}
             <div className="p-6 border-b border-theme-border bg-theme-surface-container/30">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-extrabold text-theme-text">Order Summary</h3>
+                <h3 className="text-lg font-extrabold text-theme-text">{t('order_summary')}</h3>
                 <span className="text-[10px] font-black bg-emerald-100 text-theme-text px-2 py-1 rounded-lg">
                   #{Math.random().toString(36).substring(2, 6).toUpperCase()}
                 </span>
@@ -469,8 +573,8 @@ export default function NewOrder() {
                     <span className="material-symbols-outlined">person_add</span>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-bold">Assign Customer</p>
-                    <p className="text-[10px] text-theme-text-muted">Search name or phone</p>
+                    <p className="text-xs font-bold">{t('assign_customer')}</p>
+                    <p className="text-[10px] text-theme-text-muted">{t('search_name_phone')}</p>
                   </div>
                 </div>
               ) : (
@@ -500,7 +604,7 @@ export default function NewOrder() {
                       <input 
                         autoFocus
                         className="flex-1 bg-theme-surface-container border-none rounded-xl py-3 px-4 text-sm font-bold placeholder:text-theme-text-muted/70 outline-none"
-                        placeholder="Start typing..."
+                        placeholder={t('start_typing')}
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                       />
@@ -536,7 +640,7 @@ export default function NewOrder() {
                             <div className="w-12 h-12 bg-theme-surface-container rounded-full flex items-center justify-center mx-auto mb-4">
                               <span className="material-symbols-outlined text-theme-text-muted/70">no_accounts</span>
                             </div>
-                            <p className="text-[10px] text-theme-text-muted/70 uppercase font-black mb-4 tracking-widest">No client matches</p>
+                            <p className="text-[10px] text-theme-text-muted/70 uppercase font-black mb-4 tracking-widest">{t('no_client_matches')}</p>
                             <button 
                               onClick={() => setIsInlineCreating(true)}
                               className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-emerald-900/10 active:scale-95 transition-all"
@@ -547,7 +651,7 @@ export default function NewOrder() {
                         )
                       ) : (
                         <div className="py-2 animate-slide-in-right shrink-0" style={{ animationDuration: '0.2s' }}>
-                          <p className="text-xs font-black uppercase tracking-widest text-theme-text mb-4 px-1">Quick Registration</p>
+                          <p className="text-xs font-black uppercase tracking-widest text-theme-text mb-4 px-1">{t('quick_registration')}</p>
                           {inlineError && (
                             <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-[10px] font-bold mb-4 animate-shake">
                               {inlineError}
@@ -563,19 +667,19 @@ export default function NewOrder() {
                             />
                             <input 
                               className="w-full bg-theme-surface-container border border-transparent rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/70 transition-all outline-none" 
-                              placeholder="Phone Number" 
+                              placeholder={t('phone_number')} 
                               value={newCustomer.phone} 
                               onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })} 
                             />
                             <input 
                               className="w-full bg-theme-surface-container border border-transparent rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/70 transition-all outline-none" 
-                              placeholder="Address (Optional)" 
+                              placeholder={t('address_optional')} 
                               value={newCustomer.address} 
                               onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })} 
                             />
                             <div className="flex gap-3 pt-2">
                               <button onClick={() => setIsInlineCreating(false)} className="flex-1 py-3 text-xs font-bold text-theme-text-muted/70 hover:text-theme-text hover:bg-theme-surface-container rounded-xl transition-all">Cancel</button>
-                              <button onClick={handleCreateCustomer} disabled={!newCustomer.name || !newCustomer.phone} className="flex-1 py-3 primary-gradient text-white rounded-xl text-xs font-black shadow-md disabled:opacity-50 active:scale-95 transition-all">Save & Assign</button>
+                              <button onClick={handleCreateCustomer} disabled={!newCustomer.name || !newCustomer.phone} className="flex-1 py-3 primary-gradient text-white rounded-xl text-xs font-black shadow-md disabled:opacity-50 active:scale-95 transition-all">{t('save_assign')}</button>
                             </div>
                           </div>
                         </div>
@@ -690,7 +794,7 @@ export default function NewOrder() {
                   </div>
                 )}
                 <div className="flex justify-between text-xs font-medium text-theme-text-muted">
-                  <span>Tax (18%)</span>
+                  <span>{t('tax_label_18')}</span>
                   <span>₹{tax.toLocaleString('en-IN')}</span>
                 </div>
                 {couponData && (
@@ -701,14 +805,14 @@ export default function NewOrder() {
                 )}
                 {selectedCustomer && (
                   <div className="flex justify-between text-xs font-medium text-emerald-600">
-                    <span>Member Advantage</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-theme-surface-container px-1.5 rounded">Applied</span>
+                    <span>{t('member_advantage')}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-theme-surface-container px-1.5 rounded">{t('applied')}</span>
                   </div>
                 )}
                 <div className="flex gap-2 mt-4">
                   <input 
                     type="text" 
-                    placeholder="PROMO CODE" 
+                    placeholder={t('promo_code_placeholder')} 
                     className="flex-1 bg-theme-surface border border-theme-border rounded-xl px-3 py-2 text-[10px] font-black tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
                     value={couponCode}
                     onChange={e => setCouponCode(e.target.value.toUpperCase())}
@@ -732,7 +836,7 @@ export default function NewOrder() {
                 onClick={() => setCurrentStep(3)}
                 className="w-full primary-gradient text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-emerald-900/20 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-2"
               >
-                <span>Proceed to Schedule</span>
+                <span>{t('proceed_to_schedule')}</span>
                 <span className="material-symbols-outlined">arrow_forward</span>
               </button>
             </div>
@@ -750,8 +854,8 @@ export default function NewOrder() {
                 <span className="material-symbols-outlined text-2xl">schedule</span>
               </div>
               <div>
-                <h2 className="text-2xl font-black font-headline text-theme-text">Scheduling Details</h2>
-                <p className="text-sm font-medium text-theme-text-muted">When should we pick up and deliver?</p>
+                <h2 className="text-2xl font-black font-headline text-theme-text">{t('scheduling_details')}</h2>
+                <p className="text-sm font-medium text-theme-text-muted">{t('scheduling_desc')}</p>
               </div>
             </div>
 
@@ -762,11 +866,11 @@ export default function NewOrder() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">Date</label>
+                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('date_label')}</label>
                     <input type="date" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.pickupDate} onChange={e => setSchedule({...schedule, pickupDate: e.target.value})} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">Time</label>
+                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('time_label')}</label>
                     <input type="time" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.pickupTime} onChange={e => setSchedule({...schedule, pickupTime: e.target.value})} />
                   </div>
                 </div>
@@ -778,11 +882,11 @@ export default function NewOrder() {
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">Date</label>
+                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('date_label')}</label>
                     <input type="date" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.deliveryDate} onChange={e => setSchedule({...schedule, deliveryDate: e.target.value})} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">Time</label>
+                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('time_label')}</label>
                     <input type="time" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.deliveryTime} onChange={e => setSchedule({...schedule, deliveryTime: e.target.value})} />
                   </div>
                 </div>
@@ -793,7 +897,7 @@ export default function NewOrder() {
             {schedule.pickupDate && schedule.deliveryDate && new Date(`${schedule.pickupDate}T${schedule.pickupTime || '00:00'}`) > new Date(`${schedule.deliveryDate}T${schedule.deliveryTime || '00:00'}`) && (
               <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl flex items-center gap-3 animate-shake">
                 <span className="material-symbols-outlined text-xl">error</span>
-                <span className="text-sm font-bold">Delivery window cannot be earlier than the pickup window.</span>
+                <span className="text-sm font-bold">{t('scheduling_error')}</span>
               </div>
             )}
 

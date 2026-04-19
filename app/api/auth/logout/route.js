@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { createServerSupabase } from '@/lib/supabase-server';
 
 export async function POST() {
-  const cookieStore = await cookies();
-  cookieStore.delete('cleanflow_session');
-  
-  return NextResponse.json({ success: true });
+  try {
+    const supabase = await createServerSupabase();
+    await supabase.auth.signOut();
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return NextResponse.json({ success: true });
+  }
 }

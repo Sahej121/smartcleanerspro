@@ -18,7 +18,12 @@ export async function GET(request) {
         CASE
           WHEN historical_daily_burn > 0 THEN ROUND(quantity / historical_daily_burn)
           ELSE NULL
-        END as runway_days
+        END as runway_days,
+        historical_daily_burn as burn_rate,
+        CASE
+          WHEN historical_daily_burn > 0 THEN 'Active'
+          ELSE 'Learning'
+        END as forecasting_status
       FROM inventory 
       WHERE store_id = $1
       ORDER BY 

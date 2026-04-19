@@ -1,5 +1,5 @@
-import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
+import { createServerSupabase } from '@/lib/supabase-server';
 
 export async function POST(request) {
   try {
@@ -9,23 +9,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Check if user exists
-    const res = await query('SELECT id, name FROM users WHERE email = $1', [email]);
-    
-    if (res.rows.length === 0) {
-      // For security reasons, don't reveal if user exists or not
-      return NextResponse.json({ 
-        message: 'If an account exists for this email, reset instructions have been sent.' 
-      }, { status: 200 });
+    const supabase = await createServerSupabase();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL ? request.headers.get('origin') : 'http://localhost:3000'}/login`,
+    });
+
+    if (error) {
+      console.error('[RESET] Supabase error:', error.message);
     }
 
-    const user = res.rows[0];
-
-    // Simulate sending email
-    console.log(`[SIMULATION] Sending password reset instructions to ${user.name} at ${email}`);
-
+    // For security, always return success regardless of whether the email exists
     return NextResponse.json({ 
-      message: 'Reset instructions sent. Please check your inbox (including spam).' 
+      message: 'If an account exists for this email, reset instructions have been sent.' 
     }, { status: 200 });
 
   } catch (error) {

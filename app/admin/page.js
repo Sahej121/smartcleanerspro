@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function AdminDashboard() {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,15 +26,15 @@ export default function AdminDashboard() {
   };
 
   const maxRevenue = Math.max(...(data?.dailyRevenue?.map(d => d.revenue) || [1]), 1);
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayLabels = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
   return (
     <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 animate-fade-in">
       {/* Page Header */}
       <div className="flex justify-between items-end border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface mb-2 font-headline">Business Intelligence</h1>
-          <p className="text-on-surface-variant font-medium">Performance analytics and fiscal monitors for Pristine Atelier.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface mb-2 font-headline">{t('business_intelligence')}</h1>
+          <p className="text-on-surface-variant font-medium">{t('analytics_desc')}</p>
         </div>
         <div className="flex gap-3">
            <div className="flex items-center gap-2 px-4 py-2 bg-theme-surface bg-opacity-80 border border-theme-border rounded-[1rem] text-xs font-bold text-theme-text-muted backdrop-blur-md transition-all hover:bg-theme-surface-container">
@@ -49,7 +51,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="p-8 rounded-[2.5rem] bg-surface-container-lowest border border-outline-variant/10 shadow-sm">
            <span className="material-symbols-outlined text-emerald-600 mb-4">payments</span>
-           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Total Revenue</p>
+           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t('total_revenue')}</p>
            <h2 className="text-3xl font-black text-on-surface font-headline">{formatCurrency(data?.totalRevenue)}</h2>
            <p className="text-[10px] text-emerald-600 font-bold mt-2 flex items-center gap-1">
              <span className="material-symbols-outlined text-[10px]">trending_up</span> +8.2% vs prev
@@ -57,21 +59,21 @@ export default function AdminDashboard() {
         </div>
         <div className="p-8 rounded-[2.5rem] bg-surface-container-lowest border border-theme-border shadow-sm group hover:-translate-y-1 transition-all">
            <span className="material-symbols-outlined text-blue-500 bg-blue-500/10 p-2 rounded-[1rem] mb-4 group-hover:scale-110 transition-transform">local_mall</span>
-           <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest mb-1">Order Volume</p>
+           <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest mb-1">{t('order_volume')}</p>
            <h2 className="text-3xl font-black text-on-surface font-headline">{data?.totalOrders || 0}</h2>
-           <p className="text-[10px] text-theme-text-muted font-bold mt-2">Consistent performance</p>
+           <p className="text-[10px] text-theme-text-muted font-bold mt-2">{t('consistent_performance')}</p>
         </div>
         <div className="p-8 rounded-[2.5rem] bg-surface-container-lowest border border-outline-variant/10 shadow-sm">
            <span className="material-symbols-outlined text-purple-500 mb-4">analytics</span>
-           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Avg. Ticket Size</p>
+           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t('avg_ticket_size')}</p>
            <h2 className="text-3xl font-black text-on-surface font-headline">{formatCurrency(data?.avgOrderValue)}</h2>
-           <p className="text-[10px] text-purple-600 font-bold mt-2">Up ₹120 this month</p>
+           <p className="text-[10px] text-purple-600 font-bold mt-2">t('up_amount_month')</p>
         </div>
         <div className="p-8 rounded-[2.5rem] bg-surface-container-lowest border border-theme-border shadow-sm group hover:-translate-y-1 transition-all">
            <span className="material-symbols-outlined text-amber-500 bg-amber-500/10 p-2 rounded-[1rem] mb-4 group-hover:scale-110 transition-transform">timer</span>
-           <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest mb-1">Turnaround Time</p>
-           <h2 className="text-3xl font-black text-on-surface font-headline">{data?.avgTurnaround || 2.1} <span className="text-sm font-bold text-theme-text-muted">days</span></h2>
-           <p className="text-[10px] text-amber-600 font-bold mt-2 hover:text-amber-500 transition-colors">Efficiency optimized</p>
+           <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest mb-1">{t('turnaround_time')}</p>
+           <h2 className="text-3xl font-black text-on-surface font-headline">{data?.avgTurnaround || 2.1} <span className="text-sm font-bold text-theme-text-muted">{t({t('days')})}</span></h2>
+           <p className="text-[10px] text-amber-600 font-bold mt-2 hover:text-amber-500 transition-colors">{t('efficiency_optimized')}</p>
         </div>
       </div>
 
@@ -81,11 +83,11 @@ export default function AdminDashboard() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none group-hover:bg-primary/10 transition-colors duration-700"></div>
           
           <div className="flex justify-between items-center mb-10 relative z-10">
-            <h3 className="text-xl font-black text-theme-text font-headline">Revenue Velocity</h3>
+            <h3 className="text-xl font-black text-theme-text font-headline">{t('revenue_velocity')}</h3>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 bg-theme-surface-container px-3 py-1.5 rounded-xl border border-theme-border">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                <span className="text-[10px] font-black text-theme-text uppercase tracking-widest">Revenue</span>
+                <span className="text-[10px] font-black text-theme-text uppercase tracking-widest">{t('revenue')}</span>
               </div>
             </div>
           </div>
@@ -121,7 +123,7 @@ export default function AdminDashboard() {
         {/* Status Mix */}
         <div className="bg-theme-surface rounded-[3rem] p-8 lg:p-10 border border-theme-border shadow-xl relative overflow-hidden group">
           <div className="absolute bottom-0 right-0 w-64 h-64 bg-amber-500/5 blur-[80px] rounded-full translate-x-1/2 translate-y-1/2 pointer-events-none"></div>
-          <h3 className="text-xl font-black text-theme-text font-headline mb-8 relative z-10">Operational Mix</h3>
+          <h3 className="text-xl font-black text-theme-text font-headline mb-8 relative z-10">{t('operational_mix')}</h3>
           <div className="space-y-6 relative z-10">
             {data?.ordersByStatus?.map(s => {
               const percentage = data.totalOrders > 0 ? Math.round((s.count / data.totalOrders) * 100) : 0;
@@ -131,7 +133,7 @@ export default function AdminDashboard() {
               return (
                 <div key={s.status} className="space-y-2">
                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                    <span className="text-theme-text-muted">{s.status}</span>
+                    <span className="text-theme-text-muted">{t(s.status)}</span>
                     <span className="text-theme-text bg-theme-surface-container px-2 py-0.5 rounded-md border border-theme-border">{percentage}%</span>
                   </div>
                   <div className="h-2 w-full bg-theme-surface-container rounded-full overflow-hidden border border-theme-border">
@@ -143,7 +145,7 @@ export default function AdminDashboard() {
           </div>
           <div className="mt-10 p-5 bg-primary/10 rounded-[1.5rem] flex items-center gap-3 border border-primary/20 relative z-10 shadow-sm shadow-primary/5 hover:-translate-y-1 transition-transform">
              <span className="material-symbols-outlined text-primary text-2xl drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">tips_and_updates</span>
-             <p className="text-[10px] font-black uppercase tracking-widest text-primary leading-relaxed">Most orders are in 'Ready' state. Optimize pickup scheduling.</p>
+             <p className="text-[10px] font-black uppercase tracking-widest text-primary leading-relaxed">{t('operational_tip')}</p>
           </div>
         </div>
       </div>
@@ -153,14 +155,14 @@ export default function AdminDashboard() {
          <div className="bg-theme-surface rounded-[3rem] border border-theme-border overflow-x-auto shadow-xl">
             <div className="p-6 lg:p-8 border-b border-theme-border min-w-max flex items-center gap-3">
                <span className="material-symbols-outlined text-theme-text bg-theme-surface-container p-2 rounded-[1rem] border border-theme-border">dry_cleaning</span>
-               <h3 className="text-lg font-black text-theme-text font-headline">Service Performance</h3>
+               <h3 className="text-lg font-black text-theme-text font-headline">{t('service_performance')}</h3>
             </div>
             <table className="w-full text-left min-w-[400px]">
                <thead className="bg-theme-surface-container/50 border-b border-theme-border">
                   <tr className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">
-                    <th className="px-8 py-5">Service Layer</th>
-                    <th className="px-8 py-5">Vol</th>
-                    <th className="px-8 py-5 text-right">Revenue</th>
+                    <th className="px-8 py-5">{t('service_layer')}</th>
+                    <th className="px-8 py-5">{t('vol')}</th>
+                    <th className="px-8 py-5 text-right">{t('revenue')}</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-theme-border/50">
@@ -179,20 +181,20 @@ export default function AdminDashboard() {
          <div className="bg-theme-surface rounded-[3rem] border border-theme-border overflow-x-auto shadow-xl">
             <div className="p-6 lg:p-8 border-b border-theme-border min-w-max flex items-center gap-3">
                <span className="material-symbols-outlined text-theme-text bg-theme-surface-container p-2 rounded-[1rem] border border-theme-border">apparel</span>
-               <h3 className="text-lg font-black text-theme-text font-headline">Garment Mix</h3>
+               <h3 className="text-lg font-black text-theme-text font-headline">{t('garment_mix')}</h3>
             </div>
             <table className="w-full text-left min-w-[300px]">
                <thead className="bg-theme-surface-container/50 border-b border-theme-border">
                   <tr className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">
-                    <th className="px-8 py-5">Garment Identity</th>
-                    <th className="px-8 py-5 text-right">Count</th>
+                    <th className="px-8 py-5">{t('garment_identity')}</th>
+                    <th className="px-8 py-5 text-right">{t('count')}</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-theme-border/50">
                   {data?.topGarments?.map(g => (
                     <tr key={g.garment_type} className="hover:bg-theme-surface-container transition-colors group">
                       <td className="px-8 py-5 text-xs font-black text-theme-text uppercase tracking-widest group-hover:text-primary transition-colors">{g.garment_type}</td>
-                      <td className="px-8 py-5 text-[10px] font-black text-primary uppercase tracking-widest text-right bg-primary/5">{g.count} units</td>
+                      <td className="px-8 py-5 text-[10px] font-black text-primary uppercase tracking-widest text-right bg-primary/5">{g.count} {t('units')}</td>
                     </tr>
                   ))}
                </tbody>
@@ -212,7 +214,7 @@ export default function AdminDashboard() {
             <div key={pm.payment_method} className="p-8 bg-theme-surface-container hover:bg-theme-bg border border-theme-border rounded-[2.5rem] shadow-sm hover:-translate-y-2 hover:shadow-xl transition-all duration-300 text-center flex flex-col justify-center items-center group/card cursor-default">
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted shrink-0 mb-4 bg-theme-surface px-3 py-1.5 rounded-xl border border-theme-border">{pm.payment_method}</span>
               <p className="text-2xl lg:text-3xl font-black text-theme-text tracking-tighter leading-none mb-3 font-headline group-hover/card:text-primary transition-colors">{formatCurrency(pm.total)}</p>
-              <p className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded-md">{pm.count} xactions</p>
+              <p className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded-md">{pm.count} {t('xactions')}</p>
             </div>
           ))}
         </div>

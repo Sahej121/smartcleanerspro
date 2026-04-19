@@ -1,45 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const links = [
-  { href: '/', label: 'Home' },
-  { href: '/features', label: 'Features' },
-  { href: '/how-it-works', label: 'How it works' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/contact', label: 'Contact' },
-];
-
 export default function MarketingNavbar() {
+  const { t } = useLanguage();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const links = [
+    { href: '/', label: t('home') },
+    { href: '/features', label: t('features') },
+    { href: '/how-it-works', label: t('how_it_works') },
+    { href: '/pricing', label: t('pricing') },
+    { href: '/contact', label: t('contact') },
+  ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-emerald-100/70 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-3" onClick={() => setMenuOpen(false)}>
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl primary-gradient text-white shadow-lg shadow-emerald-900/20">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
+    <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
+      scrolled 
+        ? 'glass-navbar py-2 opacity-100' 
+        : 'bg-transparent border-transparent py-4 opacity-100'
+    }`}>
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6">
+        <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-105" onClick={() => setMenuOpen(false)}>
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl primary-gradient text-white shadow-xl shadow-emerald-600/20 group-hover:rotate-6 transition-all duration-500">
+            <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>eco</span>
           </span>
           <div>
-            <p className="text-base font-black text-slate-900">DrycleanersFlow</p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Dry Cleaner Platform</p>
+            <p className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1">Dry Cleaner's flow</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600/70">{t('dry_cleaner_platform')}</p>
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-2 md:flex">
+        <nav className="hidden items-center gap-1 md:flex">
           {links.map((link) => {
             const active = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                className={`rounded-full px-5 py-2 text-sm font-bold transition-all duration-300 ${
                   active
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-emerald-50 text-emerald-700 shadow-sm'
+                    : 'text-slate-600 hover:text-emerald-600'
                 }`}
               >
                 {link.label}
@@ -48,44 +63,50 @@ export default function MarketingNavbar() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link href="/login" className="relative z-[110] hidden sm:block rounded-full px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100 transition-colors">
+            Login
+          </Link>
+          <Link href="/signup" className="relative z-[110] rounded-full px-6 py-2.5 text-sm font-bold text-white primary-gradient shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all duration-300 shimmer-button">
+            Start Free
+          </Link>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-700 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 md:hidden"
             onClick={() => setMenuOpen((prev) => !prev)}
             aria-label="Toggle menu"
           >
             <span className="material-symbols-outlined">{menuOpen ? 'close' : 'menu'}</span>
           </button>
-          <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-            Login
-          </Link>
-          <Link href="/signup" className="rounded-full px-5 py-2 text-sm font-semibold text-white primary-gradient shadow-md shadow-emerald-900/15">
-            Start Free
-          </Link>
         </div>
       </div>
-      {menuOpen ? (
-        <div className="border-t border-emerald-100 bg-white px-6 py-4 md:hidden">
-          <nav className="flex flex-col gap-1">
-            {links.map((link) => {
-              const active = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className={`rounded-xl px-3 py-2 text-sm font-semibold ${
-                    active ? 'bg-emerald-50 text-emerald-700' : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      ) : null}
+      
+      {/* Mobile Menu */}
+      <div className={`fixed inset-x-0 top-[76px] bg-white/95 backdrop-blur-2xl border-b border-emerald-100 transition-all duration-500 overflow-hidden md:hidden ${
+        menuOpen ? 'max-h-[400px] opacity-100 pointer-events-auto' : 'max-h-0 opacity-0 pointer-events-none'
+      }`}>
+        <nav className="flex flex-col gap-2 p-6">
+          {links.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className={`rounded-2xl px-4 py-3 text-base font-bold transition-all ${
+                  active ? 'bg-emerald-50 text-emerald-700 shadow-sm' : 'text-slate-700 active:bg-slate-100'
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+          <hr className="my-2 border-slate-100" />
+          <Link href="/login" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 text-base font-bold text-slate-700">
+            Login
+          </Link>
+        </nav>
+      </div>
     </header>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function InventoryPage() {
+  const { t } = useLanguage();
   const [inventory, setInventory] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -83,9 +85,9 @@ export default function InventoryPage() {
   };
 
   const getStatusColor = (status) => {
-    if (status === 'Optimal') return 'bg-primary/10 text-primary border border-primary/20';
-    if (status === 'Low Stock') return 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse';
-    if (status === 'Medium') return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+    if (status === t('optimal')) return 'bg-primary/10 text-primary border border-primary/20';
+    if (status === t('low_stock')) return 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse';
+    if (status === t('medium')) return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
     return 'bg-theme-surface-container text-theme-text-muted border border-theme-border';
   };
 
@@ -94,7 +96,7 @@ export default function InventoryPage() {
   );
 
   const totalValue = inventory.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
-  const lowStockCount = inventory.filter(i => i.status === 'Low Stock').length;
+  const lowStockCount = inventory.filter(i => i.status === t('low_stock')).length;
   const totalItems = inventory.length;
 
   return (
@@ -109,9 +111,9 @@ export default function InventoryPage() {
              <div className="w-12 h-12 rounded-[1.2rem] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
                <span className="material-symbols-outlined text-primary text-2xl">warehouse</span>
              </div>
-            <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-theme-text font-headline">Inventory Control</h1>
+            <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-theme-text font-headline">{t('inventory_control')}</h1>
           </div>
-          <p className="text-theme-text-muted font-bold text-lg max-w-2xl">Manage your atelier's resources, predict run-out dates, and maintain optimal material stock.</p>
+          <p className="text-theme-text-muted font-bold text-lg max-w-2xl">{t('inventory_control_desc')}</p>
         </div>
         <div className="flex gap-4">
           <button className="px-6 py-4 rounded-[1.5rem] border border-theme-border bg-theme-surface-container font-black text-xs uppercase tracking-widest text-theme-text hover:bg-theme-text hover:text-background transition-all shadow-lg flex items-center gap-3">
@@ -131,17 +133,17 @@ export default function InventoryPage() {
       {/* Hero Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12 relative z-10">
         {[
-          { label: 'Total Items', value: totalItems, sub: 'Tracked in system', icon: 'account_balance_wallet', color: 'primary' },
+          { label: t('total_items'), value: totalItems, sub: t('tracked_in_system'), icon: 'account_balance_wallet', color: 'primary' },
           { 
-            label: 'Alerts', 
+            label: t('alerts'), 
             value: lowStockCount, 
-            sub: lowStockCount > 0 ? 'Require reorder' : 'All stocked', 
+            sub: lowStockCount > 0 ? t('require_reorder') : t('all_stocked'), 
             icon: lowStockCount > 0 ? 'warning' : 'check_circle', 
             color: lowStockCount > 0 ? 'amber' : 'primary',
             alert: lowStockCount > 0
           },
-          { label: 'Stock Health', value: `${totalItems > 0 ? Math.round(((totalItems - lowStockCount) / totalItems) * 100) : 100}%`, sub: 'Optimal levels', icon: 'health_and_safety', color: 'blue' },
-          { label: 'Total Volume', value: totalValue.toLocaleString(), sub: 'Units across all items', icon: 'straighten', color: 'indigo' },
+          { label: t('stock_health'), value: `${totalItems > 0 ? Math.round(((totalItems - lowStockCount) / totalItems) * 100) : 100}%`, sub: t('optimal_levels'), icon: 'health_and_safety', color: 'blue' },
+          { label: t('total_volume'), value: totalValue.toLocaleString(), sub: t('units_across_items'), icon: 'straighten', color: 'indigo' },
         ].map((stat, idx) => (
           <div key={idx} className={`relative rounded-[2rem] p-8 flex flex-col justify-between group overflow-hidden transition-transform duration-500 hover:-translate-y-2 animate-fade-in-up shadow-xl ${
             stat.alert 
@@ -172,7 +174,7 @@ export default function InventoryPage() {
           <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-theme-text-muted transition-colors group-focus-within/search:text-primary">search</span>
           <input
             className="w-full bg-surface border border-theme-border rounded-full py-4 pl-14 pr-6 text-sm font-bold placeholder:text-theme-text-muted text-theme-text focus:ring-4 focus:ring-primary/10 focus:border-primary/50 transition-all outline-none shadow-xl shadow-theme-border/5"
-            placeholder="Search resources, detergents, or items..."
+            placeholder={t('search_inventory_placeholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -183,17 +185,17 @@ export default function InventoryPage() {
       <div className="space-y-4 relative z-10 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
         {/* Pseudo Table Header */}
         <div className="hidden md:grid grid-cols-12 gap-6 px-8 py-3 text-[10px] uppercase tracking-[0.2em] font-black text-theme-text-muted border-b border-theme-border/50">
-          <div className="col-span-4 lg:col-span-3">Item Profile</div>
-          <div className="col-span-3 lg:col-span-3">Stock Level</div>
-          <div className="col-span-2 lg:col-span-2">Runway Forecast</div>
-          <div className="col-span-2 lg:col-span-2">Health</div>
-          <div className="col-span-1 lg:col-span-2 text-right">Actions</div>
+          <div className="col-span-4 lg:col-span-3">{t('item_profile')}</div>
+          <div className="col-span-3 lg:col-span-3">{t('stock_level')}</div>
+          <div className="col-span-2 lg:col-span-2">{t('runway_forecast')}</div>
+          <div className="col-span-2 lg:col-span-2">{t('health')}</div>
+          <div className="col-span-1 lg:col-span-2 text-right">{t('actions')}</div>
         </div>
 
         {loading ? (
           <div className="p-20 text-center bg-surface border border-theme-border rounded-[3rem] shadow-xl">
             <div className="w-16 h-16 rounded-full border-4 border-theme-border border-t-primary animate-spin mx-auto mb-6"></div>
-            <p className="text-xs font-black text-theme-text-muted uppercase tracking-[0.3em] animate-pulse">Running Inventory Diagnostics</p>
+            <p className="text-xs font-black text-theme-text-muted uppercase tracking-[0.3em] animate-pulse">{t('inventory_diagnostics')}</p>
           </div>
         ) : filteredInventory.length > 0 ? (
           <div className="space-y-3">
@@ -256,13 +258,17 @@ export default function InventoryPage() {
                           {new Date(Date.now() + item.runway_days * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                         <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${item.runway_days < 7 ? 'text-amber-500' : 'text-primary'}`}>
-                          {item.runway_days < 7 ? 'Critical' : 'Nominal'}: ~{item.runway_days}d
+                          {item.runway_days < 7 ? t('critical') : t('nominal')}: ~{item.runway_days}d
                         </p>
                       </div>
                     ) : (
-                      <span className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted italic flex items-center gap-2">
-                         <span className="inline-block w-2 h-2 rounded-full bg-theme-text-muted animate-ping"></span> Syncing
-                      </span>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Forecasting...</span>
+                        </div>
+                        <p className="text-[9px] font-bold text-theme-text-muted italic opacity-70">Awaiting usage data</p>
+                      </div>
                     )}
                   </div>
 
@@ -300,8 +306,8 @@ export default function InventoryPage() {
             <div className="w-20 h-20 rounded-full bg-theme-surface-container flex items-center justify-center mx-auto mb-6">
                <span className="material-symbols-outlined text-5xl text-theme-text-muted">inventory_2</span>
             </div>
-            <h3 className="text-2xl font-black text-theme-text font-headline mb-2">No Resources Found</h3>
-            <p className="text-sm font-bold text-theme-text-muted uppercase tracking-[0.2em]">The database is empty or no matches exist.</p>
+            <h3 className="text-2xl font-black text-theme-text font-headline mb-2">{t('no_resources_found')}</h3>
+            <p className="text-sm font-bold text-theme-text-muted uppercase tracking-[0.2em]">{t('no_resources_desc')}</p>
           </div>
         )}
       </div>
@@ -311,7 +317,7 @@ export default function InventoryPage() {
         { 
           show: showAuditModal, 
           close: () => setShowAuditModal(false), 
-          title: 'System Audit', 
+          title: t('system_audit'), 
           icon: 'equalizer', 
           color: 'indigo',
           content: () => (
@@ -319,18 +325,18 @@ export default function InventoryPage() {
                 <div className="bg-indigo-500/10 p-5 rounded-[1.5rem] border border-indigo-500/20 mb-6 flex gap-4">
                   <span className="material-symbols-outlined text-indigo-400">info</span>
                   <p className="text-xs text-indigo-200 font-bold leading-relaxed">
-                    Log the absolute amount on the shelf for <strong className="text-indigo-100">{selectedItem?.item_name}</strong>. Used to recalibrate A.I. runway predictions.
+                    <>{t('audit_desc').split('{item_name}')[0]}<strong className="text-indigo-100">{selectedItem?.item_name}</strong>{t('audit_desc').split('{item_name}')[1]}</>
                   </p>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">Actual Weight / Count</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">{t('actual_weight_count')}</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     autoFocus
                     className="w-full bg-theme-surface-container border border-theme-border rounded-[1.5rem] p-5 text-xl font-black font-headline text-theme-text focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500/50 outline-none transition-all placeholder:text-theme-text-muted/50"
-                    placeholder={`Currently ${selectedItem?.quantity} ${selectedItem?.unit}`}
+                    placeholder={`${t('currently')} ${selectedItem?.quantity} ${selectedItem?.unit}`}
                     value={auditQty}
                     onChange={e => setAuditQty(e.target.value)}
                   />
@@ -338,20 +344,20 @@ export default function InventoryPage() {
              </>
           ),
           actionFn: handleAuditStock,
-          actionLabel: 'Lock Audit Record',
+          actionLabel: t('lock_audit_record'),
           actionDisabled: !selectedItem || auditQty === ''
         },
         { 
           show: showReceiveModal, 
           close: () => { setShowReceiveModal(false); setIsOther(false); setOtherName(''); }, 
-          title: 'Stock Ingestion', 
+          title: t('stock_ingestion'), 
           icon: 'add_shopping_cart', 
           color: 'primary',
           content: () => (
             <div className="space-y-6">
               {!selectedItem && !isOther && (
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">Origin Item</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">{t('origin_item')}</label>
                   <select
                     className="w-full bg-theme-surface-container border border-theme-border rounded-[1.5rem] p-5 text-sm font-black text-theme-text focus:ring-4 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all appearance-none"
                     onChange={e => {
@@ -359,7 +365,7 @@ export default function InventoryPage() {
                       else setSelectedItem(inventory.find(i => i.id === parseInt(e.target.value)));
                     }}
                   >
-                    <option value="">Choose an item from catalog...</option>
+                    <option value="">{t('choose_item_placeholder')}</option>
                     {inventory.map(item => (
                       <option key={item.id} value={item.id}>{item.item_name} ({item.quantity} {item.unit})</option>
                     ))}
@@ -376,7 +382,7 @@ export default function InventoryPage() {
                      </p>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">Nomenclature</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">{t('nomenclature')}</label>
                     <input
                       type="text"
                       autoFocus
@@ -388,17 +394,17 @@ export default function InventoryPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">Metric Unit</label>
+                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">{t('metric_unit')}</label>
                       <select 
                         className="w-full bg-theme-surface-container border border-theme-border rounded-[1.5rem] p-5 text-sm font-black text-theme-text focus:ring-4 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all"
                         value={otherUnit}
                         onChange={e => setOtherUnit(e.target.value)}
                       >
-                        <option value="liters">Liters</option>
-                        <option value="units">Units</option>
+                        <option value="liters">{t("liters")}</option>
+                        <option value="units">{t("units")}</option>
                         <option value="kg">Kilograms</option>
-                        <option value="bottles">Bottles</option>
-                        <option value="rolls">Rolls</option>
+                        <option value="bottles">{t("bottles")}</option>
+                        <option value="rolls">{t("rolls")}</option>
                       </select>
                     </div>
                     <div className="flex items-end">
@@ -415,7 +421,7 @@ export default function InventoryPage() {
 
               <div>
                 <label className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-3 block">
-                  {isOther ? 'Initial Allocation Volume' : 'Incoming Volume'}
+                  {isOther ? t('initial_allocation_volume') : t('incoming_volume')}
                 </label>
                 <input
                   type="number"
@@ -429,7 +435,7 @@ export default function InventoryPage() {
             </div>
           ),
           actionFn: handleReceiveStock,
-          actionLabel: 'Confirm Manifest Ingestion',
+          actionLabel: t('confirm_manifest_ingestion'),
           actionDisabled: (!isOther && (!selectedItem || !receiveQty)) || (isOther && (!otherName || !receiveQty))
         }
       ].map((modal, idx) => (
@@ -449,7 +455,7 @@ export default function InventoryPage() {
                   <div>
                     <h3 className="font-black font-headline tracking-tighter text-theme-text text-2xl">{modal.title}</h3>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">
-                      {modal.icon === 'equalizer' ? 'Override Database' : 'Add to Inventory'}
+                      {modal.icon === 'equalizer' ? t('override_database') : t('add_to_inventory')}
                     </p>
                   </div>
                 </div>

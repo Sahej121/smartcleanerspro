@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function StaffOperations({ user }) {
+  const { t } = useLanguage();
   const [workflow, setWorkflow] = useState({});
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +127,7 @@ export default function StaffOperations({ user }) {
           </div>
           <div className="flex-1">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-0.5">
-               {activeBroadcast.severity === 'error' ? 'Global Emergency Transmit' : 'System Broadcast'} • {new Date(activeBroadcast.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+               {activeBroadcast.severity === 'error' ? t('global_emergency') : t('system_broadcast')} • {new Date(activeBroadcast.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </h4>
             <p className="font-bold text-sm tracking-tight leading-snug">{activeBroadcast.description.replace(/^Admin Broadcast:\s*/i, '')}</p>
           </div>
@@ -138,15 +140,15 @@ export default function StaffOperations({ user }) {
       {/* Header Section */}
       <div className="mb-10 flex justify-between items-end animate-fade-in-up">
         <div>
-          <h2 className="text-4xl font-black tracking-tighter text-theme-text mb-1 font-headline italic">Operations Monitor</h2>
+          <h2 className="text-4xl font-black tracking-tighter text-theme-text mb-1 font-headline italic">{t('ops_monitor')}</h2>
           <p className="text-theme-text-muted font-bold tracking-tight">
-            {isFrontdesk ? 'Customer In-take & Retail Service' : isDriver ? 'Logistics & Dispatch Queue' : 'BOH Workflow & Live Production Stats'}
+            {isFrontdesk ? t('retail_service_desc') : isDriver ? t('dispatch_queue_desc') : t('production_stats_desc')}
           </p>
         </div>
         <div className="flex gap-3">
           <div className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 rounded-2xl text-primary font-black text-[11px] uppercase tracking-widest border border-primary/20 shadow-lg shadow-primary/5">
             <span className="material-symbols-outlined text-sm">visibility</span>
-            {user?.role?.toUpperCase()} Mode Active
+            {user?.role?.toUpperCase()} {t('mode_active')}
           </div>
         </div>
       </div>
@@ -160,10 +162,10 @@ export default function StaffOperations({ user }) {
               <div>
                 <h3 className="text-xl font-black flex items-center gap-3 text-theme-text tracking-tighter italic">
                   <span className="material-symbols-outlined text-primary scale-125">monitor</span>
-                  Production Queue
+                  {t('production_queue')}
                 </h3>
                 <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.3em] mt-2 opacity-60">
-                   Active workflow for {user?.role || 'operator'} identity
+                   {t('active_workflow_for')} {user?.role || t('identity')}
                 </p>
               </div>
             </div>
@@ -174,7 +176,7 @@ export default function StaffOperations({ user }) {
               {(isFrontdesk || isStaff || isFullAccess) && (
                 <div className="flex flex-col gap-5">
                 <div className="flex items-center justify-between px-3">
-                  <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">In-Take</span>
+                  <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">{t('in_take')}</span>
                   <span className="text-[11px] font-black text-primary bg-primary/10 w-8 h-8 rounded-xl flex items-center justify-center border border-primary/20 shadow-inner">
                     {(getStageItems('received').length + getStageItems('sorting').length).toString().padStart(2, '0')}
                   </span>
@@ -208,7 +210,7 @@ export default function StaffOperations({ user }) {
               {(isStaff || isFullAccess) && (
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center justify-between px-3">
-                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Processing</span>
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">{t('ops_board')}</span>
                     <span className="text-[11px] font-black text-secondary bg-secondary/10 w-8 h-8 rounded-xl flex items-center justify-center border border-secondary/20 shadow-inner">
                       {(getStageItems('washing').length + getStageItems('dry_cleaning').length + getStageItems('drying').length).toString().padStart(2, '0')}
                     </span>
@@ -244,7 +246,7 @@ export default function StaffOperations({ user }) {
               {(isStaff || isFullAccess) && (
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center justify-between px-3">
-                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Finishing</span>
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">{t('finishing')}</span>
                     <span className="text-[11px] font-black text-emerald-500 bg-emerald-500/10 w-8 h-8 rounded-xl flex items-center justify-center border border-emerald-500/20 shadow-inner">
                       {(getStageItems('ironing').length + getStageItems('quality_check').length).toString().padStart(2, '0')}
                     </span>
@@ -281,7 +283,7 @@ export default function StaffOperations({ user }) {
               {(isDriver || isProduction) && (
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center justify-between px-3">
-                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Logistics Dispatch</span>
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">{t('logistics_dispatch')}</span>
                     <span className="text-[11px] font-black text-blue-500 bg-blue-500/10 w-8 h-8 rounded-xl flex items-center justify-center border border-blue-500/20 shadow-inner">
                       {getStageItems('ready').filter(i => i.delivery_status === 'pending').length.toString().padStart(2, '0')}
                     </span>
@@ -328,7 +330,7 @@ export default function StaffOperations({ user }) {
               {(isFrontdesk || isFullAccess) && (
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center justify-between px-3">
-                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">Retail Queue</span>
+                    <span className="text-[11px] font-black text-theme-text-muted uppercase tracking-[0.2em] italic">{t('retail_queue')}</span>
                     <span className="text-[11px] font-black text-primary bg-primary/10 w-8 h-8 rounded-xl flex items-center justify-center border border-primary/20 shadow-inner">
                       {getStageItems('ready').length.toString().padStart(2, '0')}
                     </span>
@@ -389,11 +391,11 @@ export default function StaffOperations({ user }) {
           <div className="bg-theme-surface-container p-8 rounded-[3rem] border border-theme-border animate-fade-in-up">
             <h3 className="text-xl font-black mb-8 flex items-center gap-3 text-theme-text italic tracking-tighter">
               <span className="material-symbols-outlined text-primary scale-110">assignment</span>
-              Shift Objectives
+              {t('shift_objectives')}
             </h3>
             <div className="space-y-5 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
               {tasks.length === 0 ? (
-                <p className="text-xs font-black text-theme-text-muted text-center py-6 opacity-40 uppercase tracking-widest">No primary tasks assigned</p>
+                <p className="text-xs font-black text-theme-text-muted text-center py-6 opacity-40 uppercase tracking-widest">{t('no_tasks_assigned')}</p>
               ) : tasks.map((item, i) => (
                 <label key={item.id} className="flex items-center gap-5 group cursor-pointer animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                   <div 
@@ -412,11 +414,11 @@ export default function StaffOperations({ user }) {
 
           {/* Shift Metrics (Visible) */}
           <div className="bg-theme-surface-container p-8 rounded-[3rem] border border-theme-border animate-fade-in-up">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-8 opacity-60 italic">Floor Intelligence</h3>
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-8 opacity-60 italic">{t('floor_intelligence')}</h3>
             <div className="space-y-8">
               <div>
                 <div className="flex justify-between mb-3 items-end">
-                  <span className="text-[11px] font-black text-theme-text uppercase tracking-widest">Shift Completion</span>
+                  <span className="text-[11px] font-black text-theme-text uppercase tracking-widest">{t('shift_completion')}</span>
                   <span className="text-xl font-black text-primary tracking-tighter">
                     {tasks.length > 0 ? Math.round((tasks.filter(t => t.is_completed).length / tasks.length) * 100) : 0}%
                   </span>
@@ -427,11 +429,11 @@ export default function StaffOperations({ user }) {
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div className="p-5 bg-theme-surface rounded-[2rem] border border-theme-border">
-                  <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-2 opacity-60">Cycle Yield</p>
+                  <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-2 opacity-60">{t('cycle_yield')}</p>
                   <p className="text-3xl font-black text-theme-text tracking-tighter italic">124</p>
                 </div>
                 <div className="p-5 bg-theme-surface rounded-[2rem] border border-theme-border">
-                  <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-2 opacity-60">Live Items</p>
+                  <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest mb-2 opacity-60">{t('live_items')}</p>
                   <p className="text-3xl font-black text-primary tracking-tighter italic">
                     {[...Object.values(workflow)].flat().filter(i => i.status !== 'ready').length}
                   </p>
@@ -448,7 +450,7 @@ export default function StaffOperations({ user }) {
             <div className="relative z-10 font-black">
               <h3 className="text-lg font-black mb-5 flex items-center gap-3 tracking-tighter italic">
                 <span className="material-symbols-outlined scale-110" style={{ fontVariationSettings: "'FILL' 1" }}>priority_high</span>
-                Critical Alerts
+                {t('critical_alerts')}
               </h3>
               <div className="space-y-4">
                 <div className="p-4 bg-red-600/5 rounded-[1.5rem] border border-red-500/10">

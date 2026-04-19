@@ -1,14 +1,11 @@
 'use client';
 import { useState, useEffect, use } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
+import Script from 'next/script';
 import { QRCodeSVG } from 'qrcode.react';
 import { useUser, ROLES } from '@/lib/UserContext';
 
-const STAGE_LABELS = {
-  received: 'Received', sorting: 'Sorting', washing: 'Washing',
-  dry_cleaning: 'Dry Cleaning', drying: 'Drying', ironing: 'Ironing',
-  quality_check: 'Quality Check', ready: 'Ready', delivered: 'Delivered',
-};
 
 // Stage Icons
 const getStageIcon = (stage) => {
@@ -22,6 +19,13 @@ const getStageIcon = (stage) => {
 };
 
 export default function OrderDetail({ params }) {
+  const { t } = useLanguage();
+  
+  const STAGE_LABELS = {
+    received: t('received'), sorting: t('sorting'), washing: t('washing'),
+    dry_cleaning: t('dry_cleaning'), drying: t('drying'), ironing: t('ironing'),
+    quality_check: t('quality_check'), ready: t('ready'), delivered: t('delivered'),
+  };
   const { id } = use(params);
   const { role } = useUser();
   const isAdmin = role === ROLES.OWNER || role === ROLES.MANAGER;
@@ -119,6 +123,74 @@ export default function OrderDetail({ params }) {
     }
   };
 
+  const handlePayOnline = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/payments/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: id }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (data.provider === 'razorpay') {
+        const options = {
+          key: data.key,
+          amount: data.amount,
+          currency: data.currency,
+          name: data.order_details.name,
+          description: data.order_details.description,
+          order_id: data.order_id,
+          handler: async function (response) {
+            // This is called after successful payment
+            const verifyRes = await fetch(`/api/webhooks/razorpay`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'x-razorpay-signature': response.razorpay_signature 
+              },
+              body: JSON.stringify({
+                event: 'payment.captured',
+                payload: {
+                  payment: {
+                    entity: {
+                      id: response.razorpay_payment_id,
+                      amount: data.amount,
+                      notes: { order_id: id }
+                    }
+                  }
+                }
+              }),
+            });
+            
+            if (verifyRes.ok) {
+              // Refresh order data
+              const refreshedOrder = await fetch(`/api/orders/${id}`).then(r => r.json());
+              setOrder(refreshedOrder);
+            }
+          },
+          prefill: {
+            name: order.customer_name,
+            contact: order.customer_phone,
+            email: order.customer_email || '',
+          },
+          theme: {
+            color: "#10b981",
+          },
+        };
+
+        const rzp1 = new window.Razorpay(options);
+        rzp1.open();
+      }
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePrintInvoice = async () => {
     const res = await fetch(`/api/orders/${id}/invoice`);
     const data = await res.json();
@@ -169,8 +241,8 @@ export default function OrderDetail({ params }) {
                   <th>Item</th>
                   <th>Service</th>
                   <th>Qty</th>
-                  <th>Price</th>
-                  <th>Total</th>
+                  <th>{t('price')}</th>
+                  <th>{t('total')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,7 +373,7 @@ export default function OrderDetail({ params }) {
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] p-8">
       <div className="w-12 h-12 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin mb-4"></div>
-      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading Order Details</p>
+      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('loading_order_details')}</p>
     </div>
   );
 
@@ -310,7 +382,7 @@ export default function OrderDetail({ params }) {
       <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-theme-text">
         <span className="material-symbols-outlined text-4xl">search_off</span>
       </div>
-      <h3 className="text-xl font-bold text-on-surface">Order Not Found</h3>
+      <h3 className="text-xl font-bold text-on-surface">{t('order_not_found')}</h3>
     </div>
   );
 
@@ -336,7 +408,7 @@ export default function OrderDetail({ params }) {
           <div className="flex items-center gap-4">
             <h1 className="text-4xl font-black text-on-surface font-headline tracking-tight">Order #{order.order_number}</h1>
             <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>
-              {order.status}
+              {t(order.status)}
             </span>
           </div>
           <p className="text-theme-text-muted font-medium text-sm flex items-center gap-2">
@@ -424,7 +496,7 @@ export default function OrderDetail({ params }) {
                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${order.pickup_status === 'successful' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
                         order.pickup_status === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                       }`}>
-                      {order.pickup_status || 'pending'}
+                      {t(order.pickup_status) || t('pending')}
                     </span>
                     <button
                       onClick={() => { setLogisticsType('pickup'); setLogisticsStatus(order.pickup_status || 'successful'); setLogisticsDriverId(order.driver_id || ''); setShowLogisticsModal(true); }}
@@ -441,7 +513,7 @@ export default function OrderDetail({ params }) {
                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${order.delivery_status === 'successful' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
                         order.delivery_status === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                       }`}>
-                      {order.delivery_status || 'pending'}
+                      {t(order.delivery_status) || t('pending')}
                     </span>
                     <button
                       onClick={() => { setLogisticsType('delivery'); setLogisticsStatus(order.delivery_status || 'successful'); setLogisticsDriverId(order.driver_id || ''); setShowLogisticsModal(true); }}
@@ -456,19 +528,19 @@ export default function OrderDetail({ params }) {
                 <div className="mt-4 p-3 bg-blue-50/20 rounded-xl border border-blue-100/50 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[16px] text-blue-500">person</span>
                   <span className="text-[11px] font-medium text-slate-400">
-                    <strong>Assigned Driver:</strong> {drivers.find(d => d.id === order.driver_id)?.name || 'Unknown'}
+                    <strong>{t('assigned_driver') + ':'}</strong> {drivers.find(d => d.id === order.driver_id)?.name || 'Unknown'}
                   </span>
                 </div>
               )}
               {order.logistics_notes && (
                 <div className="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-100 italic text-[10px] text-amber-800">
-                  <strong>Logistics Note:</strong> {order.logistics_notes}
+                  <strong>{t('logistics_note') + ':'}</strong> {order.logistics_notes}
                 </div>
               )}
             </div>
 
             <div className="md:w-64 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-3">Address Information</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-3">{t('address_information')}</h4>
               <p className="text-xs font-bold text-theme-text mb-1">{order.customer_name}</p>
               <p className="text-[10px] text-theme-text-muted leading-relaxed mb-4">{order.customer_address || 'No address provided'}</p>
               <a
@@ -494,10 +566,10 @@ export default function OrderDetail({ params }) {
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="border-b border-theme text-[10px] uppercase tracking-widest font-black text-theme-muted">
-                    <th className="pb-4 pr-6">Garment & Service</th>
-                    <th className="pb-4 px-6 text-center">Tracking Info</th>
-                    <th className="pb-4 px-6 text-center">Quantity</th>
-                    <th className="pb-4 px-6 text-right">Price</th>
+                    <th className="pb-4 pr-6">{t('garment_service')}</th>
+                    <th className="pb-4 px-6 text-center">{t('tracking_info')}</th>
+                    <th className="pb-4 px-6 text-center">{t('quantity')}</th>
+                    <th className="pb-4 px-6 text-right">{t('price')}</th>
                     <th className="pb-4 pl-6 text-right w-10"></th>
                   </tr>
                 </thead>
@@ -521,7 +593,7 @@ export default function OrderDetail({ params }) {
                           {item.tag_id ? (
                             <span className="px-2 py-0.5 bg-theme-container text-theme-muted rounded text-[9px] font-black tracking-widest uppercase">Tag: {item.tag_id}</span>
                           ) : (
-                            <span className="text-[9px] text-theme-text font-bold italic uppercase">No Tag</span>
+                            <span className="text-[9px] text-theme-text font-bold italic uppercase">{t('no_tag')}</span>
                           )}
                           {item.bag_id && (
                             <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black tracking-widest uppercase">Bag: {item.bag_id}</span>
@@ -675,11 +747,11 @@ export default function OrderDetail({ params }) {
                                     isCurrent ? 'text-blue-500' :
                                       'text-theme-text-muted'
                                   }`}>
-                                  {STAGE_LABELS[stageKey] || stageKey}
+                                  {t(stageKey)}
                                 </p>
                                 <p className="text-[9px] font-bold text-theme-text-muted">
                                   {historyEntry && historyEntry.time ? new Date(historyEntry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-                                    isCurrent ? 'In Progress' : 'Pending'}
+                                    isCurrent ? t('in_progress') : t('pending')}
                                 </p>
                               </div>
                             </div>
@@ -709,8 +781,8 @@ export default function OrderDetail({ params }) {
                 {(order.customer_name || 'W').charAt(0)}
               </div>
               <div>
-                <h4 className="text-base font-black text-on-surface">{order.customer_name || 'Walk-in Customer'}</h4>
-                <p className="text-xs font-bold text-slate-400">{order.customer_phone || 'No phone provided'}</p>
+                <h4 className="text-base font-black text-on-surface">{order.customer_name || t('walk_in_customer')}</h4>
+                <p className="text-xs font-bold text-slate-400">{order.customer_phone || t('no_phone_provided')}</p>
               </div>
             </div>
 
@@ -746,23 +818,23 @@ export default function OrderDetail({ params }) {
 
             <div className="space-y-4 mb-6">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-theme-text-muted">Subtotal</span>
+                <span className="text-xs font-medium text-theme-text-muted">{t('subtotal')}</span>
                 <span className="text-sm font-bold text-on-surface">₹{((order.total_amount || 0) - (order.tax || 0)).toLocaleString('en-IN')}</span>
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between items-center text-emerald-600">
-                  <span className="text-xs font-medium">Applied Discount</span>
+                  <span className="text-xs font-medium">{t('applied_discount')}</span>
                   <span className="text-sm font-bold">-₹{order.discount?.toLocaleString('en-IN')}</span>
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-theme-text-muted">Tax (GST/VAT)</span>
+                <span className="text-xs font-medium text-theme-text-muted">{t('tax_label')}</span>
                 <span className="text-sm font-bold text-on-surface">₹{order.tax?.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
             <div className="pt-4 border-t border-theme-border flex justify-between items-end mb-6">
-              <span className="text-sm font-black uppercase tracking-widest text-theme-text">Total</span>
+              <span className="text-sm font-black uppercase tracking-widest text-theme-text">{t('total')}</span>
               <span className="text-3xl font-black text-emerald-500 font-headline tracking-tighter">
                 ₹{order.total_amount?.toLocaleString('en-IN')}
               </span>
@@ -770,7 +842,7 @@ export default function OrderDetail({ params }) {
 
             <div className="bg-surface-container-lowest rounded-2xl p-4 border border-slate-50 space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted">Payment Method</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted">{t('payment_method')}</span>
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-theme-container rounded-md shadow-sm border border-theme-border">
                   <span className="text-theme-text font-bold text-[10px] uppercase tracking-wider">{order.payment_method}</span>
                 </div>
@@ -781,7 +853,7 @@ export default function OrderDetail({ params }) {
                     order.payment_status === 'refunded' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
                       'bg-amber-500/10 text-amber-500 border-amber-500/20'
                   }`}>
-                  {order.payment_status}
+                  {t(order.payment_status)}
                 </span>
               </div>
             </div>
@@ -796,7 +868,16 @@ export default function OrderDetail({ params }) {
                   className="w-full py-3 bg-emerald-600 text-theme-text text-xs font-black rounded-xl shadow-lg shadow-emerald-900/10 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[18px]">payments</span>
-                  Collect Payment
+                  Collect Payment (Offline)
+                </button>
+              )}
+              {(order.payment_status === 'pending' || order.payment_status === 'partial') && (
+                <button
+                  onClick={handlePayOnline}
+                  className="w-full py-3 bg-slate-900 text-white text-xs font-black rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[18px]">security</span>
+                  Pay Online (Razorpay)
                 </button>
               )}
               {order.payment_status === 'paid' && (
@@ -947,7 +1028,7 @@ export default function OrderDetail({ params }) {
       {showPaymentModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-theme-text/40 backdrop-blur-md animate-fade-in">
           <div className="bg-theme-surface rounded-[2.5rem] p-8 max-w-sm w-full mx-4 shadow-2xl border border-theme-border animate-scale-in">
-            <h3 className="text-xl font-black text-theme-text mb-6">Collect Payment</h3>
+            <h3 className="text-xl font-black text-theme-text mb-6">{t('collect_payment')}</h3>
             <div className="space-y-4 mb-8">
               <div>
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-1">Amount</label>
@@ -1083,6 +1164,12 @@ export default function OrderDetail({ params }) {
           </div>
         </div>
       )}
+      
+      {/* Razorpay SDK */}
+      <Script
+        id="razorpay-checkout-js"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      />
     </div>
   );
 }

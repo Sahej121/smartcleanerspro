@@ -1,9 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function EnterpriseUpgradePage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [phase, setPhase] = useState(0);
 
@@ -40,7 +42,7 @@ export default function EnterpriseUpgradePage() {
                <div className="absolute inset-0 rounded-[2rem] border-2 border-primary/50 border-t-primary animate-spin"></div>
             </div>
             
-            <h1 className="text-4xl font-black font-headline tracking-tighter text-theme-text mb-2">Initializing Enterprise...</h1>
+            <h1 className="text-4xl font-black font-headline tracking-tighter text-theme-text mb-2">{t('initializing_enterprise')}</h1>
             <p className="text-xs font-black uppercase tracking-[0.3em] text-theme-text-muted mb-12 h-6">
               {phases[phase]?.text}
             </p>

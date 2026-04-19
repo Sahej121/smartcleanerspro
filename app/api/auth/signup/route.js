@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
+import { createServerSupabase } from '@/lib/supabase-server';
 import { query } from '@/lib/db/db';
-import { hashPassword, createToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
 
 export async function POST(req) {
   try {
@@ -13,8 +12,6 @@ export async function POST(req) {
 
     // Disable public signups (invite-only / admin-created flow)
     return NextResponse.json({ error: 'Public signup is disabled. Please ask your store owner for an account.' }, { status: 403 });
-
-
 
   } catch (error) {
     console.error('Signup error:', error);

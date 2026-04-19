@@ -1,7 +1,9 @@
 'use client';
 import React, { useRef, useEffect, useState } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function SignaturePad({ onSave, onCancel }) {
+  const { t } = useLanguage();
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
 

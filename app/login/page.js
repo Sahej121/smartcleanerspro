@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
 import { normalizeTier } from '@/lib/tier-config';
 import Link from 'next/link';
+import { useBranding } from '@/lib/BrandingContext';
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,6 +19,7 @@ export default function LoginPage() {
   const [resetMessage, setResetMessage] = useState('');
   const router = useRouter();
   const { user, fetchUser } = useUser();
+  const { systemName } = useBranding();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -38,12 +42,12 @@ export default function LoginPage() {
 
       if (res.ok) {
         await fetchUser();
-        router.push('/');
+        router.push('/waiting?origin=login');
       } else {
-        setError(data.error || 'Identity verification failed');
+        setError(data.error || t('login_failed'));
       }
     } catch (err) {
-      setError('An encrypted connection error occurred');
+      setError(t('network_error'));
     } finally {
       setLoading(false);
     }
@@ -61,9 +65,9 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setResetMessage(data.message || 'Reset instructions sent.');
+        setResetMessage(data.message || t('reset_sent'));
       } else {
-        setError(data.error || 'Reset failed');
+        setError(data.error || t('reset_failed'));
       }
     } catch (err) {
       setError('Network error');
@@ -90,8 +94,8 @@ export default function LoginPage() {
             <div className="w-16 h-16 rounded-[1.5rem] primary-gradient flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-emerald-900/20 mx-auto mb-6 transition-transform hover:scale-110 breathe-glow">
               C
             </div>
-            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">{typeof window !== 'undefined' ? (localStorage.getItem('cleanflow_system_name') || 'DrycleanersFlow') : 'DrycleanersFlow'}</h1>
-            <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">Atelier Management</p>
+            <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">{systemName}</h1>
+            <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">{t('atelier_management')}</p>
           </div>
 
           {error && (
@@ -104,7 +108,7 @@ export default function LoginPage() {
           {showForgot ? (
             <form onSubmit={handleReset} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Account Email</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">{t('account_email')}</label>
                 <div className="relative group">
                   <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${resetEmail ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>mail</span>
                   <input 
@@ -113,7 +117,7 @@ export default function LoginPage() {
                     value={resetEmail} 
                     onChange={e => setResetEmail(e.target.value)}
                     required 
-                    placeholder="Enter your email address"
+                    placeholder={t('email_placeholder')}
                   />
                 </div>
               </div>
@@ -134,9 +138,9 @@ export default function LoginPage() {
                   {loading ? (
                     <>
                       <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
-                      SENDING...
+                      {t('sending')}
                     </>
-                  ) : 'SEND RESET LINK'}
+                  ) : t('send_reset_link')}
                 </span>
               </button>
               
@@ -149,7 +153,7 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">System Identity</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">{t('system_identity')}</label>
                 <div className="relative group">
                   <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${identifier ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>person</span>
                   <input 
@@ -158,15 +162,15 @@ export default function LoginPage() {
                     value={identifier} 
                     onChange={e => setIdentifier(e.target.value)}
                     required 
-                    placeholder="Email or phone reference"
+                    placeholder={t('login_identifier_placeholder')}
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <div className="flex justify-between items-center px-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Access Key</label>
-                  <button type="button" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline" onClick={() => setShowForgot(true)}>Forgot?</button>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('access_key')}</label>
+                  <button type="button" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline" onClick={() => setShowForgot(true)}>{t('forgot_password')}</button>
                 </div>
                 <div className="relative group">
                   <span className={`material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-xl transition-colors duration-300 ${password ? 'text-primary' : 'text-slate-300 group-focus-within:text-primary'}`}>lock</span>
@@ -192,7 +196,7 @@ export default function LoginPage() {
                       <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
                       AUTHENTICATING...
                     </>
-                  ) : 'AUTHORIZE ACCESS'}
+                  ) : t('authorize_access')}
                 </span>
               </button>
             </form>
@@ -200,10 +204,10 @@ export default function LoginPage() {
 
           <div className="text-center mt-10">
             <p className="text-[11px] font-bold text-slate-400">
-              New to the Atelier? <button onClick={() => router.push('/signup')} className="text-primary font-black hover:underline ml-1">REGISTER</button>
+              New to the Atelier? <button onClick={() => router.push('/signup')} className="text-primary font-black hover:underline ml-1">{t('register')}</button>
             </p>
             <p className="mt-2 text-[11px] font-bold text-slate-400">
-              Looking for plans first? <Link href="/pricing" className="text-primary font-black hover:underline ml-1">VIEW PRICING</Link>
+              Looking for plans first? <Link href="/pricing" className="text-primary font-black hover:underline ml-1">{t('view_pricing')}</Link>
             </p>
           </div>
         </div>

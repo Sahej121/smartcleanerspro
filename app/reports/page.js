@@ -1,7 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function ReportsPage() {
+  const { t } = useLanguage();
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
@@ -65,17 +67,17 @@ export default function ReportsPage() {
              </div>
              <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">Analytics</span>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">{t('analytics')}</span>
                 </div>
-                <h1 className="text-4xl font-black text-theme-text tracking-tighter">Business Intelligence</h1>
-                <p className="text-theme-text-muted font-medium text-sm mt-1">Real-time performance metrics and financial tracking.</p>
+                <h1 className="text-4xl font-black text-theme-text tracking-tighter">{t('business_intelligence')}</h1>
+                <p className="text-theme-text-muted font-medium text-sm mt-1">{t('reports_desc')}</p>
              </div>
           </div>
           
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 relative z-10 w-full md:w-auto">
             <div className="flex flex-wrap items-center gap-4 bg-background p-2 rounded-[2rem] border border-theme-border/50 shadow-inner">
               <div className="flex flex-col md:flex-row items-center gap-2 px-4 py-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">From</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('from')}</span>
                 <input 
                   type="date" 
                   className="text-sm font-bold bg-transparent text-theme-text border-none outline-none cursor-pointer focus:text-emerald-400 transition-colors"
@@ -86,7 +88,7 @@ export default function ReportsPage() {
               </div>
               <div className="w-px h-8 bg-slate-800 hidden md:block"></div>
               <div className="flex flex-col md:flex-row items-center gap-2 px-4 py-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">To</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('to')}</span>
                 <input 
                   type="date" 
                   className="text-sm font-bold bg-transparent text-theme-text border-none outline-none cursor-pointer focus:text-emerald-400 transition-colors"
@@ -110,7 +112,7 @@ export default function ReportsPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <div className="w-12 h-12 rounded-full border-4 border-theme-border border-t-emerald-500 animate-spin"></div>
-            <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest animate-pulse">Compiling Engine...</p>
+            <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest animate-pulse">{t('compiling_engine')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in-up stagger-1">
@@ -118,7 +120,7 @@ export default function ReportsPage() {
             {/* Revenue Summary */}
             <div className="col-span-1 md:col-span-2 lg:col-span-2 bg-surface rounded-[2.5rem] p-8 border border-theme-border shadow-sm space-y-6 flex flex-col group hover:border-slate-700 transition-colors">
               <div className="flex justify-between items-center">
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">Total Revenue</h3>
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('total_revenue')}</h3>
                  <span className="material-symbols-outlined text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 w-10 h-10 rounded-[1rem] flex items-center justify-center group-hover:scale-110 transition-transform">payments</span>
               </div>
               <div className="mt-auto pb-4">
@@ -169,7 +171,7 @@ export default function ReportsPage() {
                    return (
                      <div key={s.status} className="space-y-2">
                        <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                         <span className={textColor}>{s.status}</span>
+                         <span className={textColor}>{t(s.status)}</span>
                          <span className="text-theme-text bg-slate-800 px-2 rounded">{s.count}</span>
                        </div>
                        <div className="h-1.5 bg-background rounded-full overflow-hidden shadow-inner">
@@ -179,7 +181,7 @@ export default function ReportsPage() {
                    );
                  })}
                  {statusData.length === 0 && (
-                   <p className="text-[10px] text-theme-text-muted font-bold tracking-widest text-center py-6 border border-dashed border-theme-border rounded-[1.5rem]">No Orders Active</p>
+                   <p className="text-[10px] text-theme-text-muted font-bold tracking-widest text-center py-6 border border-dashed border-theme-border rounded-[1.5rem]">{t('no_orders_active')}</p>
                  )}
                </div>
             </div>
@@ -190,7 +192,7 @@ export default function ReportsPage() {
                   <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                </div>
                
-               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted w-full text-left absolute top-8 left-8">Top Performer</h3>
+               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted w-full text-left absolute top-8 left-8">{t('top_performer')}</h3>
                
                {staffData[0] ? (
                  <div className="space-y-4 pt-6 group-hover:-translate-y-2 transition-transform">
@@ -199,7 +201,7 @@ export default function ReportsPage() {
                    </div>
                    <p className="text-xl font-black text-theme-text tracking-tighter">{staffData[0].username}</p>
                    <p className="text-[9px] font-black text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 uppercase tracking-[0.2em] inline-block shadow-sm">
-                     {staffData[0].orders_created} Orders Created
+                     {staffData[0].orders_created} {t('orders_created_label')}
                    </p>
                  </div>
                ) : (
@@ -207,7 +209,7 @@ export default function ReportsPage() {
                     <div className="w-16 h-16 bg-background border border-theme-border border-dashed rounded-[1.5rem] mx-auto flex items-center justify-center text-theme-text-muted mb-4">
                       <span className="material-symbols-outlined text-2xl">person_off</span>
                     </div>
-                    <p className="text-[10px] text-theme-text-muted font-bold uppercase tracking-widest italic">No Data Available</p>
+                    <p className="text-[10px] text-theme-text-muted font-bold uppercase tracking-widest italic">{t('no_data_available')}</p>
                  </div>
                )}
             </div>
@@ -225,10 +227,10 @@ export default function ReportsPage() {
                  <table className="w-full text-left border-collapse min-w-[600px]">
                    <thead>
                       <tr className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted border-b border-theme-border/50">
-                        <th className="py-4 px-8">Member Identity</th>
-                        <th className="py-4 px-6 text-center">Volume</th>
-                        <th className="py-4 px-6 text-right">Total Value</th>
-                        <th className="py-4 px-8 text-right">AOV</th>
+                        <th className="py-4 px-8">{t('member_identity')}</th>
+                        <th className="py-4 px-6 text-center">{t('volume')}</th>
+                        <th className="py-4 px-6 text-right">{t('total_value')}</th>
+                        <th className="py-4 px-8 text-right">{t('aov')}</th>
                       </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-800/50">
@@ -257,7 +259,7 @@ export default function ReportsPage() {
                        <tr>
                          <td colSpan="4" className="py-16 text-center text-theme-text-muted">
                            <span className="material-symbols-outlined text-4xl mb-4 text-slate-700">group_off</span>
-                           <p className="text-[10px] font-black uppercase tracking-widest">No staff activity recorded</p>
+                           <p className="text-[10px] font-black uppercase tracking-widest">{t('no_staff_activity')}</p>
                          </td>
                        </tr>
                      )}

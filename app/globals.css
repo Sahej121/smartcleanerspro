@@ -289,6 +289,40 @@
     animation: countUp 0.5s ease-out forwards;
   }
 
+  /* Scroll Reveal Base */
+  .reveal {
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+
+  .reveal-up { transform: translateY(12px); }
+  .reveal-down { transform: translateY(-12px); }
+  .reveal-left { transform: translateX(12px); }
+  .reveal-right { transform: translateX(-12px); }
+  .reveal-scale { transform: scale(0.98); }
+  .reveal-blur { filter: blur(2px); }
+
+  /* Both .active and .revealed supported for flexibility */
+  .reveal.active,
+  .reveal.revealed {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(0, 0) scale(1);
+    filter: blur(0);
+  }
+
+  /* Stagger Delays (0ms to 800ms) */
+  .delay-100 { transition-delay: 100ms; }
+  .delay-200 { transition-delay: 200ms; }
+  .delay-300 { transition-delay: 300ms; }
+  .delay-400 { transition-delay: 400ms; }
+  .delay-500 { transition-delay: 500ms; }
+  .delay-600 { transition-delay: 600ms; }
+  .delay-700 { transition-delay: 700ms; }
+  .delay-800 { transition-delay: 800ms; }
+
 
 
   /* Pulsing status dot */
@@ -414,3 +448,103 @@
 .stagger-6 { animation-delay: 0.3s; }
 .stagger-7 { animation-delay: 0.35s; }
 .stagger-8 { animation-delay: 0.4s; }
+
+/* New Premium Landing Page Utilities */
+.text-gradient-emerald {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500;
+}
+
+.glass-navbar {
+  @apply sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.mesh-background {
+  position: relative;
+  background-color: #ffffff;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(5, 150, 105, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(5, 150, 105, 0.08) 0px, transparent 50%);
+  overflow: hidden;
+}
+
+@keyframes logo-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.logo-scroll-container {
+  display: flex;
+  width: max-content;
+  animation: logo-scroll 40s linear infinite;
+}
+
+.logo-scroll-container:hover {
+  animation-play-state: paused;
+}
+
+.mesh-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+}
+
+.glass-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  animation: float 20s infinite alternate ease-in-out;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5%, 10%) scale(1.1); }
+  100% { transform: translate(-5%, 5%) scale(0.9); }
+}
+
+.shimmer-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transform: rotate(30deg);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) rotate(30deg); }
+  100% { transform: translateX(100%) rotate(30deg); }
+}
+
+/* Parallax Utilities */
+.parallax {
+  transform: translateY(calc(var(--scroll-y, 0) * var(--parallax-speed, 0.1) * 1px));
+  will-change: transform;
+}

@@ -44,3 +44,10 @@ next-env.d.ts
 *.db
 *.db-shm
 *.db-wal
+
+# temporary scripts and scratch
+/scratch/
+check-*.js
+test-*.js
+fix-*.js
+*.resolved

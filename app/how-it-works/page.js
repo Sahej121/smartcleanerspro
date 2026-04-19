@@ -2,41 +2,45 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { Section } from '@/components/marketing/MarketingSection';
 
-const workflowSteps = [
-  {
-    title: '1) Intake and Tagging',
-    body: 'Create the order, capture garment details, and generate a unique QR label so every item is traceable from the first touchpoint.',
-    image: '/images/website/how-it-works-1.png',
-  },
-  {
-    title: '2) Stain Identification',
-    body: 'Use guided stain analysis to classify garment issues and apply treatment recommendations before processing.',
-    image: '/images/website/how-it-works-2.png',
-  },
-  {
-    title: '3) Production Workflow',
-    body: 'Move each item through sorting, cleaning, pressing, and quality checkpoints with clear stage-by-stage visibility.',
-    image: '/images/website/how-it-works-3.png',
-  },
-  {
-    title: '4) Delivery and Completion',
-    body: 'Assign routes, track pickups and drop-offs, and capture signature/photo proof to close the order confidently.',
-    image: '/images/website/how-it-works-1.png',
-  },
-];
 
 export default function HowItWorksPage() {
+  const { t } = useLanguage();
+
+  const workflowSteps = [
+    {
+      title: t('workflow_step_1_title'),
+      body: t('workflow_step_1_body'),
+      image: '/images/website/how-it-works-1.png',
+    },
+    {
+      title: t('workflow_step_2_title'),
+      body: t('workflow_step_2_body'),
+      image: '/images/website/how-it-works-2.png',
+    },
+    {
+      title: t('workflow_step_3_title'),
+      body: t('workflow_step_3_body'),
+      image: '/images/website/how-it-works-3.png',
+    },
+    {
+      title: t('workflow_step_4_title'),
+      body: t('workflow_step_4_body'),
+      image: '/images/website/how-it-works-1.png',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#f8faf9]">
       <MarketingNavbar />
       <Section
-        eyebrow="How It Works"
-        title="A complete garment lifecycle in one system"
-        description="From counter intake to final delivery, DrycleanersFlow keeps your team synchronized with a clear, auditable workflow."
+        eyebrow={t('how_it_works_label')}
+        title={t('how_it_works_title')}
+        description={t('how_it_works_desc')}
       >
         <div className="grid gap-6 md:grid-cols-2">
           {workflowSteps.map((step) => (
@@ -52,13 +56,13 @@ export default function HowItWorksPage() {
           ))}
         </div>
         <div className="mt-10 rounded-3xl border border-emerald-100 bg-white p-6 md:flex md:items-center md:justify-between">
-          <p className="text-sm text-slate-600">Ready to put this workflow in place for your business?</p>
+          <p className="text-sm text-slate-600">{t('ready_launch_query')}</p>
           <div className="mt-4 flex gap-3 md:mt-0">
             <Link href="/signup" className="rounded-full px-5 py-2 text-sm font-semibold text-white primary-gradient">
-              Start Free Trial
+              {t('start_free_trial')}
             </Link>
             <Link href="/pricing" className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700">
-              View Pricing
+              {t('view_pricing')}
             </Link>
           </div>
         </div>

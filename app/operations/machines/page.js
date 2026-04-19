@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
 import { useUser } from '@/lib/UserContext';
 import { useRouter } from 'next/navigation';
@@ -18,6 +19,7 @@ const MACHINE_COLORS = {
 };
 
 export default function MachineOperationsHub() {
+  const { t } = useLanguage();
   const { user, loading: authLoading } = useUser();
   const router = useRouter();
   const [machines, setMachines] = useState([]);
@@ -101,7 +103,7 @@ export default function MachineOperationsHub() {
         setScanError(data.error);
       }
     } catch (err) {
-      setScanError('System Error. Try again.');
+      setScanError(t('system_error_try_again'));
     }
   };
 
@@ -124,7 +126,7 @@ export default function MachineOperationsHub() {
   if (authLoading || loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-theme-surface-container p-8">
       <div className="w-16 h-16 rounded-full border-4 border-emerald-900 border-t-emerald-400 animate-spin mb-6"></div>
-      <p className="text-sm font-black text-theme-text-muted uppercase tracking-widest animate-pulse">Initializing Hardware Matrix...</p>
+      <p className="text-sm font-black text-theme-text-muted uppercase tracking-widest animate-pulse">{t('initializing_hardware_matrix')}</p>
     </div>
   );
 
@@ -145,23 +147,23 @@ export default function MachineOperationsHub() {
                 <Link href="/operations" className="flex items-center justify-center w-8 h-8 rounded-full bg-theme-surface-container hover:bg-theme-surface-container0 transition-colors mr-1">
                   <span className="material-symbols-outlined text-sm">arrow_back</span>
                 </Link>
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-theme-surface-container0/10 rounded-full border border-emerald-500/20">BOH Matrix</span>
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-theme-surface-container0/10 rounded-full border border-emerald-500/20">{t('boh_matrix')}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-theme-surface-container0 animate-pulse"></span>
-                <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">Hardware Online</span>
+                <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">{t('hardware_online')}</span>
               </div>
-              <h1 className="text-4xl font-black text-theme-text tracking-tighter">Machine Operations</h1>
+              <h1 className="text-4xl font-black text-theme-text tracking-tighter">{t('machine_operations')}</h1>
             </div>
           </div>
           
           <div className="flex gap-3 relative z-10 w-full md:w-auto">
              <div className="bg-theme-surface-container px-6 py-4 rounded-3xl border border-theme-border text-center flex-1 md:flex-none">
-                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">Running</p>
+                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('running')}</p>
                 <p className="text-2xl font-black text-theme-text leading-none animate-pulse">
                   {machines.filter(m => m.status === 'running').length}
                 </p>
              </div>
              <div className="bg-theme-surface-container px-6 py-4 rounded-3xl border border-theme-border text-center flex-1 md:flex-none">
-                <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-widest mb-1">Idle / Ready</p>
+                <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-widest mb-1">{t('idle_ready')}</p>
                 <p className="text-2xl font-black text-theme-text leading-none">
                   {machines.filter(m => m.status === 'idle').length}
                 </p>
@@ -175,7 +177,7 @@ export default function MachineOperationsHub() {
           <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             {machines.length === 0 ? (
               <div className="col-span-full py-12 text-center bg-theme-surface/50 rounded-[3rem] border border-dashed border-theme-border">
-                <p className="text-xs font-black text-theme-text-muted uppercase tracking-[0.2em]">No hardware configured</p>
+                <p className="text-xs font-black text-theme-text-muted uppercase tracking-[0.2em]">{t('no_hardware_configured')}</p>
               </div>
             ) : machines.map((machine, i) => (
               <button 
@@ -207,7 +209,7 @@ export default function MachineOperationsHub() {
                     <h3 className={`text-xl font-black mb-1 ${machine.status === 'running' ? 'text-theme-text' : 'text-theme-text'}`}>{machine.machine_name}</h3>
                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                        <span className={machine.status === 'running' ? 'text-emerald-500/70' : 'text-theme-text-muted'}>
-                         {machine.machine_type.replace(/_/g, ' ')}
+                         {t(machine.machine_type)}
                        </span>
                        <span className="bg-theme-surface-container/50 px-2 py-1 rounded-md text-theme-text-muted/70">
                          ID: {machine.id}
@@ -231,7 +233,7 @@ export default function MachineOperationsHub() {
               <div className="bg-theme-surface border border-theme-border rounded-[3rem] p-8 shadow-2xl space-y-6 animate-scale-in">
                 <div className="flex justify-between items-start border-b border-theme-border/50 pb-6 mb-2">
                   <div>
-                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-2">{selectedMachine.machine_type.replace(/_/g, ' ')}</p>
+                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-2">{t(selectedMachine.machine_type)}</p>
                      <h2 className="text-3xl font-black text-theme-text">{selectedMachine.machine_name}</h2>
                   </div>
                   <button onClick={() => setSelectedMachine(null)} className="p-2 bg-theme-surface-container rounded-xl hover:text-emerald-500 transition-colors">
@@ -241,13 +243,13 @@ export default function MachineOperationsHub() {
 
                 <div className="flex gap-4">
                    <div className="flex-1 bg-theme-surface-container p-4 rounded-2xl border border-theme-border text-center">
-                     <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-widest mb-1">State</p>
+                     <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-widest mb-1">{t('state')}</p>
                      <p className={`text-sm font-black uppercase tracking-widest ${selectedMachine.status === 'running' ? 'text-emerald-500 animate-pulse' : 'text-theme-text'}`}>
-                        {selectedMachine.status}
+                        {t(selectedMachine.status)}
                      </p>
                    </div>
                    <div className="flex-1 bg-theme-surface-container p-4 rounded-2xl border border-theme-border text-center">
-                     <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-widest mb-1">Load Count</p>
+                     <p className="text-[9px] font-black text-theme-text-muted uppercase tracking-widest mb-1">{t('load_count')}</p>
                      <p className="text-sm font-black text-theme-text">{selectedMachine.active_loads || 0}</p>
                    </div>
                 </div>
@@ -264,7 +266,7 @@ export default function MachineOperationsHub() {
                   ) : (
                     <form onSubmit={handleStartLoad} className="space-y-4">
                       <div>
-                        <label className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest ml-4 mb-2 block">Scan Garment to Load</label>
+                        <label className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest ml-4 mb-2 block">{t('scan_garment_to_load')}</label>
                         <div className="relative group">
                           <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-theme-text-muted/70 group-focus-within:text-emerald-500 transition-colors">qr_code_scanner</span>
                           <input 
@@ -272,7 +274,7 @@ export default function MachineOperationsHub() {
                             className={`w-full bg-theme-surface-container border-2 rounded-[1.5rem] py-5 pl-14 pr-6 text-sm font-bold text-theme-text placeholder:text-theme-text-muted focus:outline-none transition-all ${
                               scanError ? 'border-red-500/50' : 'border-theme-border focus:border-emerald-500/50'
                             }`}
-                            placeholder="Scan Tag ID..."
+                            placeholder={t('scan_tag_id_placeholder')}
                             value={scannedTag}
                             onChange={(e) => setScannedTag(e.target.value)}
                           />
@@ -293,7 +295,7 @@ export default function MachineOperationsHub() {
 
                 {loads.length > 0 && (
                   <div className="pt-8 space-y-4">
-                     <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.2em]">Current / Recent Loads</p>
+                     <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.2em]">{t('current_recent_loads')}</p>
                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
                         {loads.map(load => (
                           <div key={load.id} className="p-4 bg-theme-surface-container border border-theme-border rounded-2xl flex items-center justify-between">
@@ -307,9 +309,9 @@ export default function MachineOperationsHub() {
                                </div>
                             </div>
                             {load.status === 'running' ? (
-                               <span className="px-2 py-1 bg-theme-surface-container0/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-md animate-pulse">Running</span>
+                               <span className="px-2 py-1 bg-theme-surface-container0/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-md animate-pulse">{t('running')}</span>
                             ) : (
-                               <span className="px-2 py-1 bg-theme-surface-container text-theme-text-muted text-[9px] font-black uppercase tracking-widest rounded-md">Done</span>
+                               <span className="px-2 py-1 bg-theme-surface-container text-theme-text-muted text-[9px] font-black uppercase tracking-widest rounded-md">{t('done')}</span>
                             )}
                           </div>
                         ))}

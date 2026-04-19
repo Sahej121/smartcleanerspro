@@ -4,42 +4,46 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { Section } from '@/components/marketing/MarketingSection';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
-const featureBlocks = [
-  {
-    title: 'Order and POS Management',
-    points: ['Fast intake and ticket generation', 'Customer history at checkout', 'Clear lifecycle statuses per garment'],
-  },
-  {
-    title: 'Production Workflow',
-    points: ['Stage-based operations queue', 'Machine and assembly tracking', 'Quality control and completion visibility'],
-  },
-  {
-    title: 'Logistics and Delivery',
-    points: ['Pickup and delivery assignments', 'Route-focused driver workflows', 'Photo/signature proof capture'],
-  },
-  {
-    title: 'Analytics and Reporting',
-    points: ['Staff performance views', 'Revenue and throughput summaries', 'Operational health monitoring'],
-  },
-  {
-    title: 'Role and Tier Controls',
-    points: ['Owner, manager, staff, driver roles', 'Tier-based route access controls', 'Secure middleware protections'],
-  },
-  {
-    title: 'Multi-store Oversight',
-    points: ['Centralized admin settings', 'Store-level branding and configs', 'Scalable operations from one console'],
-  },
-];
 
 export default function FeaturesPage() {
+  const { t } = useLanguage();
+
+  const featureBlocks = [
+    {
+      title: t('feature_pos_title'),
+      points: [t('feature_pos_p1'), t('feature_pos_p2'), t('feature_pos_p3')],
+    },
+    {
+      title: t('feature_production_title'),
+      points: [t('feature_production_p1'), t('feature_production_p2'), t('feature_production_p3')],
+    },
+    {
+      title: t('feature_logistics_title'),
+      points: [t('feature_logistics_p1'), t('feature_logistics_p2'), t('feature_logistics_p3')],
+    },
+    {
+      title: t('feature_analytics_title'),
+      points: [t('feature_analytics_p1'), t('feature_analytics_p2'), t('feature_analytics_p3')],
+    },
+    {
+      title: t('feature_roles_title'),
+      points: [t('feature_roles_p1'), t('feature_roles_p2'), t('feature_roles_p3')],
+    },
+    {
+      title: t('feature_multistore_title'),
+      points: [t('feature_multistore_p1'), t('feature_multistore_p2'), t('feature_multistore_p3')],
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#f8faf9]">
       <MarketingNavbar />
       <Section
-        eyebrow="Features"
-        title="Everything your atelier needs in one platform"
-        description="DrycleanersFlow combines front desk speed, production discipline, logistics reliability, and executive visibility."
+        eyebrow={t('features_label')}
+        title={t('features_title')}
+        description={t('features_desc')}
       >
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {featureBlocks.map((block) => (
@@ -58,15 +62,15 @@ export default function FeaturesPage() {
         </div>
         <div className="mt-10 rounded-3xl border border-emerald-100 bg-white p-6 md:flex md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Ready To Launch</p>
-            <p className="mt-2 text-sm text-slate-600">Start with core workflows now and scale to multi-store operations as you grow.</p>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">{t('ready_to_launch_label')}</p>
+            <p className="mt-2 text-sm text-slate-600">{t('ready_to_launch_desc')}</p>
           </div>
           <div className="mt-4 flex gap-3 md:mt-0">
             <Link href="/signup" className="rounded-full px-5 py-2 text-sm font-semibold text-white primary-gradient">
-              Start Free Trial
+              {t('start_free_trial')}
             </Link>
             <Link href="/pricing" className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700">
-              View Pricing
+              {t('view_pricing')}
             </Link>
           </div>
         </div>
