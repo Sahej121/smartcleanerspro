@@ -10,6 +10,15 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
+  async redirects() {
+    return [
+      {
+        source: '/signup',
+        destination: '/pricing',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withPWA(nextConfig);
