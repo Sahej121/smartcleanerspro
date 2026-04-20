@@ -72,7 +72,7 @@ export default function AdminDashboard() {
         <div className="p-8 rounded-[2.5rem] bg-surface-container-lowest border border-theme-border shadow-sm group hover:-translate-y-1 transition-all">
            <span className="material-symbols-outlined text-amber-500 bg-amber-500/10 p-2 rounded-[1rem] mb-4 group-hover:scale-110 transition-transform">timer</span>
            <p className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest mb-1">{t('turnaround_time')}</p>
-           <h2 className="text-3xl font-black text-on-surface font-headline">{data?.avgTurnaround || 2.1} <span className="text-sm font-bold text-theme-text-muted">{t({t('days')})}</span></h2>
+           <h2 className="text-3xl font-black text-on-surface font-headline">{data?.avgTurnaround || 2.1} <span className="text-sm font-bold text-theme-text-muted">{t('days')}</span></h2>
            <p className="text-[10px] text-amber-600 font-bold mt-2 hover:text-amber-500 transition-colors">{t('efficiency_optimized')}</p>
         </div>
       </div>

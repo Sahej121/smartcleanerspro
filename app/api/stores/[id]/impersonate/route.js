@@ -1,19 +1,13 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db/db';
-import { verifyToken, createToken } from '@/lib/auth';
+import { getSession, signPinToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
 export async function POST(req, { params }) {
   try {
     const { id } = await params;
-    const cookieStore = await cookies();
-    const token = cookieStore.get('cleanflow_session')?.value;
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
+    const payload = await getSession();
 
     // Only owners can impersonate
     if (!payload || payload.role !== 'owner') {
@@ -41,11 +35,12 @@ export async function POST(req, { params }) {
       impersonatedBy: payload.name
     };
 
-    const newToken = await createToken(impersonatedPayload);
+    const newToken = await signPinToken(impersonatedPayload);
 
     // Set the new session cookie
+    const cookieStore = await cookies();
     cookieStore.set({
-      name: 'cleanflow_session',
+      name: 'cleanflow_pin_session',
       value: newToken,
       httpOnly: true,
       path: '/',
