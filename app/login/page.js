@@ -204,7 +204,7 @@ export default function LoginPage() {
 
           <div className="text-center mt-10">
             <p className="text-[11px] font-bold text-slate-400">
-              New to the Atelier? <button onClick={() => router.push('/signup')} className="text-primary font-black hover:underline ml-1">{t('register')}</button>
+              New to the Atelier? <button onClick={() => router.push('/pricing')} className="text-primary font-black hover:underline ml-1">{t('register')}</button>
             </p>
             <p className="mt-2 text-[11px] font-bold text-slate-400">
               Looking for plans first? <Link href="/pricing" className="text-primary font-black hover:underline ml-1">{t('view_pricing')}</Link>

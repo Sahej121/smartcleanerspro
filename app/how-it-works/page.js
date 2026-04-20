@@ -58,7 +58,7 @@ export default function HowItWorksPage() {
         <div className="mt-10 rounded-3xl border border-emerald-100 bg-white p-6 md:flex md:items-center md:justify-between">
           <p className="text-sm text-slate-600">{t('ready_launch_query')}</p>
           <div className="mt-4 flex gap-3 md:mt-0">
-            <Link href="/signup" className="rounded-full px-5 py-2 text-sm font-semibold text-white primary-gradient">
+            <Link href="/pricing" className="rounded-full px-5 py-2 text-sm font-semibold text-white primary-gradient">
               {t('start_free_trial')}
             </Link>
             <Link href="/pricing" className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700">

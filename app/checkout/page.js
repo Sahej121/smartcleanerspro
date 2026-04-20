@@ -6,9 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, ROLES } from '@/lib/UserContext';
 import Link from 'next/link';
 import Script from 'next/script';
-import { PRICING_MARKETS, TIERS } from '@/lib/tier-config';
+import { PRICING_MARKETS, TIERS, ADD_ONS } from '@/lib/tier-config';
 
-function SignupForm() {
+function CheckoutForm() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -25,9 +25,23 @@ function SignupForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [paymentStep, setPaymentStep] = useState(false);
+  const [selectedAddons, setSelectedAddons] = useState([]);
 
   const priceStr = market.prices[tierKey] || '0';
-  const amount = parseFloat(priceStr.replace(/,/g, ''));
+  const baseAmount = parseFloat(priceStr.replace(/,/g, ''));
+  
+  const addonsTotal = selectedAddons.reduce((sum, id) => {
+    const addon = ADD_ONS.find(a => a.id === id);
+    return sum + (addon ? addon.amount : 0);
+  }, 0);
+  
+  const totalAmount = baseAmount + addonsTotal;
+
+  const toggleAddon = (id) => {
+    setSelectedAddons(prev => 
+      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    );
+  };
 
   const handleInitialSubmit = (e) => {
     e.preventDefault();
@@ -78,51 +92,79 @@ function SignupForm() {
   const handlePayment = async () => {
     setLoading(true);
     try {
-      // 1. Initialize order on server
-      const res = await fetch('/api/payments/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          amount: amount, 
-          order_id: `sub_${Date.now()}`, // Temporary ID for SaaS sub
-          is_saas_signup: true 
-        }),
-      });
+      const isStripe = marketId !== 'india'; // Everything except India uses Stripe
+      
+      if (isStripe) {
+        // 1. Create Pending User Account
+        const signupRes = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            name, email, password, role: ROLES.ADMIN, tier: tierKey, market: marketId, provider: 'stripe' 
+          }),
+        });
+        const signupData = await signupRes.json();
+        if (!signupRes.ok) throw new Error(signupData.error || 'Failed to create account');
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to initialize payment');
+        // 2. Initialize Stripe Checkout
+        const res = await fetch('/api/payments/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            amount: totalAmount, 
+            order_id: `sub_${Date.now()}`, 
+            is_saas_signup: true,
+            addons: selectedAddons,
+            store_id: signupData.user.store_id,
+            market: marketId
+          }),
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to initialize Stripe payment');
+        
+        // 3. Redirect to Stripe
+        window.location.href = data.checkout_url;
+      } else {
+        // Razorpay Flow
+        const res = await fetch('/api/payments/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            amount: totalAmount, 
+            order_id: `sub_${Date.now()}`, 
+            is_saas_signup: true,
+            addons: selectedAddons,
+            market: marketId
+          }),
+        });
 
-      // 2. Open Razorpay Modal
-      const options = {
-        key: data.key,
-        amount: data.amount,
-        currency: data.currency,
-        name: "DrycleanersFlow",
-        description: `Subscription: ${tier.label}`,
-        order_id: data.order_id,
-        handler: async function (response) {
-          await finalizeSignup({
-            payment_id: response.razorpay_payment_id,
-            order_id: response.razorpay_order_id,
-            signature: response.razorpay_signature
-          });
-        },
-        prefill: {
-          name: name,
-          email: email,
-        },
-        theme: {
-          color: "#10b981",
-        },
-        modal: {
-          ondismiss: function() {
-            setLoading(false);
-          }
-        }
-      };
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to initialize Razorpay payment');
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+        const options = {
+          key: data.key,
+          amount: data.amount,
+          currency: data.currency,
+          name: "DrycleanersFlow",
+          description: `Subscription: ${tier.label}`,
+          order_id: data.order_id,
+          handler: async function (response) {
+            await finalizeSignup({
+              payment_id: response.razorpay_payment_id,
+              order_id: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              provider: 'razorpay'
+            });
+          },
+          prefill: { name, email },
+          theme: { color: "#10b981" },
+          modal: { ondismiss: () => setLoading(false) }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      }
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -221,12 +263,28 @@ function SignupForm() {
             <div className="p-6 rounded-3xl bg-emerald-50 border border-emerald-100 space-y-4">
               <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-emerald-800">
                 <span>{tier.label}</span>
-                <span>{market.currency}{priceStr}</span>
+                <span>{market.currency}{priceStr} / mo</span>
               </div>
-              <div className="h-px bg-emerald-200/50" />
+              
+              <div className="pt-4 mt-2 border-t border-emerald-200/50 space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Optional Add-ons</p>
+                {ADD_ONS.map(addon => (
+                  <label key={addon.id} onClick={() => toggleAddon(addon.id)} className="flex items-center justify-between cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors ${selectedAddons.includes(addon.id) ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-emerald-200 group-hover:border-emerald-300'}`}>
+                        {selectedAddons.includes(addon.id) && <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>}
+                      </div>
+                      <span className="text-xs font-semibold text-emerald-950">{addon.label}</span>
+                    </div>
+                    <span className="text-xs font-black text-emerald-800">+{market.currency}{addon.amount} / mo</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="h-px bg-emerald-200/50 my-2" />
               <div className="flex justify-between items-center text-sm font-black text-emerald-950">
                 <span>{t('total_due_now')}</span>
-                <span>{market.currency}{priceStr}</span>
+                <span>{market.currency}{totalAmount} / mo</span>
               </div>
             </div>
 
@@ -263,7 +321,7 @@ function SignupForm() {
   );
 }
 
-export default function SignupPage() {
+export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#F8FAF9] flex items-center justify-center p-6 relative overflow-hidden">
       {/* Decorative Orbs */}
@@ -271,7 +329,7 @@ export default function SignupPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full"></div>
 
       <Suspense fallback={<div className="text-emerald-600 animate-pulse font-black uppercase tracking-widest">Loading Atelier...</div>}>
-        <SignupForm />
+        <CheckoutForm />
       </Suspense>
     </div>
   );

@@ -10,7 +10,7 @@ import { requireRole } from '@/lib/auth';
  */
 export async function POST(request) {
   try {
-    const { order_id, amount: customAmount, is_saas_signup } = await request.json();
+    const { order_id, amount: customAmount, is_saas_signup, market, addons, store_id } = await request.json();
 
     let auth = null;
     if (!is_saas_signup) {
@@ -84,6 +84,34 @@ export async function POST(request) {
           description: description,
           order_id: order_id
         }
+      });
+    }
+
+    if (providerConfig.provider === 'stripe') {
+      const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      
+      const stripeSession = await providerConfig.createOrder(
+        amount, 
+        country === 'India' ? 'inr' : 'usd', 
+        {
+          order_id: order_id,
+          is_saas: is_saas_signup ? 'true' : 'false',
+          store_id: store_id,
+          addons: addons ? addons.join(', ') : '',
+          description: description
+        },
+        origin
+      );
+
+      if (!stripeSession.success) {
+        throw new Error(stripeSession.error || 'Failed to create Stripe session');
+      }
+
+      return NextResponse.json({
+        success: true,
+        provider: 'stripe',
+        checkout_url: stripeSession.url,
+        session_id: stripeSession.session_id
       });
     }
 

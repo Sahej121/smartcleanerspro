@@ -75,7 +75,7 @@ export default function ContactPage() {
                   {t('contact_setup_desc')}
                 </p>
                 <div className="mt-6 flex gap-3">
-                  <Link href="/signup" className="rounded-full px-6 py-3 text-xs font-black uppercase tracking-widest text-white primary-gradient shadow-lg">
+                  <Link href="/pricing" className="rounded-full px-6 py-3 text-xs font-black uppercase tracking-widest text-white primary-gradient shadow-lg">
                     {t('start_free_trial')}
                   </Link>
                 </div>

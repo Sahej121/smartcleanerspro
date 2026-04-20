@@ -96,6 +96,7 @@ export async function middleware(request) {
     pathname === '/how-it-works' ||
     pathname === '/pricing' ||
     pathname === '/contact' ||
+    pathname === '/checkout' ||
     pathname === '/policy'
   ) {
     // Still refresh the Supabase session for public routes (token rotation)
@@ -104,7 +105,7 @@ export async function middleware(request) {
   }
 
   // Auth pages
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage = pathname === '/login';
 
   // --- Supabase Session Verification ---
   const { supabase, response } = createMiddlewareSupabase(request);

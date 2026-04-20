@@ -5,22 +5,30 @@ import { verifyPaymentSignature } from '@/lib/payments/razorpay-service';
 
 export async function POST(req) {
   try {
-    const { name, email, password, role, tier, market, payment_id, order_id, signature } = await req.json();
+    const { name, email, password, role, tier, market, payment_id, order_id, signature, provider } = await req.json();
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // 1. Payment Verification for Paid Tiers
+    let storeStatus = 'trial';
     const isPaidTier = tier === 'software_only' || tier === 'hardware_bundle';
+    
     if (isPaidTier) {
-      if (!payment_id || !order_id || !signature) {
-        return NextResponse.json({ error: 'Payment information missing' }, { status: 402 });
-      }
-      
-      const isValid = verifyPaymentSignature(payment_id, order_id, signature);
-      if (!isValid) {
-        return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 });
+      if (provider === 'stripe') {
+        storeStatus = 'pending_payment';
+      } else {
+        // Razorpay flow (default)
+        if (!payment_id || !order_id || !signature) {
+          return NextResponse.json({ error: 'Payment information missing' }, { status: 402 });
+        }
+        
+        const isValid = verifyPaymentSignature(payment_id, order_id, signature);
+        if (!isValid) {
+          return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 });
+        }
+        storeStatus = 'active';
       }
     }
 
@@ -51,7 +59,7 @@ export async function POST(req) {
       const storeRes = await query(
         `INSERT INTO stores (store_name, country, subscription_tier, subscription_status) 
          VALUES ($1, $2, $3, $4) RETURNING id`,
-        [`${name}'s Atelier`, market || 'India', tier || 'software_only', isPaidTier ? 'active' : 'trial']
+        [`${name}'s Atelier`, market || 'India', tier || 'software_only', storeStatus]
       );
       const storeId = storeRes.rows[0].id;
 
