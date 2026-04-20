@@ -6,53 +6,66 @@ import { requireRole } from '@/lib/auth';
 /**
  * Initiate a checkout session
  * POST /api/payments/checkout
- * Body: { order_id, amount, currency }
+ * Body: { order_id, amount, is_saas_signup }
  */
 export async function POST(request) {
   try {
-    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
-    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const { order_id, amount: customAmount, is_saas_signup } = await request.json();
 
-    const { order_id, amount: customAmount } = await request.json();
+    let auth = null;
+    if (!is_saas_signup) {
+      auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+      if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
     if (!order_id) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
     }
 
-    // 1. Fetch order details from DB to verify amount
-    const orderRes = await query(
-      'SELECT o.*, s.country FROM orders o JOIN stores s ON o.store_id = s.id WHERE o.id = $1 AND o.store_id = $2',
-      [order_id, auth.user.store_id]
-    );
+    let amount = customAmount;
+    let country = 'India';
+    let storeName = "DrycleanersFlow";
+    let description = `Payment for Order #${order_id}`;
 
-    if (orderRes.rows.length === 0) {
-      return NextResponse.json({ error: 'Order not found in your store' }, { status: 404 });
+    if (!is_saas_signup) {
+      // Fetch order details from DB to verify amount for POS orders
+      const orderRes = await query(
+        'SELECT o.*, s.country, s.store_name FROM orders o JOIN stores s ON o.store_id = s.id WHERE o.id = $1 AND o.store_id = $2',
+        [order_id, auth.user.store_id]
+      );
+
+      if (orderRes.rows.length === 0) {
+        return NextResponse.json({ error: 'Order not found in your store' }, { status: 404 });
+      }
+
+      const order = orderRes.rows[0];
+      amount = customAmount || parseFloat(order.total_amount);
+      country = order.country || 'India';
+      storeName = order.store_name || "DrycleanersFlow";
+      description = `Payment for Order #${order.order_number}`;
+    } else {
+      // SaaS Signup flow
+      description = "CleanFlow Subscription Activation";
     }
 
-    const order = orderRes.rows[0];
-    const amount = customAmount || parseFloat(order.total_amount);
+    console.log(`[Checkout] Processing ${is_saas_signup ? 'SaaS' : 'POS'} Payment, Amount: ${amount}`);
 
-    console.log(`[Checkout] Processing Order #${order.order_number} (ID: ${order.id}), Amount: ₹${amount}`);
-
-    // 2. Handle Zero-Amount Orders (e.g. fully paid by points/discounts)
+    // Handle Zero-Amount
     if (amount < 1) {
-      console.log(`[Checkout] Amount ₹${amount} is below Gateway minimum. Marking as paid-bypass.`);
       return NextResponse.json({
         success: true,
         provider: 'none',
-        message: 'Order total is zero or covered by discounts. No payment required.'
+        message: 'No payment required.'
       });
     }
 
-    // 3. Get the correct payment provider
-    const providerConfig = await getPaymentProvider(order.country || 'India');
+    // Get the correct payment provider
+    const providerConfig = await getPaymentProvider(country);
 
     if (providerConfig.provider === 'razorpay') {
-      const razorpayOrder = await providerConfig.createOrder(amount, 'INR', {
-        order_id: order.id,
-        order_number: order.order_number,
-        store_id: order.store_id,
-        customer_id: order.customer_id
+      const razorpayOrder = await providerConfig.createOrder(amount, country === 'India' ? 'INR' : 'USD', {
+        order_id: order_id,
+        is_saas: is_saas_signup ? 'true' : 'false'
       });
 
       if (!razorpayOrder.success) {
@@ -67,15 +80,14 @@ export async function POST(request) {
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         order_details: {
-          name: auth.user.store_name || "Dry Cleaner's flow",
-          description: `Payment for Order #${order.order_number}`,
-          order_id: order.id
+          name: storeName,
+          description: description,
+          order_id: order_id
         }
       });
     }
 
-    // Stripe implementation placeholder
-    return NextResponse.json({ error: 'Stripe integration coming soon' }, { status: 501 });
+    return NextResponse.json({ error: 'Payment provider not supported for this region' }, { status: 501 });
 
   } catch (error) {
     console.error('Checkout API Error:', error);

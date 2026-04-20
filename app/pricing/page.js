@@ -73,7 +73,7 @@ export default function PricingLandingPage() {
       router.push('/contact');
       return;
     }
-    router.push(`/signup?tier=${tierKey}&market=${selectedMarket}`);
+    router.push(`/checkout?tier=${tierKey}&market=${selectedMarket}`);
   };
 
   return (
@@ -234,7 +234,7 @@ export default function PricingLandingPage() {
             {t('switch_to_cleanflow')}
           </p>
           <button 
-            onClick={() => router.push('/signup')}
+            onClick={() => router.push('/checkout')}
             className="px-12 py-6 primary-gradient text-white rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-emerald-900/20 active:scale-95 transition-all"
           >
             {t('start_free_tier')}
