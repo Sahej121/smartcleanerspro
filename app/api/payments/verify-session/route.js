@@ -2,12 +2,22 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { query } from '@/lib/db/db';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+let stripeInstance = null;
+function getStripe() {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('Stripe secret key missing in environment variables');
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+    });
+  }
+  return stripeInstance;
+}
 
 export async function POST(req) {
   try {
+    const stripe = getStripe();
     const { session_id } = await req.json();
 
     if (!session_id) {
