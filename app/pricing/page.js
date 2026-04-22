@@ -73,7 +73,11 @@ export default function PricingLandingPage() {
       router.push('/contact');
       return;
     }
-    router.push(`/checkout?tier=${tierKey}&market=${selectedMarket}`);
+    const tier = TIERS[tierKey];
+    const priceStr = PRICING_MARKETS[selectedMarket].prices[tierKey];
+    const basePrice = parseFloat(priceStr.replace(/,/g, ''));
+    
+    router.push(`/checkout?tier=${tierKey}&market=${selectedMarket}&planName=${encodeURIComponent(tier.label)}&price=${basePrice}`);
   };
 
   return (
@@ -234,7 +238,7 @@ export default function PricingLandingPage() {
             {t('switch_to_cleanflow')}
           </p>
           <button 
-            onClick={() => router.push('/checkout')}
+            onClick={() => handleStart('software_only')}
             className="px-12 py-6 primary-gradient text-white rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-emerald-900/20 active:scale-95 transition-all"
           >
             {t('start_free_tier')}

@@ -97,6 +97,10 @@ export async function middleware(request) {
     pathname === '/pricing' ||
     pathname === '/contact' ||
     pathname === '/checkout' ||
+    pathname === '/register' ||
+    pathname.startsWith('/checkout/success') ||
+    pathname === '/api/payments/checkout' ||
+    pathname === '/api/payments/verify-session' ||
     pathname === '/policy'
   ) {
     // Still refresh the Supabase session for public routes (token rotation)

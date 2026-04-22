@@ -16,20 +16,16 @@ export async function POST(req) {
     const isPaidTier = tier === 'software_only' || tier === 'hardware_bundle';
     
     if (isPaidTier) {
-      if (provider === 'stripe') {
-        storeStatus = 'pending_payment';
-      } else {
-        // Razorpay flow (default)
-        if (!payment_id || !order_id || !signature) {
-          return NextResponse.json({ error: 'Payment information missing' }, { status: 402 });
-        }
-        
-        const isValid = verifyPaymentSignature(payment_id, order_id, signature);
-        if (!isValid) {
-          return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 });
-        }
-        storeStatus = 'active';
+      // Razorpay flow (default)
+      if (!payment_id || !order_id || !signature) {
+        return NextResponse.json({ error: 'Payment information missing' }, { status: 402 });
       }
+      
+      const isValid = verifyPaymentSignature(payment_id, order_id, signature);
+      if (!isValid) {
+        return NextResponse.json({ error: 'Invalid payment signature' }, { status: 403 });
+      }
+      storeStatus = 'active';
     }
 
     // 2. Supabase Auth Signup

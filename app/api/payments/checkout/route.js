@@ -46,6 +46,11 @@ export async function POST(request) {
     } else {
       // SaaS Signup flow
       description = "CleanFlow Subscription Activation";
+      if (market && market.toLowerCase() !== 'india') {
+        country = market; // e.g. 'us', 'europe', 'latam'
+      } else {
+        country = 'India';
+      }
     }
 
     console.log(`[Checkout] Processing ${is_saas_signup ? 'SaaS' : 'POS'} Payment, Amount: ${amount}`);
@@ -84,34 +89,6 @@ export async function POST(request) {
           description: description,
           order_id: order_id
         }
-      });
-    }
-
-    if (providerConfig.provider === 'stripe') {
-      const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      
-      const stripeSession = await providerConfig.createOrder(
-        amount, 
-        country === 'India' ? 'inr' : 'usd', 
-        {
-          order_id: order_id,
-          is_saas: is_saas_signup ? 'true' : 'false',
-          store_id: store_id,
-          addons: addons ? addons.join(', ') : '',
-          description: description
-        },
-        origin
-      );
-
-      if (!stripeSession.success) {
-        throw new Error(stripeSession.error || 'Failed to create Stripe session');
-      }
-
-      return NextResponse.json({
-        success: true,
-        provider: 'stripe',
-        checkout_url: stripeSession.url,
-        session_id: stripeSession.session_id
       });
     }
 

@@ -12,7 +12,7 @@ export default function MainLayout({ children }) {
   const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAuthPage = pathname === '/login' || pathname === '/signup';
-  const isPublicPage = ['/', '/features', '/how-it-works', '/pricing', '/contact', '/policy'].includes(pathname);
+  const isPublicPage = ['/', '/features', '/how-it-works', '/pricing', '/contact', '/policy', '/checkout', '/register'].includes(pathname);
   const userTier = normalizeTier(user?.tier);
   const isSuperAdmin = user?.role === 'owner' && (user?.id == 1);
   const themeClass = (userTier === 'enterprise' && !isSuperAdmin) ? 'theme-enterprise' : 'theme-standard';

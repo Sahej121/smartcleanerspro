@@ -67,9 +67,6 @@ export default function MarketingNavbar() {
           <Link href="/login" className="relative z-[110] hidden sm:block rounded-full px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100 transition-colors">
             Login
           </Link>
-          <Link href="/signup" className="relative z-[110] rounded-full px-6 py-2.5 text-sm font-bold text-white primary-gradient shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all duration-300 shimmer-button">
-            Start Free
-          </Link>
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 md:hidden"
