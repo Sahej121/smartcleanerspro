@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/cleanflow',
-});
+import { query } from '@/lib/db/db';
 
 export async function POST(req) {
   try {
@@ -13,7 +9,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Coupon code is required' }, { status: 400 });
     }
 
-    const { rows } = await pool.query(
+    const { rows } = await query(
       `SELECT * FROM coupons 
        WHERE code = $1 AND is_active = TRUE 
        AND (expiry_date IS NULL OR expiry_date > NOW())`,

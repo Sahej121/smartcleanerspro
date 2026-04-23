@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     // getSession() handles both Supabase Auth sessions AND PIN-based sessions
@@ -43,6 +46,12 @@ export async function GET() {
         suspended: isSuspended,
         auth_id: session.auth_id || null,
       }
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
     });
 
   } catch (error) {

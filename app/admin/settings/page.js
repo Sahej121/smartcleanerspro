@@ -43,7 +43,7 @@ export default function SettingsPage() {
     const saved = localStorage.getItem('cleanflow_settings');
     if (saved) setSettings(JSON.parse(saved));
     // Get user role
-    fetch('/api/auth/me').then(r => r.json()).then(d => {
+    fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' }).then(r => r.json()).then(d => {
       if (d.user) {
         setCurrentUser(d.user);
         setUserRole(d.user.role);

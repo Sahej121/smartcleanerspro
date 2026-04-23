@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/cleanflow',
-});
+import { query } from '@/lib/db/db';
 
 export async function GET() {
   try {
-    const { rows } = await pool.query(
+    const { rows } = await query(
       'SELECT min_quantity, discount_percent FROM volume_discounts WHERE is_active = TRUE ORDER BY min_quantity DESC'
     );
     return NextResponse.json(rows);
