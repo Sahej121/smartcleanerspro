@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useBranding } from '@/lib/BrandingContext';
-import { TIERS, hasFeature } from '@/lib/tier-config';
+import { TIERS, hasFeature, PRICING_MARKETS } from '@/lib/tier-config';
 import { formatCurrency, detectCountry } from '@/lib/currency-utils';
 
 export default function SettingsPage() {
   const { lang, changeLang, t, LANGUAGES } = useLanguage();
+  const router = useRouter();
   const { systemName, systemLogo, updateBranding } = useBranding();
   const [activeTab, setActiveTab] = useState('general');
   const [message, setMessage] = useState('');
@@ -29,6 +31,7 @@ export default function SettingsPage() {
   const [confirmPinResetModal, setConfirmPinResetModal] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(null);
   const [showAdminUpgradeModal, setShowAdminUpgradeModal] = useState(null);
+  const [selectedUpgradeTier, setSelectedUpgradeTier] = useState('');
 
   const [settings, setSettings] = useState({
     storeName: 'DrycleanersFlow',
@@ -211,6 +214,52 @@ export default function SettingsPage() {
 
   const tierConfig = TIERS[currentTier] || TIERS.software_only;
   const canAdd = tierConfig.maxStores === -1 || storeCount < tierConfig.maxStores;
+
+  const getMarketForCountry = (country = '') => {
+    const normalized = country.trim().toLowerCase();
+    if (['india', 'in'].includes(normalized)) return 'india';
+    if (['united arab emirates', 'uae', 'ae', 'saudi arabia', 'sa', 'qatar', 'qa', 'kuwait', 'kw', 'oman', 'om', 'bahrain', 'bh'].includes(normalized)) return 'uae';
+    if (['united states', 'usa', 'us'].includes(normalized)) return 'us';
+    if (['mexico', 'mx', 'brazil', 'br', 'argentina', 'ar', 'colombia', 'co', 'chile', 'cl', 'peru', 'pe', 'panama', 'pa', 'uruguay', 'uy'].includes(normalized)) return 'latam';
+    if (['united kingdom', 'uk', 'gb', 'germany', 'de', 'france', 'fr', 'italy', 'it', 'spain', 'es', 'netherlands', 'nl', 'sweden', 'se', 'norway', 'no', 'switzerland', 'ch'].includes(normalized)) return 'europe';
+    return 'us';
+  };
+
+  const proceedWithUpgrade = () => {
+    if (!showAdminUpgradeModal || !selectedUpgradeTier) return;
+    const selectedMarket = showAdminUpgradeModal.market || 'us';
+    const market = PRICING_MARKETS[selectedMarket] || PRICING_MARKETS.us;
+    const tier = TIERS[selectedUpgradeTier];
+
+    if (currentUser?.id === 1) {
+      handleTierChange(showAdminUpgradeModal.storeId, selectedUpgradeTier, true);
+      return;
+    }
+
+    if (selectedUpgradeTier === 'enterprise') {
+      setShowAdminUpgradeModal(null);
+      setSelectedUpgradeTier('');
+      router.push('/contact');
+      return;
+    }
+
+    const basePrice = parseFloat((market.prices[selectedUpgradeTier] || '0').toString().replace(/,/g, ''));
+    setShowAdminUpgradeModal(null);
+    setSelectedUpgradeTier('');
+    router.push(`/checkout?tier=${selectedUpgradeTier}&market=${selectedMarket}&planName=${encodeURIComponent(tier.label)}&price=${basePrice}`);
+  };
+
+  const getStoreLimitLabel = (maxStores) => (maxStores === -1 ? 'Unlimited stores' : `Up to ${maxStores} store${maxStores > 1 ? 's' : ''}`);
+  const openUpgradePage = (store) => {
+    const market = getMarketForCountry(store.country);
+    const params = new URLSearchParams({
+      storeId: String(store.id),
+      storeName: store.store_name || 'Store',
+      currentTier: store.subscription_tier || 'software_only',
+      market,
+    });
+    router.push(`/admin/settings/upgrade?${params.toString()}`);
+  };
 
   const tabs = [
     { id: 'general', label: t('general') || 'General', icon: 'settings' },
@@ -484,7 +533,7 @@ export default function SettingsPage() {
                   {t('plan_limit_msg').replace('{tier}', tierConfig.label).replace('{max}', tierConfig.maxStores)} 
                   {stores[0] && (
                     <button 
-                      onClick={() => setShowAdminUpgradeModal({ storeId: stores[0].id, storeName: stores[0].store_name, currentTier: stores[0].subscription_tier })} 
+                      onClick={() => openUpgradePage(stores[0])}
                       className="underline ml-1 text-amber-900 hover:text-amber-700"
                     >
                       Upgrade →
@@ -612,7 +661,10 @@ export default function SettingsPage() {
                          <div className="flex items-center gap-2">
                            {i === 0 && (
                              <button 
-                               onClick={(e) => { e.stopPropagation(); setShowAdminUpgradeModal({ storeId: store.id, storeName: store.store_name, currentTier: store.subscription_tier }); }}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 openUpgradePage(store);
+                               }}
                                className="relative overflow-hidden group/btn flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
                                title="Upgrade Node Tier"
                              >
@@ -770,54 +822,90 @@ export default function SettingsPage() {
            {/* Admin Upgrade Modal */}
            {showAdminUpgradeModal && (
             <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-              <div className="bg-theme-surface rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl animate-fade-in scale-100">
+              <div className="bg-theme-surface rounded-[2.5rem] w-full max-w-xl p-8 shadow-2xl animate-fade-in scale-100 border border-theme-border">
                 <div className="text-center space-y-4">
-                  <div className="w-20 h-20 bg-purple-50 text-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-2">
                     <span className="material-symbols-outlined text-4xl">admin_panel_settings</span>
                   </div>
-                  <h2 className="text-2xl font-black text-theme-text font-headline">{t('manage_node_tier')}</h2>
-                  <p className="text-sm font-medium text-theme-text-muted px-2">
+                  <h2 className="text-3xl font-black text-theme-text font-headline tracking-tight">{t('manage_node_tier')}</h2>
+                  <p className="text-sm font-medium text-theme-text-muted px-2 -mt-1">
                     {currentUser?.id === 1 ? `Superadmin override for store` : `Select the new tier for store`} <strong>{showAdminUpgradeModal.storeName}</strong>.
                   </p>
+                  <div className="mx-auto max-w-sm rounded-2xl border border-theme-border bg-theme-surface-container px-4 py-3 text-left">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted">Current plan</p>
+                    <p className="text-sm font-black text-theme-text mt-1">{TIERS[showAdminUpgradeModal.currentTier]?.label || 'Software Only'}</p>
+                  </div>
 
-                  <div className="pt-4 space-y-2 text-left">
-                    {Object.entries(TIERS).filter(([, tier]) => tier.price).map(([key, tier]) => (
+                  <div className="pt-3 space-y-3 text-left">
+                    {Object.entries(TIERS).map(([key, tier]) => {
+                      const selectedMarket = showAdminUpgradeModal.market || 'us';
+                      const market = PRICING_MARKETS[selectedMarket] || PRICING_MARKETS.us;
+                      const marketPrice = key === 'enterprise' ? 'Contact Sales' : `${market.currency}${market.prices[key] || '-'}/month`;
+                      const isCurrent = showAdminUpgradeModal.currentTier === key;
+                      const isSelected = selectedUpgradeTier === key;
+                      const isRecommended = showAdminUpgradeModal.currentTier === 'software_only' && key === 'hardware_bundle';
+                      return (
                       <button
                         key={key}
-                        onClick={() => {
-                          if (currentUser?.id === 1) {
-                            handleTierChange(showAdminUpgradeModal.storeId, key, true);
-                          } else {
-                            const data = showAdminUpgradeModal;
-                            setShowAdminUpgradeModal(null);
-                            setShowPaymentModal({ storeId: data.storeId, tier: key, tierLabel: tier.label, price: tier.price });
-                          }
-                        }}
-                        className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${
-                          showAdminUpgradeModal.currentTier === key 
-                            ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/20' 
+                        onClick={() => setSelectedUpgradeTier(key)}
+                        className={`w-full p-4 rounded-2xl border-2 transition-all ${
+                          isSelected
+                            ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/20'
                             : 'border-theme-border bg-theme-surface hover:border-theme-text-muted/30'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className={`material-symbols-outlined ${showAdminUpgradeModal.currentTier === key ? 'text-emerald-500' : 'text-theme-text-muted'}`}>{tier.icon}</span>
-                          <div>
-                            <span className="font-bold text-sm text-theme-text block">{tier.label}</span>
-                            <span className="text-xs font-medium text-theme-text-muted">{tier.price}</span>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <span className={`material-symbols-outlined mt-0.5 ${isSelected ? 'text-emerald-500' : 'text-theme-text-muted'}`}>{tier.icon}</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-theme-text block">{tier.label}</span>
+                                {isRecommended && (
+                                  <span className="text-[9px] bg-slate-900 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Recommended</span>
+                                )}
+                              </div>
+                              <span className="text-xs font-medium text-theme-text-muted">{marketPrice}</span>
+                            </div>
+                          </div>
+                          {isCurrent ? (
+                            <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Active</span>
+                          ) : isSelected ? (
+                            <span className="text-[10px] bg-slate-900 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Selected</span>
+                          ) : (
+                            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg">Select</span>
+                          )}
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <div className="rounded-xl border border-theme-border bg-theme-surface-container px-3 py-2">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-theme-text-muted">Stores</p>
+                            <p className="text-xs font-bold text-theme-text mt-1">{getStoreLimitLabel(tier.maxStores)}</p>
+                          </div>
+                          <div className="rounded-xl border border-theme-border bg-theme-surface-container px-3 py-2">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-theme-text-muted">Support</p>
+                            <p className="text-xs font-bold text-theme-text mt-1">{tier.support || 'Standard support'}</p>
                           </div>
                         </div>
-                        {showAdminUpgradeModal.currentTier === key ? (
-                          <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Active</span>
-                        ) : (
-                          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
-                        )}
                       </button>
-                    ))}
+                    )})}
                   </div>
                   
                   <div className="pt-4">
+                    <button
+                      onClick={proceedWithUpgrade}
+                      disabled={!selectedUpgradeTier || selectedUpgradeTier === showAdminUpgradeModal.currentTier}
+                      className="w-full py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                    >
+                      {selectedUpgradeTier === 'enterprise'
+                        ? 'Continue to Contact Sales'
+                        : currentUser?.id === 1
+                          ? 'Apply Tier Change'
+                          : 'Continue to Secure Checkout'}
+                    </button>
                     <button 
-                      onClick={() => setShowAdminUpgradeModal(null)}
+                      onClick={() => {
+                        setShowAdminUpgradeModal(null);
+                        setSelectedUpgradeTier('');
+                      }}
                       className="w-full py-4 bg-theme-border hover:bg-slate-200 text-theme-text rounded-2xl font-black text-sm transition-all"
                     >
                       Close

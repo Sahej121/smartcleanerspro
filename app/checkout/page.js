@@ -2,6 +2,7 @@
 
 import { useState, Suspense, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useUser } from '@/lib/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
@@ -11,6 +12,8 @@ function CheckoutForm() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useUser();
+  const storeId = searchParams.get('storeId');
 
   const tierKey = searchParams.get('tier') || 'software_only';
   const marketId = searchParams.get('market') || 'us';
@@ -80,22 +83,41 @@ function CheckoutForm() {
         name: "DrycleanersFlow",
         description: `Subscription: ${planName}`,
         order_id: data.order_id,
-        handler: function (response) {
-          sessionStorage.setItem("payment_verified", "true");
-          sessionStorage.setItem("selected_plan", JSON.stringify({ 
-            tier: tierKey, 
-            market: marketId, 
-            plan: planName, 
-            addOns: selectedAddons, 
-            total: totalAmount 
-          }));
-          sessionStorage.setItem("payment_details", JSON.stringify({
-            payment_id: response.razorpay_payment_id,
-            order_id: response.razorpay_order_id,
-            signature: response.razorpay_signature,
-            provider: 'razorpay'
-          }));
-          router.push('/register');
+        handler: async function (response) {
+          if (user && storeId) {
+            try {
+              const res = await fetch(`/api/stores/${storeId}/tier`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tier: tierKey, payment_confirmed: true }),
+              });
+              if (res.ok) {
+                router.push('/');
+              } else {
+                setError('Failed to apply tier upgrade. Please contact support.');
+                setLoading(false);
+              }
+            } catch (err) {
+              setError('Failed to apply tier upgrade. Please contact support.');
+              setLoading(false);
+            }
+          } else {
+            sessionStorage.setItem("payment_verified", "true");
+            sessionStorage.setItem("selected_plan", JSON.stringify({ 
+              tier: tierKey, 
+              market: marketId, 
+              plan: planName, 
+              addOns: selectedAddons, 
+              total: totalAmount 
+            }));
+            sessionStorage.setItem("payment_details", JSON.stringify({
+              payment_id: response.razorpay_payment_id,
+              order_id: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              provider: 'razorpay'
+            }));
+            router.push('/register');
+          }
         },
         theme: { color: "#10b981" },
         modal: { ondismiss: () => setLoading(false) }
@@ -118,10 +140,10 @@ function CheckoutForm() {
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       
       <div className="mb-8 flex justify-center">
-        <Link href="/pricing" className="group flex items-center gap-2 rounded-full border border-white/40 bg-white/60 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-800 shadow-sm backdrop-blur-md transition-all hover:bg-white hover:scale-105 active:scale-95">
+        <button onClick={() => router.back()} className="group flex items-center gap-2 rounded-full border border-white/40 bg-white/60 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-800 shadow-sm backdrop-blur-md transition-all hover:bg-white hover:scale-105 active:scale-95">
           <span className="material-symbols-outlined text-sm transition-transform group-hover:-translate-x-1">arrow_back</span>
           {translate('change_plan', 'Change Plan')}
-        </Link>
+        </button>
       </div>
 
       <div className="glass-panel p-1 border-white/60 rounded-[3.5rem] shadow-2xl overflow-hidden">
@@ -246,14 +268,16 @@ function CheckoutForm() {
             </div>
           </div>
 
-          <div className="text-center mt-12 pt-8 border-t border-emerald-100/50">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              {translate('already_have_profile', 'Already have a profile?')} 
-              <button onClick={() => router.push('/login')} className="text-emerald-600 font-black hover:underline ml-2 transition-colors">
-                {translate('sign_in', 'Sign in')}
-              </button>
-            </p>
-          </div>
+          {!user && (
+            <div className="text-center mt-12 pt-8 border-t border-emerald-100/50">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                {translate('already_have_profile', 'Already have a profile?')} 
+                <button onClick={() => router.push('/login')} className="text-emerald-600 font-black hover:underline ml-2 transition-colors">
+                  {translate('sign_in', 'Sign in')}
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </div>
       
