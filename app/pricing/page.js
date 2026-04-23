@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { TIERS, ADD_ONS, PRICING_MARKETS, getTierPrice } from '@/lib/tier-config';
+import { TIERS, ADD_ONS, PRICING_MARKETS, getTierPrice, getAddonPricing } from '@/lib/tier-config';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
@@ -62,11 +62,6 @@ export default function PricingLandingPage() {
     detectMarket();
   }, []);
 
-  const handleMarketChange = (marketId) => {
-    setIsPriceAnimating(true);
-    setSelectedMarket(marketId);
-    setTimeout(() => setIsPriceAnimating(false), 500);
-  };
 
   const handleStart = (tierKey) => {
     if (tierKey === 'enterprise') {
@@ -104,35 +99,20 @@ export default function PricingLandingPage() {
           {t('pricing_desc')}
         </p>
 
-        {/* Premium Market Selector */}
+        {/* Pricing Grid Header */}
         <div className="relative z-20 max-w-4xl mx-auto mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-          <div className="inline-flex flex-wrap justify-center gap-3 p-2 bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-white shadow-xl">
-            {isDetecting ? (
-              <div className="flex items-center gap-3 px-8 py-3 text-xs font-black uppercase tracking-[0.3em] text-emerald-700 animate-pulse">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></span>
-                Locating your atelier...
-              </div>
-            ) : (
-              Object.values(PRICING_MARKETS).map((market) => (
-                <button
-                  key={market.id}
-                  onClick={() => handleMarketChange(market.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300 ${
-                    selectedMarket === market.id 
-                      ? 'bg-slate-900 text-white shadow-lg scale-105' 
-                      : 'text-slate-500 hover:bg-white/60 hover:text-slate-900'
-                  }`}
-                >
-                  <span>{market.flag}</span>
-                  <span>{market.label}</span>
-                </button>
-              ))
-            )}
-          </div>
-          {!isDetecting && (
-            <p className="mt-4 text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] opacity-60">
-              {t('select_market_desc')}
-            </p>
+          {isDetecting ? (
+            <div className="inline-flex items-center gap-3 px-8 py-3 bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-white shadow-xl text-xs font-black uppercase tracking-[0.3em] text-emerald-700 animate-pulse">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></span>
+              Locating your atelier...
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-3 px-8 py-3 bg-emerald-50/50 backdrop-blur-xl rounded-[2.5rem] border border-emerald-100/50 shadow-sm text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">
+              <span>{PRICING_MARKETS[selectedMarket].flag}</span>
+              <span>{PRICING_MARKETS[selectedMarket].label} pricing</span>
+              <span className="w-1 h-1 bg-emerald-300 rounded-full"></span>
+              <span className="opacity-60">Optimized for your region</span>
+            </div>
           )}
         </div>
       </header>
@@ -210,18 +190,25 @@ export default function PricingLandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {ADD_ONS.map((addon) => (
+          {ADD_ONS.map((addon) => {
+            const addonPricing = getAddonPricing(addon, selectedMarket);
+            return (
             <div key={addon.id} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 hover:border-emerald-200 transition-all hover:shadow-xl hover:shadow-emerald-900/5 group">
               <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mb-6 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
                 <span className="material-symbols-outlined text-2xl">{addon.icon}</span>
               </div>
               <h4 className="text-sm font-black text-slate-900 mb-1">{addon.label}</h4>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-slate-900 tracking-tighter">{addon.price}</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">{addon.period}</span>
+                <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                  {PRICING_MARKETS[selectedMarket].currency}{addonPricing.amount}
+                </span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">{addonPricing.period}</span>
               </div>
+              {addonPricing.billing === 'one_time' ? (
+                <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">One-time purchase</p>
+              ) : null}
             </div>
-          ))}
+          )})}
         </div>
       </section>
 

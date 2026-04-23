@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
-import { PRICING_MARKETS, TIERS, ADD_ONS } from '@/lib/tier-config';
+import { PRICING_MARKETS, TIERS, ADD_ONS, getAddonPricing } from '@/lib/tier-config';
 
 function CheckoutForm() {
   const { t } = useLanguage();
@@ -27,12 +27,26 @@ function CheckoutForm() {
   const priceStr = searchParams.get('price') || market.prices[tierKey] || '0';
   const baseAmount = parseFloat(priceStr.toString().replace(/,/g, ''));
   
-  const addonsTotal = selectedAddons.reduce((sum, id) => {
+  const addonsSummary = selectedAddons.reduce((summary, id) => {
     const addon = ADD_ONS.find(a => a.id === id);
-    return sum + (addon ? addon.amount : 0);
-  }, 0);
+    if (!addon) return summary;
+    const pricing = getAddonPricing(addon, marketId);
+    if (pricing.billing === 'one_time') {
+      summary.oneTime += pricing.amount;
+    } else {
+      summary.monthly += pricing.amount;
+    }
+    return summary;
+  }, { monthly: 0, oneTime: 0 });
   
-  const totalAmount = baseAmount + addonsTotal;
+  const monthlyTotal = baseAmount + addonsSummary.monthly;
+  const totalAmount = monthlyTotal + addonsSummary.oneTime;
+
+  // Helper for human-readable translation fallbacks
+  const translate = (key, fallback) => {
+    const val = t(key);
+    return val === key ? fallback : val;
+  };
 
   const toggleAddon = (id) => {
     setSelectedAddons(prev => 
@@ -57,7 +71,7 @@ function CheckoutForm() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to initialize Razorpay payment');
+      if (!res.ok) throw new Error(data.error || 'Failed to initialize payment gateway');
 
       const options = {
         key: data.key,
@@ -100,96 +114,171 @@ function CheckoutForm() {
   };
 
   return (
-    <div className="w-full max-w-lg relative z-10 animate-in fade-in zoom-in-95 duration-700">
+    <div className="w-full max-w-xl relative z-10 animate-fade-in-up">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       
-      <div className="mb-4 flex justify-center">
-        <Link href="/pricing" className="rounded-full border border-emerald-100 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">
-          {t('change_plan') || 'Change Plan'}
+      <div className="mb-8 flex justify-center">
+        <Link href="/pricing" className="group flex items-center gap-2 rounded-full border border-white/40 bg-white/60 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-800 shadow-sm backdrop-blur-md transition-all hover:bg-white hover:scale-105 active:scale-95">
+          <span className="material-symbols-outlined text-sm transition-transform group-hover:-translate-x-1">arrow_back</span>
+          {translate('change_plan', 'Change Plan')}
         </Link>
       </div>
 
-      <div className="glass-panel p-10 rounded-[3.5rem] border border-white bg-white/40 shadow-[0_32px_64px_-16px_rgba(11,28,48,0.1)]">
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 rounded-[1.5rem] primary-gradient flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-emerald-900/20 mx-auto mb-6 transition-transform hover:scale-110">
-            {tier.icon ? <span className="material-symbols-outlined text-3xl">{tier.icon}</span> : 'C'}
-          </div>
-          <h1 className="text-3xl font-black text-on-surface font-headline uppercase tracking-tight mb-2">
-            {t('finalize_payment') || 'Finalize Payment'}
-          </h1>
-          <p className="text-xs font-black text-on-surface-variant uppercase tracking-[0.3em]">
-            {market.currency}{baseAmount} / month
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 animate-in slide-in-from-top-2">
-            <span className="material-symbols-outlined text-lg">error</span>
-            <p className="text-[11px] font-black uppercase tracking-tight">{error}</p>
-          </div>
-        )}
-
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-          <div className="p-6 rounded-3xl bg-emerald-50 border border-emerald-100 space-y-4">
-            <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-emerald-800">
-              <span>{planName}</span>
-              <span>{market.currency}{baseAmount} / mo</span>
+      <div className="glass-panel p-1 border-white/60 rounded-[3.5rem] shadow-2xl overflow-hidden">
+        <div className="bg-white/40 backdrop-blur-2xl p-10 md:p-14 rounded-[3.25rem]">
+          <div className="text-center mb-12">
+            <div className="w-20 h-20 rounded-[2rem] primary-gradient flex items-center justify-center text-white shadow-2xl shadow-emerald-900/20 mx-auto mb-8 animate-float">
+              <span className="material-symbols-outlined text-4xl">{tier.icon || 'star'}</span>
             </div>
-            
-            <div className="pt-4 mt-2 border-t border-emerald-200/50 space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-2">Optional Add-ons</p>
-              {ADD_ONS.map(addon => (
-                <label key={addon.id} onClick={() => toggleAddon(addon.id)} className="flex items-center justify-between cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors ${selectedAddons.includes(addon.id) ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-emerald-200 group-hover:border-emerald-300'}`}>
-                      {selectedAddons.includes(addon.id) && <span className="material-symbols-outlined text-white text-[12px] font-bold">check</span>}
+            <h1 className="text-4xl md:text-5xl font-black text-emerald-950 font-headline tracking-tighter mb-3">
+              {translate('finalize_payment', 'Finalize Payment')}
+            </h1>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/50 border border-emerald-200/50">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <p className="text-xs font-black text-emerald-800 uppercase tracking-[0.25em]">
+                {market.currency}{baseAmount} / {translate('month', 'month')}
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mb-10 p-5 bg-red-50/80 backdrop-blur-sm border border-red-100 rounded-3xl flex items-center gap-4 text-red-600 animate-in slide-in-from-top-4 duration-500">
+              <div className="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-xl">error</span>
+              </div>
+              <p className="text-xs font-bold uppercase tracking-tight leading-relaxed">{error}</p>
+            </div>
+          )}
+
+          <div className="space-y-10">
+            <div className="p-8 rounded-[2.5rem] bg-emerald-50/50 border border-emerald-100/50 shadow-inner relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <span className="material-symbols-outlined text-6xl text-emerald-900">verified_user</span>
+              </div>
+              
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-1">Selected Plan</p>
+                  <h3 className="text-xl font-black text-emerald-950">{planName}</h3>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-emerald-950">{market.currency}{baseAmount}</span>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase">/ month</p>
+                </div>
+              </div>
+              
+              <div className="pt-6 mt-6 border-t border-emerald-200/30 space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 mb-4">Optional Enhancements</p>
+                <div className="grid gap-3">
+                  {ADD_ONS.map((addon, idx) => {
+                    const addonPricing = getAddonPricing(addon, marketId);
+                    const isSelected = selectedAddons.includes(addon.id);
+                    return (
+                    <div 
+                      key={addon.id} 
+                      onClick={() => toggleAddon(addon.id)} 
+                      className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border ${isSelected ? 'bg-white border-emerald-300 shadow-md scale-[1.02]' : 'bg-transparent border-emerald-200/50 hover:bg-white/40 hover:border-emerald-200'}`}
+                      style={{ transitionDelay: `${idx * 50}ms` }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${isSelected ? 'bg-emerald-500 border-emerald-500 scale-110 shadow-lg shadow-emerald-500/20' : 'bg-white border-emerald-200'}`}>
+                          {isSelected && <span className="material-symbols-outlined text-white text-base font-bold">check</span>}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-emerald-950 leading-none mb-1">{addon.label}</p>
+                          <p className="text-[9px] font-medium text-emerald-600 uppercase tracking-tighter">
+                            {addonPricing.billing === 'one_time' ? 'One-time purchase' : 'Billed monthly'}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black text-emerald-900">
+                        +{market.currency}{addonPricing.amount} {addonPricing.period}
+                      </span>
                     </div>
-                    <span className="text-xs font-semibold text-emerald-950">{addon.label}</span>
-                  </div>
-                  <span className="text-xs font-black text-emerald-800">+{market.currency}{addon.amount} / mo</span>
-                </label>
-              ))}
+                  )})}
+                </div>
+              </div>
+
+              <div className="mt-8 pt-8 border-t-2 border-dashed border-emerald-200/50 space-y-4">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">
+                  <span>Monthly subscription total</span>
+                  <span>{market.currency}{monthlyTotal}</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">
+                  <span>One-time setup/add-ons</span>
+                  <span>{market.currency}{addonsSummary.oneTime}</span>
+                </div>
+                <div className="flex justify-between items-end">
+                  <span className="text-sm font-black text-emerald-950 uppercase tracking-widest">{translate('total_due_now', 'Total Due Now')}</span>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-emerald-950 tracking-tighter">{market.currency}{totalAmount}</span>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase">First payment</p>
+                </div>
+                </div>
+              </div>
             </div>
 
-            <div className="h-px bg-emerald-200/50 my-2" />
-            <div className="flex justify-between items-center text-sm font-black text-emerald-950">
-              <span>{t('total_due_now') || 'Total Due Now'}</span>
-              <span>{market.currency}{totalAmount} / mo</span>
+            <div className="space-y-6">
+              <button 
+                onClick={handlePayment}
+                className="w-full primary-gradient text-white py-6 rounded-3xl font-black text-base shadow-2xl shadow-emerald-900/20 hover:shadow-emerald-900/40 active:scale-[0.98] transition-all disabled:opacity-50 overflow-hidden relative group shimmer-button"
+                disabled={loading}
+              >
+                <div className="relative z-10 flex items-center justify-center gap-3">
+                  {loading ? (
+                    <>
+                      <span className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <span className="uppercase tracking-widest text-sm">{translate('processing', 'Processing...')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="uppercase tracking-[0.2em] text-sm">Confirm & Proceed to Payment</span>
+                      <span className="material-symbols-outlined">payments</span>
+                    </>
+                  )}
+                </div>
+              </button>
+              
+              <div className="flex items-center justify-center gap-2 text-slate-400">
+                <span className="material-symbols-outlined text-sm">lock</span>
+                <p className="text-[10px] font-bold uppercase tracking-widest">Secure 256-bit SSL Encryption</p>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <button 
-              onClick={handlePayment}
-              className="w-full primary-gradient text-white py-5 rounded-[2.5rem] font-black text-sm shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/30 active:scale-95 transition-all disabled:opacity-50 overflow-hidden relative group"
-              disabled={loading}
-            >
-              <span className="relative z-10">{loading ? (t('processing') || 'Processing...') : 'Proceed to Payment'}</span>
-              <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[0%] transition-transform duration-500 skew-x-12"></div>
-            </button>
+          <div className="text-center mt-12 pt-8 border-t border-emerald-100/50">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              {translate('already_have_profile', 'Already have a profile?')} 
+              <button onClick={() => router.push('/login')} className="text-emerald-600 font-black hover:underline ml-2 transition-colors">
+                {translate('sign_in', 'Sign in')}
+              </button>
+            </p>
           </div>
-        </div>
-
-        <div className="text-center mt-10">
-          <p className="text-[11px] font-bold text-slate-400">
-            Already have a profile? <button onClick={() => router.push('/login')} className="text-primary font-black hover:underline ml-1">{t('sign_in') || 'Sign in'}</button>
-          </p>
         </div>
       </div>
       
-      <p className="text-center mt-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Pristine Atelier v2.4.0</p>
+      <div className="text-center mt-10 space-y-2">
+        <p className="text-[10px] font-black text-emerald-900/30 uppercase tracking-[0.6em]">Pristine Atelier v2.5.0</p>
+        <p className="text-[9px] font-bold text-emerald-900/20 uppercase tracking-[0.2em]">&copy; 2024 CleanFlow Systems. All Rights Reserved.</p>
+      </div>
     </div>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAF9] flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Decorative Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 blur-[120px] rounded-full"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full"></div>
+    <div className="min-h-screen mesh-background flex items-center justify-center p-8 relative">
+      {/* Dynamic Orbs */}
+      <div className="glass-orb w-[40vw] h-[40vw] bg-emerald-300 top-[-10%] left-[-10%] delay-300"></div>
+      <div className="glass-orb w-[35vw] h-[35vw] bg-teal-200 bottom-[-5%] right-[-5%] animation-delay-700"></div>
+      <div className="glass-orb w-[20vw] h-[20vw] bg-lime-100 top-[20%] right-[10%] delay-500"></div>
 
-      <Suspense fallback={<div className="text-emerald-600 animate-pulse font-black uppercase tracking-widest">Loading Atelier...</div>}>
+      <Suspense fallback={
+        <div className="flex flex-col items-center gap-6 animate-pulse">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-100"></div>
+          <div className="h-4 w-48 bg-emerald-100 rounded-full"></div>
+        </div>
+      }>
         <CheckoutForm />
       </Suspense>
     </div>
