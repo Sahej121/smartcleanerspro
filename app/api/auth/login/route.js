@@ -21,11 +21,21 @@ export async function POST(req) {
     } catch {
       supabaseHost = '(invalid url)';
     }
+
+    const databaseUrl = process.env.DATABASE_URL;
+    let dbHost = '';
+    try {
+      dbHost = databaseUrl ? new URL(databaseUrl).hostname : '';
+    } catch {
+      dbHost = '(invalid url)';
+    }
     console.log('[LOGIN][DIAG]', {
       vercelSha,
       supabaseHost,
       supabaseUrlPresent: Boolean(supabaseUrl),
       supabaseAnonKeyPresent: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+      dbHost,
+      databaseUrlPresent: Boolean(databaseUrl),
       nodeEnv: process.env.NODE_ENV,
     });
 
