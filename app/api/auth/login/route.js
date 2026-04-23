@@ -7,6 +7,28 @@ import { cookies } from 'next/headers';
 
 export async function POST(req) {
   try {
+    // Diagnostics (no secrets): helps confirm deployed commit + env host
+    const vercelSha =
+      process.env.VERCEL_GIT_COMMIT_SHA ||
+      process.env.VERCEL_GIT_COMMIT_SHA1 ||
+      process.env.VERCEL_GITHUB_COMMIT_SHA ||
+      process.env.VERCEL_GIT_COMMIT_REF ||
+      'unknown';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    let supabaseHost = '';
+    try {
+      supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : '';
+    } catch {
+      supabaseHost = '(invalid url)';
+    }
+    console.log('[LOGIN][DIAG]', {
+      vercelSha,
+      supabaseHost,
+      supabaseUrlPresent: Boolean(supabaseUrl),
+      supabaseAnonKeyPresent: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+      nodeEnv: process.env.NODE_ENV,
+    });
+
     // Ensure migration has run (idempotent)
     await query('ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_attempts INTEGER DEFAULT 0, ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP');
 
