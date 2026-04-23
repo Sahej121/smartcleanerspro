@@ -66,9 +66,6 @@ export default function FeaturesPage() {
             <p className="mt-2 text-sm text-slate-600">{t('ready_to_launch_desc')}</p>
           </div>
           <div className="mt-4 flex gap-3 md:mt-0">
-            <Link href="/pricing" className="rounded-full px-5 py-2 text-sm font-semibold text-white primary-gradient">
-              {t('start_free_trial')}
-            </Link>
             <Link href="/pricing" className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700">
               {t('view_pricing')}
             </Link>

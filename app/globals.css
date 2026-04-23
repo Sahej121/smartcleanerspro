@@ -455,7 +455,8 @@
 }
 
 .glass-navbar {
-  @apply sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20;
+  @apply sticky top-0 z-50 bg-white/35 backdrop-blur-lg border-b border-white/10;
+  box-shadow: none;
 }
 
 html {

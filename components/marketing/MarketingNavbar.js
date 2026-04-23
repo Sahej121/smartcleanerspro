@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,15 +9,6 @@ export default function MarketingNavbar() {
   const { t } = useLanguage();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const links = [
     { href: '/', label: t('home') },
@@ -28,11 +19,7 @@ export default function MarketingNavbar() {
   ];
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
-      scrolled 
-        ? 'glass-navbar py-2 opacity-100' 
-        : 'bg-transparent border-transparent py-4 opacity-100'
-    }`}>
+    <header className="fixed top-0 left-0 right-0 z-[100] glass-navbar py-2 opacity-100 transition-all duration-500">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-3 group transition-transform hover:scale-105" onClick={() => setMenuOpen(false)}>
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl primary-gradient text-white shadow-xl shadow-emerald-600/20 group-hover:rotate-6 transition-all duration-500">

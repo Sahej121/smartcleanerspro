@@ -76,7 +76,7 @@ export default function ContactPage() {
                 </p>
                 <div className="mt-6 flex gap-3">
                   <Link href="/pricing" className="rounded-full px-6 py-3 text-xs font-black uppercase tracking-widest text-white primary-gradient shadow-lg">
-                    {t('start_free_trial')}
+                    {t('view_pricing')}
                   </Link>
                 </div>
               </article>

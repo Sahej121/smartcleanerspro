@@ -84,6 +84,7 @@ export async function middleware(request) {
   // Allow public assets, API auth routes, and PWA files
   if (
     pathname.startsWith('/_next') ||
+    pathname.startsWith('/images/') ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/webhooks/') ||
     pathname.startsWith('/icons/') ||
