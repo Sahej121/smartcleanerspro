@@ -79,7 +79,7 @@ export async function middleware(request) {
   // Custom limits per endpoint
   let limit = isLocal ? 1000 : 100;
   if (pathname.startsWith('/api/auth/login')) {
-    limit = isLocal ? 100 : 5; // Stricter for login
+    limit = isLocal ? 100 : 20; // Increased limit for testing/login
   } else if (pathname.startsWith('/api/webhooks')) {
     limit = isLocal ? 1000 : 50; // Moderate for webhooks
   }
