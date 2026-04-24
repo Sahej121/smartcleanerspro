@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { DashboardSkeleton } from '@/components/Skeleton';
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
@@ -13,11 +14,7 @@ export default function AdminDashboard() {
       .then(d => { setData(d); setLoading(false); });
   }, []);
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-[50vh]">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-    </div>
-  );
+  if (loading) return <DashboardSkeleton />;
 
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-IN', {

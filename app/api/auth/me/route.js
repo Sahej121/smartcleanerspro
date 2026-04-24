@@ -17,23 +17,13 @@ export async function GET() {
 
     console.log(`[ME] Session found - Type: ${session.type}, ID: ${session.id}, Role: ${session.role}`);
 
-    // For Supabase sessions, session already has full app data.
-    // For PIN sessions, session comes from the JWT payload.
-    // In both cases we have id, name, email, role, store_id, tier.
-
-    // Query store status for suspension detection
-    let isSuspended = false;
-    if (session.store_id) {
-      const storeRes = await query('SELECT status FROM stores WHERE id = $1', [session.store_id]);
-      if (storeRes.rows.length > 0) {
-        isSuspended = storeRes.rows[0].status === 'suspended';
-      }
-    }
+    // For Supabase sessions, session already has full app data including suspension status.
+    // For PIN sessions, session comes from the JWT payload + quick DB check.
+    // In both cases we have id, name, email, role, store_id, tier, suspended.
 
     // Map db role to frontend role (preserve specializing roles)
     let feRole = session.role;
     if (session.role === 'manager') feRole = 'admin';
-    // Note: frontdesk, driver, staff remain as is
 
     return NextResponse.json({ 
       user: {
@@ -43,7 +33,7 @@ export async function GET() {
         role: feRole,
         store_id: session.store_id,
         tier: session.tier,
-        suspended: isSuspended,
+        suspended: session.suspended,
         auth_id: session.auth_id || null,
       }
     }, {

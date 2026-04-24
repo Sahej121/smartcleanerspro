@@ -12,11 +12,11 @@ const PROVISIONING_STEPS = [
 ];
 
 const LOGIN_STEPS = [
-  { id: 1, label: 'Authenticating Protocol', duration: 2000 },
-  { id: 2, label: 'Synchronizing Session Data', duration: 2500 },
-  { id: 3, label: 'Validating Enterprise Shield', duration: 1500 },
-  { id: 4, label: 'Decrypting Dashboard Matrix', duration: 3000 },
-  { id: 5, label: 'Initializing Workspace', duration: 1500 }
+  { id: 1, label: 'Authenticating Protocol', duration: 800 },
+  { id: 2, label: 'Synchronizing Session Data', duration: 1000 },
+  { id: 3, label: 'Validating Enterprise Shield', duration: 600 },
+  { id: 4, label: 'Decrypting Dashboard Matrix', duration: 1200 },
+  { id: 5, label: 'Initializing Workspace', duration: 600 }
 ];
 
 function BubbleMatrix() {
@@ -65,6 +65,10 @@ function WaitingContent() {
     let progressTimer;
 
     const runSequence = async () => {
+      // Prefetch target routes to make the transition instant
+      router.prefetch('/');
+      router.prefetch('/admin');
+
       for (let i = 0; i < steps.length; i++) {
         setCurrentStep(i);
         const duration = steps[i].duration;

@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const router = useRouter();
-  const { user, fetchUser } = useUser();
+  const { user, login } = useUser();
   const { systemName } = useBranding();
 
   // Redirect if already logged in
@@ -42,7 +42,12 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        await fetchUser();
+        // Map backend worker to frontend staff
+        const userData = {
+          ...data.user,
+          role: data.user.role === 'manager' ? 'admin' : data.user.role
+        };
+        login(userData);
         router.push('/waiting?origin=login');
       } else {
         setError(data.error || t('login_failed'));

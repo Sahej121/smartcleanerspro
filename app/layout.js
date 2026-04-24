@@ -4,6 +4,7 @@ import { UserProvider } from '@/lib/UserContext';
 import { BrandingProvider } from '@/lib/BrandingContext';
 import { NotificationProvider } from '@/lib/NotificationContext';
 import MainLayout from '@/components/MainLayout';
+import { getSession } from '@/lib/auth';
 
 export const metadata = {
   title: 'DrycleanersFlow – Dry Cleaner POS',
@@ -23,7 +24,22 @@ export const viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // Fetch session on the server to avoid client-side loading states
+  const session = await getSession();
+  
+  // Transform session to user object for UserProvider
+  const initialUser = session ? {
+    id: session.id,
+    name: session.name,
+    email: session.email,
+    role: session.role === 'manager' ? 'admin' : session.role,
+    store_id: session.store_id,
+    tier: session.tier,
+    suspended: session.suspended,
+    auth_id: session.auth_id || null,
+  } : null;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -42,7 +58,7 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body>
-        <UserProvider>
+        <UserProvider initialUser={initialUser}>
           <BrandingProvider>
             <LanguageProvider>
               <NotificationProvider>
