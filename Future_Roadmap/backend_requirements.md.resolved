@@ -1,0 +1,264 @@
+# CleanFlow POS - Backend Architecture & Technical Requirements
+
+This document outlines the detailed backend specifications required to support the CleanFlow POS frontend application. It covers architectural patterns, database schemas, required API endpoints, and performance considerations to maintain the "Pristine Atelier" premium standard.
+
+---
+
+## 1. System Architecture
+
+To ensure high availability, fast response times (micro-interactions on the frontend require <100ms API latency), and geographic scalability, the backend should be structured as follows:
+
+*   **API Gateway:** A unified entry point (e.g., NGINX, AWS API Gateway, or Cloudflare Workers) handling rate limiting, SSL, and request routing.
+*   **Core API Service:** A monolithic or macro-service structure (Node.js/Express, Go, or Python/FastAPI) handling business logic.
+*   **Database (RDBMS):** PostgreSQL is highly recommended for atomic transactions (critical for order and payment processing) and complex relational querying (e.g., joining orders, customers, and store nodes).
+*   **Caching Layer:** Redis for caching real-time dashboards (Master Control & Store Admin statistics), session management, and frequently accessed pricing configurations.
+*   **Real-time Engine:** WebSockets (Socket.io or native) for live updates to the inventory dashboard and cross-terminal order synchronization.
+*   **Background Worker:** A queue system (e.g., RabbitMQ or BullMQ) for processing end-of-day reports, automated WhatsApp routing, QR code PDF rendering, and system alerts.
+
+---
+
+## 2. Database Schema (PostgreSQL)
+
+The system relies on a multi-tenant or robust relational structure focusing on stores (nodes), orders, and inventory.
+
+### `stores` 
+Represents individual atelier locations.
+*   [id](file:///Users/sahej/dry_cleaners/components/Sidebar.js#17-106) (UUID, Primary Key)
+*   `name` (String, e.g., "Paris Node")
+*   `region` (String, e.g., "EU-West")
+*   `manager_id` (UUID, Foreign Key -> `users`)
+*   `status` (Enum: 'Active', 'Maintenance', 'Offline')
+
+### `users`
+System operators (Master, Admin, Staff).
+*   [id](file:///Users/sahej/dry_cleaners/components/Sidebar.js#17-106) (UUID, Primary Key)
+*   `store_id` (UUID, Foreign Key)
+*   `name` (String)
+*   `email` (String, Unique)
+*   `password_hash` (String)
+*   `role` (Enum: 'master', 'admin', 'staff')
+*   `pin_code` (String, for quick POS terminal switching)
+
+### `customers`
+The client database.
+*   [id](file:///Users/sahej/dry_cleaners/components/Sidebar.js#17-106) (UUID, Primary Key)
+*   `name` (String)
+*   `phone` (String, Unique)
+*   `email` (String, Nullable)
+*   `address` (Text, Nullable)
+*   `loyalty_points` (Integer, Default 0)
+*   `tier` (Enum: 'Standard', 'Silver', 'Gold')
+*   `created_at` (Timestamp)
+
+### `inventory_items`
+Stock tracking for atelier consumables.
+*   [id](file:///Users/sahej/dry_cleaners/components/Sidebar.js#17-106) (UUID, Primary Key)
+*   `store_id` (UUID, Foreign Key)
+*   `name` (String, e.g., "Eco-Solvent Blend UX-4")
+*   `category` (Enum: 'Chemicals', 'Packaging', 'Office', 'Machinery')
+*   `stock_level` (Decimal)
+*   `max_stock` (Decimal)
+*   `unit` (String, e.g., 'pcs', 'L')
+*   `price_per_unit` (Decimal)
+*   `next_delivery_date` (Date, Nullable)
+
+### `garment_pricing`
+Dynamic pricing matrix.
+*   [id](file:///Users/sahej/dry_cleaners/components/Sidebar.js#17-106) (UUID, Primary Key)
+*   `garment_type` (String, e.g., "Suit")
+*   `service_type` (String, e.g., "Dry Clean")
+*   `base_price` (Decimal)
+*   `tax_rate` (Decimal)
+
+### `orders`
+The core transactional table.
+*   [id](file:///Users/sahej/dry_cleaners/components/Sidebar.js#17-106) (UUID, Primary Key)
+*   `order_number` (String, Unique, e.g., "TWN7")
+*   `store_id` (UUID, Foreign Key)
+*   `customer_id` (UUID, Foreign Key)
+*   `staff_id` (UUID, Foreign Key: who created it)
+*   `status` (Enum: 'Received', 'Processing', 'Ready', 'Completed')
+*   `subtotal` (Decimal)
+*   `tax_total` (Decimal)
+*   `discount_total` (Decimal)
+*   `grand_total` (Decimal)
+*   `payment_method` (Enum: 'cash', 'card', 'online', 'loyalty')
+*   `payment_status` (Enum: 'pending', 'paid', 'refunded')
+*   `pickup_date_time` (Timestamp, Nullable)
+*   `delivery_date_time` (Timestamp, Nullable)
+*   `created_at` (Timestamp)
+
+### `order_items`
+Line items for specific orders.
+*   [id](file:///Users/sahej/dry_cleaners/components/Sidebar.js#17-106) (UUID, Primary Key)
+*   `order_id` (UUID, Foreign Key -> `orders.id`)
+*   `pricing_id` (UUID, Foreign Key -> `garment_pricing.id`)
+*   `quantity` (Integer)
+*   `unit_price` (Decimal)
+
+---
+
+## 3. Required REST API Endpoints
+
+All endpoints assume the presence of a `Bearer {JWT_TOKEN}` header for authentication, carrying the user's `store_id` and `role`.
+
+### Authentication
+*   `POST /api/auth/login` -> Trades Email+Password or PIN for a JWT.
+*   `GET /api/auth/session` -> Validate token and return user context (Role, Store context).
+
+### Customers
+*   `GET /api/customers` -> Fetch list (supports `?search=` and pagination).
+*   `POST /api/customers` -> Create a new customer profile.
+*   `GET /api/customers/:id` -> Detailed profile + order history.
+*   `PUT /api/customers/:id` -> Update profile details.
+
+### POS & Orders
+*   `GET /api/pricing` -> Fetch current garment and service types matrix. Includes any bundle/full package configurations.
+*   `POST /api/orders` -> Create a checkout transaction. Deducts loyalty points if applied, creates `orders` and `order_items`. Handles specific `schedule` configurations.
+*   `GET /api/orders` -> List active orders for the store queue.
+*   `GET /api/orders/:id` -> Track specific order status.
+*   `PATCH /api/orders/:id/status` -> Move order through states (Received -> Processing -> Ready).
+
+### Dashboards & Analytics
+*   `GET /api/stats/store-admin` -> Daily order goals, staff leaderboard, solvent/packaging material metrics for the local node. Data should be cached dynamically (Redis) to prevent heavy `COUNT()` queries.
+*   `GET /api/stats/master-control` -> Aggregated global data: Gross Transaction Volume (GTV), intercontinental traffic distribution, and system logs. Requires a dedicated data warehouse sync if data grows too large.
+
+### Inventory
+*   `GET /api/inventory` -> Fetch list of items for the local `store_id`.
+*   `POST /api/inventory/receive` -> Update stock levels. Triggers background alert if stock crosses below `max_stock * 0.25`.
+*   `GET /api/inventory/alerts` -> Quick fetch for low-stock constraints.
+
+### Support
+*   `GET /api/support/tickets` -> Fetch active local store queries.
+*   `POST /api/support/tickets` -> Escalate an issue from the POS terminal to central Master Control.
+
+---
+
+## 4. Key Security & Implementation Details
+
+1. **Role-Based Access Control (RBAC):** Middleware must strictly enforce boundaries. A `staff` token should not be able to query `api/stats/master-control`. A `store-admin` should only be able to query `orders` belonging to their own `store_id`.
+2. **Transaction Integrity:** Order creation must occur inside a database transaction (BEGIN ... COMMIT). If deducting stock or generating invoices fails, the whole transaction must rollback.
+3. **Optimistic Locking:** When updating `inventory_items` stock levels, use increment mapping or row locking (`SELECT ... FOR UPDATE`) to prevent double-spending stock if two terminals receive stock simultaneously.
+4. **Data Masking:** Only export the last 4 digits of cards (if stored) or masked PII data in the Master System Logs endpoint.
+
+---
+
+## 5. UI Action-to-API Matrix (Every Application Button)
+
+To ensure comprehensive backend coverage, the following details *every* interactive button and action across the frontend pages and maps them to their required backend behavior.
+
+### Global Actions (Sidebar & Header)
+*   **"New Pickup" Button:** 
+    *   **Action:** Triggers the creation of a new order logic constraint.
+    *   **API:** `GET /api/pricing` (to load POS), `POST /api/orders/draft` (if tracking abandoned carts).
+*   **"Log Out" Button:**
+    *   **Action:** Destroys local session context.
+    *   **API:** `POST /api/auth/logout` (Invalidates JWT on the server-side blocklist).
+*   **Notification Bell:**
+    *   **Action:** Opens the notification panel.
+    *   **API/Service:** WSS (WebSocket) active listener for `events:notification` or `GET /api/notifications/unread`.
+
+### POS New Order Page (`/orders/new`)
+*   **Search Customer Input:** 
+    *   **Action:** Fetches clients matching name/phone.
+    *   **API:** `GET /api/customers?search={query}&limit=5`
+*   **"Quick Add Client" -> "Save & Assign":**
+    *   **Action:** Creates a customer inline and immediately selects them.
+    *   **API:** `POST /api/customers` (Payload: `{name, phone}`).
+*   **Garment Category Buttons (All, Blankets, Coats, etc.):** 
+    *   **Action:** Local frontend filtering (No direct API call).
+*   **Garment Cards (Clicking to Add):**
+    *   **Action:** Local frontend cart state updates.
+*   **Cart +/- Buttons:**
+    *   **Action:** Local frontend arithmetic.
+*   **"Proceed to Schedule" / "Proceed to Payment" Buttons:**
+    *   **Action:** Local frontend stepper progression. Validates cart state and captures scheduling data.
+*   **"Complete Order" (Finalize & Pay):**
+    *   **Action:** Finalizes checkout, processes the selected payment method (Cash, Card, Online), and generates receipt.
+    *   **API:** `POST /api/orders` (Payload: `{customer_id, items: [{garment_type, service_type, quantity, price}], payment_method, schedule: {pickupDate, pickupTime, deliveryDate, deliveryTime}}`).
+*   **"New Transaction" / "Track Order" (Success Screen):**
+    *   **Action:** "Track Order" routes to `/orders/:id`, calling `GET /api/orders/:id`.
+
+### Store Admin & Master Control Dashboards (`/`)
+*   **"Export Report" (Store Admin):**
+    *   **Action:** Downloads a CSV/PDF of the day's statistics.
+    *   **API:** `GET /api/reports/store/:id/export?format=pdf`
+*   **"Add Note" (Master Control System Logs):**
+    *   **Action:** Appends an admin note to a system alert/log.
+    *   **API:** `POST /api/logs/:id/notes` (Payload: `{content, author_id}`).
+*   **"View Detailed Map" (Master Control):**
+    *   **Action:** Loads high-granularity regional telemetry.
+    *   **API:** `GET /api/telemetry/regions/detailed`
+*   **"Filter" or Time-Range Dropdowns (e.g., "Today", "This Week"):**
+    *   **Action:** Refreshes dashboard metrics.
+    *   **API:** `GET /api/stats/store-admin?timeframe={range}`
+
+### Customer Database Page (`/customers`)
+*   **"Add Customer" (Top Button) -> "Save Profile" (Modal):**
+    *   **Action:** Creates an extensive customer record.
+    *   **API:** `POST /api/customers` (Payload: `{name, phone, email, address, notes}`).
+*   **"Export List" Button:**
+    *   **Action:** Generates a full CRM dataset.
+    *   **API:** `GET /api/customers/export?format=csv`
+*   **Pagination Prev/Next ("<" / ">"):**
+    *   **Action:** Paginates the customer table.
+    *   **API:** `GET /api/customers?page=X&limit=10`
+*   **"Edit Customer" (Within row or detail view):**
+    *   **Action:** Updates client attributes or loyalty tier.
+    *   **API:** `PUT /api/customers/:id`
+*   **Table Search Bar:**
+    *   **API:** `GET /api/customers?search={query}`
+
+### Inventory Page (`/inventory`)
+*   **"Receive Stock" Button:**
+    *   **Action:** Brings up a modal to manually increase quantities of solvents, packaging, etc.
+    *   **API:** `POST /api/inventory/receive` (Payload: `{item_id, quantity_added, invoice_ref}`).
+*   **"Export Audit" Button:**
+    *   **Action:** Downloads current stock levels across all assets for tax/EOF auditing.
+    *   **API:** `GET /api/inventory/audit/export`
+*   **"Add to Cart" / Reorder Icon (Table row, Right side):**
+    *   **Action:** Flags an item for external purchase from an Atelier supplier.
+    *   **API:** `POST /api/inventory/:id/reorder` (Creates a purchase order draft).
+*   **Category & Status Filter Buttons:**
+    *   **Action:** Filters table.
+    *   **API:** `GET /api/inventory?category=Packaging&status=low_stock`
+
+### Support Center Page (`/support`)
+*   **"Start Live Chat" Button (Atelier Concierge):**
+    *   **Action:** Initiates a WebSocket connection for real-time priority support.
+    *   **API:** Initializes WSS connection to `wss://api.cleanflow.com/chat/live`.
+*   **Search Knowledge Base Bar:**
+    *   **Action:** Typeahead query for articles.
+    *   **API:** `GET /api/support/articles?query={text}`
+*   **Create Ticket "+" Button:**
+    *   **Action:** Opens form to escalate an issue.
+    *   **API:** `POST /api/support/tickets` (Payload: `{subject, description, severity, machine_log_attachment}`).
+*   **"View Ticket History" Button:**
+    *   **Action:** Loads archived requests.
+    *   **API:** `GET /api/support/tickets?status=resolved,archived`
+
+---
+
+## 6. Recommended Backend Stack
+
+* **Framework:** Node.js with NestJS (for strict TypeScript structures and built-in architectural patterns) or Go (Fiber) for maximal raw performance.
+* **ORM:** Prisma (Node.js) or GORM (Go) for seamless Database schema syncing and type-safe querying.
+* **Database:** PostgreSQL on AWS RDS or Supabase.
+* **Cache:** Redis via AWS ElastiCache.
+* **Hosting:** Dockerized containers orchestrated via Kubernetes or hosted simply on AWS ECS/Render for scale.
+
+---
+
+## 7. Automations & External Integrations (Future Scope)
+
+To enhance operational efficiency and maintain a "white-glove" experience, the backend and background worker will need to integrate with external communication APIs.
+
+### 7.1 WhatsApp Business Integration (Twilio / Meta API)
+All automated notifications should be routed through WhatsApp rather than standard SMS/Email for maximum engagement.
+*   **Customer Delivery Notifications:** When an order is created, the system must trigger a background job to send a WhatsApp message to the customer detailing their scheduled delivery/pickup day and timeframe.
+*   **Staff Action Alerts:** When a garments enters the `Processing` pipeline, the system must dispatch a WhatsApp message to the assigned staff member or station group (e.g., The Pressing Station) indicating that their job queue is ready to start.
+
+### 7.2 QR Code Label Printing (Zebra / Cloud Print API)
+*   **Asset Tracking:** The backend must include a service to generate robust QR codes for every generated `order_item` upon checkout. 
+*   **QR Encoding:** These QR codes should encode a JSON or securely hashed string detailing the `order_id`, `item_id`, and `service_type`.
+*   **Printing Integration:** Upon order confirmation (`POST /api/orders`), the backend should trigger a direct integration with a local IP printer or a cloud-print service to automatically print durable, waterproof QR sticker labels that attach to garment bags or tags. Staff will scan these labels to update the order status.
