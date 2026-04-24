@@ -69,12 +69,7 @@ export async function middleware(request) {
   const country = request.geo?.country || 'unknown';
   const city = request.geo?.city || 'unknown';
 
-  // Create response
-  const response = NextResponse.next();
-
-  // Inject geolocation headers so the client/server components can access them without a DB call
-  response.headers.set('x-user-country', country);
-  response.headers.set('x-user-city', city);
+  // We will inject geolocation headers into the final response
 
   // --- 1. Rate Limiting (Increased for Local Dev/Tests) ---
   const now = Date.now();
@@ -138,6 +133,8 @@ export async function middleware(request) {
   ) {
     // Still refresh the Supabase session for public routes (token rotation)
     const { response } = createMiddlewareSupabase(request);
+    response.headers.set('x-user-country', country);
+    response.headers.set('x-user-city', city);
     return addSecurityHeaders(response);
   }
 
@@ -146,6 +143,8 @@ export async function middleware(request) {
 
   // --- Supabase Session Verification ---
   const { supabase, response } = createMiddlewareSupabase(request);
+  response.headers.set('x-user-country', country);
+  response.headers.set('x-user-city', city);
   const { data: { user } } = await supabase.auth.getUser();
 
   // --- PIN Session Fallback (Shadow Auth) ---
@@ -205,6 +204,3 @@ function addSecurityHeaders(response) {
   return response;
 }
 
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-};
