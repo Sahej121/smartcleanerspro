@@ -41,7 +41,14 @@ export async function GET(request) {
     sql += ' ORDER BY o.created_at DESC';
 
     const res = await query(sql, params);
-    return NextResponse.json(res.rows);
+    
+    // Cache for 10 seconds to reduce DB load during high-traffic POS usage
+    // while keeping data fresh enough for operational use
+    return NextResponse.json(res.rows, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=5',
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

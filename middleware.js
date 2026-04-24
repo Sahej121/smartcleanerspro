@@ -47,9 +47,34 @@ function canAccessRouteMw(tier, route) {
   });
 }
 
+export const config = {
+  runtime: 'experimental-edge', // Ensure we use Edge runtime for global speed
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public assets)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ],
+};
+
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const ip = request.ip || request.headers.get('x-forwarded-for') || 'anonymous';
+  
+  // Get geolocation from Vercel edge headers
+  const country = request.geo?.country || 'unknown';
+  const city = request.geo?.city || 'unknown';
+
+  // Create response
+  const response = NextResponse.next();
+
+  // Inject geolocation headers so the client/server components can access them without a DB call
+  response.headers.set('x-user-country', country);
+  response.headers.set('x-user-city', city);
 
   // --- 1. Rate Limiting (Increased for Local Dev/Tests) ---
   const now = Date.now();
