@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { fetchWithRetry } from '@/lib/fetchWithRetry';
 
 export default function SupportPage() {
   const router = useRouter();
@@ -28,17 +29,33 @@ export default function SupportPage() {
 
   const handleCreateTicket = async () => {
     if (!newTicket.subject) return;
+
+    const tempId = Date.now();
+    const optimisticTicket = {
+      ...newTicket,
+      id: tempId,
+      status: 'in_progress',
+      created_at: new Date().toISOString(),
+      syncStatus: 'syncing'
+    };
+
+    setTickets(prev => [optimisticTicket, ...prev]);
+    setShowCreateModal(false);
+    setNewTicket({ subject: '', description: '', priority: 'medium' });
+
     try {
-      await fetch('/api/support', {
+      await fetchWithRetry('/api/support', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTicket),
       });
-      setShowCreateModal(false);
-      setNewTicket({ subject: '', description: '', priority: 'medium' });
+      // Silently sync real data
       fetchTickets();
     } catch (error) {
       console.error('Failed to create ticket:', error);
+      setTickets(prev => prev.map(t => 
+        t.id === tempId ? { ...t, status: 'failed', syncStatus: 'failed' } : t
+      ));
     }
   };
 
@@ -67,6 +84,7 @@ export default function SupportPage() {
     if (status === 'resolved') return 'Resolved';
     if (status === 'open') return 'Open';
     if (status === 'closed') return 'Closed';
+    if (status === 'failed') return 'Failed to Sync';
     return status;
   };
 
@@ -189,9 +207,11 @@ export default function SupportPage() {
                         <span className="text-[10px] font-black tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">TKT-{ticket.id}</span>
                         <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
                           ticket.status === 'resolved' || ticket.status === 'closed' ? 'bg-theme-surface-container text-theme-text-muted border-theme-border' : 
-                          ticket.status === 'open' ? 'bg-primary/10 text-primary border-primary/30 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                          ticket.status === 'open' ? 'bg-primary/10 text-primary border-primary/30 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 
+                          ticket.status === 'failed' ? 'bg-red-500/10 text-red-500 border-red-500/30' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'
                         }`}>
                           {getStatusLabel(ticket.status)}
+                          {ticket.syncStatus === 'syncing' && <span className="material-symbols-outlined text-[10px] animate-spin ml-1 align-middle">sync</span>}
                         </span>
                       </div>
                       <h4 className="text-sm font-black text-theme-text mb-2 leading-snug group-hover:text-primary transition-colors">{ticket.subject}</h4>

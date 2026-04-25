@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { fetchWithRetry } from '@/lib/fetchWithRetry';
 
 export default function InventoryPage() {
   const { t } = useLanguage();
@@ -37,50 +38,100 @@ export default function InventoryPage() {
     if (!isOther && (!selectedItem || !receiveQty)) return;
     if (isOther && (!otherName || !receiveQty)) return;
 
+    const qty = parseFloat(receiveQty);
+
     try {
       if (isOther) {
-        await fetch('/api/inventory', {
+        // STRICT for new item creation
+        const res = await fetch('/api/inventory', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Idempotency-Key': crypto.randomUUID()
+          },
           body: JSON.stringify({
             item_name: otherName,
-            quantity: parseFloat(receiveQty),
+            quantity: qty,
             unit: otherUnit,
             reorder_level: 10
           }),
         });
+        if (!res.ok) throw new Error('Failed to create item');
+        fetchInventory();
       } else {
-        await fetch('/api/inventory', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: selectedItem.id, quantity: parseFloat(receiveQty), action: 'receive' }),
-        });
+        // OPTIMISTIC + RETRY for existing item update
+        const itemId = selectedItem.id;
+        
+        // Optimistic update with "syncing" state
+        setInventory(prev => prev.map(item => 
+          item.id === itemId 
+            ? { ...item, quantity: parseFloat(item.quantity) + qty, syncStatus: 'syncing' }
+            : item
+        ));
+
+        setShowReceiveModal(false);
+        setSelectedItem(null);
+        setIsOther(false);
+        setOtherName('');
+        setReceiveQty('');
+
+        try {
+          await fetchWithRetry('/api/inventory', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: itemId, quantity: qty, action: 'receive' }),
+          });
+
+          // Mark as synced
+          setInventory(prev => prev.map(item => 
+            item.id === itemId ? { ...item, syncStatus: 'synced' } : item
+          ));
+          
+          // Clear synced state after a delay
+          setTimeout(() => {
+            setInventory(prev => prev.map(item => 
+              item.id === itemId ? { ...item, syncStatus: null } : item
+            ));
+          }, 3000);
+        } catch (err) {
+          // Mark as failed (No rollback as per requirements)
+          setInventory(prev => prev.map(item => 
+            item.id === itemId ? { ...item, syncStatus: 'failed' } : item
+          ));
+        }
+        return; // Early return since we already cleared modal state
       }
+
       setShowReceiveModal(false);
       setSelectedItem(null);
       setIsOther(false);
       setOtherName('');
       setReceiveQty('');
-      fetchInventory();
     } catch (error) {
-      console.error('Failed to receive stock:', error);
+      alert('Failed to receive stock.');
     }
   };
 
   const handleAuditStock = async () => {
     if (!selectedItem || !auditQty) return;
     try {
-      await fetch('/api/inventory', {
+      // STRICT for audit overrides
+      const res = await fetch('/api/inventory', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': crypto.randomUUID()
+        },
         body: JSON.stringify({ id: selectedItem.id, quantity: parseFloat(auditQty) }),
       });
+      if (!res.ok) throw new Error('Failed to audit stock');
+      
       setShowAuditModal(false);
       setSelectedItem(null);
       setAuditQty('');
       fetchInventory();
     } catch (error) {
-      console.error('Failed to audit stock:', error);
+      alert('Failed to audit stock. Please try again.');
     }
   };
 
@@ -272,12 +323,28 @@ export default function InventoryPage() {
                     )}
                   </div>
 
-                  {/* 4. Status */}
-                  <div className="md:col-span-2 lg:col-span-2">
+                  {/* 4. Status & Sync Indicator */}
+                  <div className="md:col-span-2 lg:col-span-2 flex flex-col items-start gap-2">
                     <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] ${getStatusColor(item.status)}`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                       {item.status}
                     </span>
+                    
+                    {item.syncStatus === 'syncing' && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-blue-500 animate-pulse">
+                        <span className="material-symbols-outlined text-[12px] animate-spin">sync</span> Syncing
+                      </span>
+                    )}
+                    {item.syncStatus === 'synced' && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-primary animate-fade-in">
+                        <span className="material-symbols-outlined text-[12px]">cloud_done</span> Synced
+                      </span>
+                    )}
+                    {item.syncStatus === 'failed' && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-red-500 animate-fade-in">
+                        <span className="material-symbols-outlined text-[12px]">cloud_off</span> Sync Failed
+                      </span>
+                    )}
                   </div>
 
                   {/* 5. Actions */}

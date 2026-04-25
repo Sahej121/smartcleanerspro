@@ -23,35 +23,53 @@ export default function PricingPage() {
     const price = parseFloat(editValue);
     if (isNaN(price) || price < 0) return;
 
-    await fetch('/api/pricing', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, price }),
-    });
+    try {
+      const res = await fetch('/api/pricing', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': crypto.randomUUID()
+        },
+        body: JSON.stringify({ id, price }),
+      });
 
-    setPricing(pricing.map(p => p.id === id ? { ...p, price } : p));
-    setEditingId(null);
-    setMessage('Price updated successfully');
-    setTimeout(() => setMessage(''), 3000);
+      if (!res.ok) throw new Error('Failed to update price');
+
+      setPricing(pricing.map(p => p.id === id ? { ...p, price } : p));
+      setEditingId(null);
+      setMessage('Price updated successfully');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      alert('Failed to update price. Please try again.');
+    }
   };
   
   const handleAdd = async () => {
     const price = parseFloat(newItem.price);
     if (!newItem.garment_type || !newItem.service_type || isNaN(price)) return;
     
-    const res = await fetch('/api/pricing', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...newItem, price }),
-    });
-    
-    if (res.ok) {
-      const added = await res.json();
-      setPricing([...pricing, added]);
-      setShowAddModal(false);
-      setNewItem({ garment_type: '', service_type: 'Dry Cleaning', price: '' });
-      setMessage('New pricing tier configured');
-      setTimeout(() => setMessage(''), 3000);
+    try {
+      const res = await fetch('/api/pricing', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': crypto.randomUUID()
+        },
+        body: JSON.stringify({ ...newItem, price }),
+      });
+      
+      if (res.ok) {
+        const added = await res.json();
+        setPricing([...pricing, added]);
+        setShowAddModal(false);
+        setNewItem({ garment_type: '', service_type: 'Dry Cleaning', price: '' });
+        setMessage('New pricing tier configured');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        alert('Failed to add price.');
+      }
+    } catch (error) {
+      alert('Network error. Failed to add price.');
     }
   };
 

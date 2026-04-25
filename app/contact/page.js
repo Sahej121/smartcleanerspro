@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { fetchWithRetry } from '@/lib/fetchWithRetry';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { Section } from '@/components/marketing/MarketingSection';
@@ -27,22 +28,16 @@ export default function ContactPage() {
     // Optimistic Update: instantly show success
     setSubmitted(true);
 
-    // Fire API silently in the background
-    fetch('/api/contact', {
+    // Fire API silently in the background with retries
+    fetchWithRetry('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
     })
-    .then(async (res) => {
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to send message');
-      }
-    })
     .catch((err) => {
-      // Revert optimistic update on failure
+      // If retries completely fail, revert to explicit failure state
       setSubmitted(false);
-      setError(err.message || 'Network error. Please try again.');
+      setError('Connection failed after multiple attempts. Please try again.');
     });
   };
 

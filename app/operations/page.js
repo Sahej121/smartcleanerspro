@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser, ROLES } from '@/lib/UserContext';
+import { fetchWithRetry } from '@/lib/fetchWithRetry';
 
 const STAGES = [
   { key: 'received', label: 'In-Take', icon: 'inbox', shadow: 'shadow-blue-900/5', accent: 'bg-blue-500' },
@@ -75,33 +76,51 @@ export default function OperationsPage() {
     // Optimistically update UI
     setWorkflow(prev => {
       const newWorkflow = { ...prev };
-      // Remove from old
       if (newWorkflow[currentStageKey]) {
         newWorkflow[currentStageKey] = newWorkflow[currentStageKey].filter(i => i.id !== itemId);
       }
-      // Add to new
       if (!newWorkflow[nextStageKey]) newWorkflow[nextStageKey] = [];
-      newWorkflow[nextStageKey] = [...newWorkflow[nextStageKey], targetItem];
+      newWorkflow[nextStageKey] = [...newWorkflow[nextStageKey], { ...targetItem, syncStatus: 'syncing' }];
       return newWorkflow;
     });
 
     try {
-      const res = await fetch(`/api/workflow/${itemId}`, {
+      await fetchWithRetry(`/api/workflow/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'advance' }),
       });
-      if (!res.ok) throw new Error('API failed');
       
-      // Fetch latest state in background to sync any other changes silently
-      fetch('/api/workflow')
-        .then(r => r.json())
-        .then(data => setWorkflow(data));
+      // Mark as synced
+      setWorkflow(prev => {
+        const newWorkflow = { ...prev };
+        if (newWorkflow[nextStageKey]) {
+          newWorkflow[nextStageKey] = newWorkflow[nextStageKey].map(i => 
+            i.id === itemId ? { ...i, syncStatus: 'synced' } : i
+          );
+        }
+        return newWorkflow;
+      });
+
+      // Clear sync indicator by fetching latest state quietly
+      setTimeout(() => {
+        fetch('/api/workflow')
+          .then(r => r.json())
+          .then(data => setWorkflow(data));
+      }, 2000);
+
     } catch (err) {
       console.error('Failed to advance item:', err);
-      // Rollback on failure
-      setWorkflow(previousWorkflow);
-      alert('Failed to update status. Reverting changes.');
+      // Mark as failed (no rollback)
+      setWorkflow(prev => {
+        const newWorkflow = { ...prev };
+        if (newWorkflow[nextStageKey]) {
+          newWorkflow[nextStageKey] = newWorkflow[nextStageKey].map(i => 
+            i.id === itemId ? { ...i, syncStatus: 'failed' } : i
+          );
+        }
+        return newWorkflow;
+      });
     }
   };
 
@@ -165,7 +184,12 @@ export default function OperationsPage() {
                   ) : items.map((item, i) => (
                     <div key={item.id} className={`bg-theme-surface p-6 rounded-[2.5rem] border border-theme shadow-sm transition-all group animate-in slide-in-from-bottom-2 duration-300 hover:shadow-2xl hover:-translate-y-1 ${stage.shadow}`}>
                       <div className="flex justify-between items-start mb-6">
-                        <span className="text-[11px] font-black text-primary uppercase tracking-widest">{item.order_number}</span>
+                        <div className="flex flex-col gap-1">
+                           <span className="text-[11px] font-black text-primary uppercase tracking-widest">{item.order_number}</span>
+                           {item.syncStatus === 'syncing' && <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-1"><span className="material-symbols-outlined text-[10px] animate-spin">sync</span> Syncing</span>}
+                           {item.syncStatus === 'synced' && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest animate-fade-in flex items-center gap-1"><span className="material-symbols-outlined text-[10px]">check</span> Synced</span>}
+                           {item.syncStatus === 'failed' && <span className="text-[8px] font-black text-red-500 uppercase tracking-widest animate-fade-in flex items-center gap-1"><span className="material-symbols-outlined text-[10px]">error</span> Failed</span>}
+                        </div>
                         <div className={`w-2 h-2 rounded-full ${stage.accent} shadow-[0_0_8px] ${stage.key === 'ready' ? 'shadow-primary/40' : 'opacity-40'}`}></div>
                       </div>
                       
