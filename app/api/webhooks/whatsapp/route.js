@@ -28,6 +28,7 @@ export async function POST(req) {
     const { Body, From, MediaUrl0 } = body;
     const incomingText = Body ? Body.trim() : '';
     const phone = From ? From.replace('whatsapp:', '') : null;
+    const cleanPhone = phone ? phone.replace(/\D/g, '').slice(-10) : null;
 
     if (!phone) {
       return NextResponse.json({ error: 'Missing From number' }, { status: 400 });
@@ -37,15 +38,8 @@ export async function POST(req) {
     let sessionRes = await query('SELECT * FROM whatsapp_sessions WHERE phone_number = $1', [phone]);
     let session = sessionRes.rows[0];
 
-    if (!session) {
-      await query('INSERT INTO whatsapp_sessions (phone_number) VALUES ($1)', [phone]);
-      session = { phone_number: phone, state: 'REQUIRE_PIN', context: {} };
-      await sendWhatsAppMessage(From, 'Welcome to DrycleanersFlow Atelier POS! 👔\n\nPlease reply with your 4-digit Staff PIN to authenticate.');
-      return NextResponse.json({ success: true });
-    }
-
-    let nextState = session.state;
-    let context = session.context || {};
+    let nextState = session?.state;
+    let context = session?.context || {};
     let replyMsg = '';
 
     // If user types 'CANCEL' or 'RESET' at any point, restart flow.
@@ -55,52 +49,59 @@ export async function POST(req) {
       return NextResponse.json({ success: true });
     }
 
+    // If no session exists, check if this is a registered staff member
+    if (!session) {
+      const staffCheck = await query(`
+        SELECT id, name, store_id FROM users 
+        WHERE phone LIKE $1 AND role IN ('staff', 'driver', 'manager', 'frontdesk', 'owner')
+      `, [`%${cleanPhone}`]);
+
+      if (staffCheck.rows.length > 0) {
+        const staff = staffCheck.rows[0];
+        await query('INSERT INTO whatsapp_sessions (phone_number, user_id, store_id, state) VALUES ($1, $2, $3, $4)', 
+          [phone, staff.id, staff.store_id, 'REQUIRE_PIN']);
+        session = { phone_number: phone, user_id: staff.id, store_id: staff.store_id, state: 'REQUIRE_PIN', context: {} };
+        await sendWhatsAppMessage(From, `Welcome back, ${staff.name}! 👔\n\nPlease reply with your 4-digit PIN to authenticate.`);
+      } else {
+        // Not a registered staff member, handle as potential new customer or ignore
+        await query('INSERT INTO whatsapp_sessions (phone_number) VALUES ($1)', [phone]);
+        await sendWhatsAppMessage(From, 'Welcome to DrycleanersFlow! 👔\n\nYou are not registered as a staff member. If you are an employee, please contact your admin to register your mobile number.');
+      }
+      return NextResponse.json({ success: true });
+    }
+
     // STATE MACHINE
     switch (session.state) {
       case 'REQUIRE_PIN':
-        // Try finding user by phone. Wait, many seed users don't have phones in DB. 
-        // For testing, if they enter "1234", let's just log them in as user ID 2 (Manager).
-        // Let's check DB first.
         const pinText = incomingText;
         if (pinText.length !== 4) {
           replyMsg = 'Invalid PIN. Please send exactly 4 digits.';
           break;
         }
 
-        const usersRes = await query(`
+        const userAuthRes = await query(`
           SELECT id, name, pin_hash, store_id 
           FROM users 
-          WHERE role IN ('staff', 'driver', 'manager', 'frontdesk', 'owner')
-        `);
+          WHERE id = $1
+        `, [session.user_id]);
         
-        let authenticatedUser = null;
-        for (const u of usersRes.rows) {
-          if (u.pin_hash) {
-             const isValid = await verifyPassword(pinText, u.pin_hash);
-             if (isValid) {
-               authenticatedUser = u;
-               break;
-             }
+        const staffMember = userAuthRes.rows[0];
+        let isValid = false;
+
+        if (staffMember) {
+          if (staffMember.pin_hash) {
+            isValid = await verifyPassword(pinText, staffMember.pin_hash);
+          } else if (pinText === '1234') { // Fallback for dev/mock
+            isValid = true;
           }
         }
 
-        if (!authenticatedUser && pinText === '1234') {
-          // Fallback for easy mock testing since seed users might not have simple pin hashes
-          // Assuming user ID 2 exists (Priya Sharma - manager)
-          const fallback = await query('SELECT id, name, store_id FROM users WHERE id = 2');
-          authenticatedUser = fallback.rows[0];
-        }
-
-        if (authenticatedUser) {
+        if (isValid) {
           nextState = 'REQUIRE_CUSTOMER';
           context = { garments: [] };
-          await query(
-            'UPDATE whatsapp_sessions SET user_id = $1, store_id = $2 WHERE phone_number = $3', 
-            [authenticatedUser.id, authenticatedUser.store_id || 1, phone]
-          );
-          replyMsg = `Authentication successful. Welcome, ${authenticatedUser.name}!\n\nPlease enter the Customer's 10-digit Phone Number to begin collecting garments.`;
+          replyMsg = `Authentication successful. Welcome, ${staffMember.name}!\n\nPlease enter the Customer's 10-digit Phone Number to begin collecting garments.`;
         } else {
-          replyMsg = 'Authentication failed. Incorrect PIN.';
+          replyMsg = 'Authentication failed. Incorrect PIN. Please try again.';
         }
         break;
 
@@ -134,12 +135,26 @@ export async function POST(req) {
         break;
 
       case 'COLLECTING_GARMENTS':
-        if (incomingText.toUpperCase() === 'DONE') {
+        const upperText = incomingText.toUpperCase();
+        if (upperText.startsWith('DONE')) {
           if (!context.garments || context.garments.length === 0) {
             replyMsg = 'You haven\'t uploaded any photos. Send photos or type RESET to cancel.';
           } else {
+            // Extract bag number if provided: DONE B101
+            const parts = incomingText.split(/\s+/);
+            if (parts.length > 1) {
+              context.bag_number = parts.slice(1).join(' ');
+            } else {
+              context.bag_number = 'B-TBD'; // To Be Determined
+            }
+
             nextState = 'CONFIRMING';
-            replyMsg = `You've collected ${context.garments.length} garments for ${context.customer_name}.\n\nThis will be created as an Open Ticket for the store to price later.\n\nReply 'YES' to confirm processing.`;
+            const garmentList = context.garments.map((g, i) => `${i+1}. ${g.type}`).join('\n');
+            replyMsg = `📋 *Order Summary*\n\n` +
+                       `👤 Customer: ${context.customer_name}\n` +
+                       `🛍️ Bag Number: ${context.bag_number}\n` +
+                       `👕 Items (${context.garments.length}):\n${garmentList}\n\n` +
+                       `This will be created as an *Open Ticket*. Reply *'YES'* to confirm processing.`;
           }
         } else if (MediaUrl0) {
           if (!context.garments) context.garments = [];
@@ -168,14 +183,13 @@ export async function POST(req) {
           for (let i = 0; i < context.garments.length; i++) {
             const garment = context.garments[i];
             const gType = garment.type || 'Open Ticket';
-            // User requested format: bag number-,order numer-, type format.
-            // Using 'B1' as a placeholder for bag number if not yet assigned.
-            const tagId = `B1-${orderNum}-${gType.replace(/\s+/g, '')}-${i + 1}`;
+            const bagPrefix = context.bag_number || 'B1';
+            const tagId = `${bagPrefix}-${orderNum}-${gType.replace(/\s+/g, '')}-${i + 1}`;
 
             const itemRes = await query(
-              `INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status, image_url, tag_id) 
-               VALUES ($1, $2, 'To be priced', 1, 0, 'received', $3, $4) RETURNING id`,
-              [orderId, gType, garment.url, tagId]
+              `INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status, image_url, tag_id, bag_id) 
+               VALUES ($1, $2, 'To be priced', 1, 0, 'received', $3, $4, $5) RETURNING id`,
+              [orderId, gType, garment.url, tagId, bagPrefix]
             );
             await query(
               `INSERT INTO garment_workflow (order_item_id, stage, updated_by, timestamp) VALUES ($1, 'received', $2, NOW())`,

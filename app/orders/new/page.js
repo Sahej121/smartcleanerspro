@@ -6,31 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
 import PhotoCapture from '@/components/logistics/PhotoCapture';
 import Script from 'next/script';
-
-function AnimatedTotal({ value, prefix = '₹' }) {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef(null);
-  
-  useEffect(() => {
-    if (value === 0) { setDisplay(0); return; }
-    let start = display;
-    const startTime = performance.now();
-    
-    function step(now) {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / 600, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(start + (value - start) * eased);
-      setDisplay(current);
-      if (progress < 1) ref.current = requestAnimationFrame(step);
-    }
-    
-    ref.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(ref.current);
-  }, [value]);
-  
-  return <>{prefix}{display.toLocaleString('en-IN')}</>;
-}
+import { AnimatedTotal } from '@/components/common/AnimatedStats';
+import CustomerSection from './components/CustomerSection';
+import ServiceCatalog from './components/ServiceCatalog';
+import OrderCart from './components/OrderCart';
+import ScheduleSection from './components/ScheduleSection';
+import PaymentSection from './components/PaymentSection';
 
 // Icon mapping for garment types
 function getGarmentIcon(type) {
@@ -483,607 +464,94 @@ export default function NewOrder() {
       {/* POS 3-Column Layout */}
       {currentStep <= 2 && (
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-y-auto lg:overflow-hidden pb-20 lg:pb-0">
-          {/* Column 1: Service Categories (Horizontal on mobile) */}
-        <div className="lg:col-span-2 flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto no-scrollbar animate-fade-in-up stagger-1 pb-2 shrink-0">
-          <h3 className="hidden lg:block text-xs font-black uppercase tracking-widest text-theme-text-muted/70 mb-2 px-1">{t('categories')}</h3>
-          {garmentTypes.map((cat, i) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`flex shrink-0 lg:shrink flex-row lg:flex-col items-center justify-center p-3 lg:p-4 rounded-2xl transition-all duration-300 group gap-2 lg:gap-0 ${
-                activeCategory === cat
-                  ? 'bg-theme-surface shadow-sm border border-theme-border ring-2 ring-emerald-500/10'
-                  : 'bg-theme-surface shadow-sm border border-theme-border hover:bg-theme-surface-container'
-              }`}
-            >
-              <div className={`w-8 h-8 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center lg:mb-3 transition-all ${
-                activeCategory === cat
-                  ? 'bg-theme-surface-container text-emerald-600'
-                  : 'bg-theme-surface-container text-theme-text-muted/70 group-hover:bg-theme-surface-container group-hover:text-emerald-600'
-              }`}>
-                <span className="material-symbols-outlined text-xl lg:text-3xl">{getCategoryIcon(cat)}</span>
-              </div>
-              <span className={`text-xs lg:text-sm whitespace-nowrap transition-colors ${
-                activeCategory === cat
-                  ? 'font-bold text-theme-text'
-                  : 'font-semibold text-theme-text-muted'
-              }`}>{cat}</span>
-            </button>
-          ))}
+          <ServiceCatalog 
+            garmentTypes={garmentTypes}
+            activeCategory={activeCategory}
+            setActiveCategory={setActiveCategory}
+            getCategoryIcon={getCategoryIcon}
+            getGarmentIcon={getGarmentIcon}
+            pricing={pricing}
+            addToCart={addToCart}
+            setShowAddCategoryModal={setShowAddCategoryModal}
+            handleAddCustomGarment={handleAddCustomGarment}
+            t={t}
+          />
+
+          <OrderCart 
+            cart={cart}
+            removeFromCart={removeFromCart}
+            updateItemPrice={updateItemPrice}
+            getGarmentIcon={getGarmentIcon}
+            subtotal={subtotal}
+            applicableVolDiscount={applicableVolDiscount}
+            volDiscountInfo={volDiscountInfo}
+            tax={tax}
+            couponData={couponData}
+            couponDiscount={couponDiscount}
+            redeemedPoints={redeemedPoints}
+            total={total}
+            couponCode={couponCode}
+            setCouponCode={setCouponCode}
+            handleApplyCoupon={handleApplyCoupon}
+            setCurrentStep={setCurrentStep}
+            setItemEditIndex={setItemEditIndex}
+            setItemEditData={setItemEditData}
+            setStainError={setStainError}
+            setShowItemEditModal={setShowItemEditModal}
+            selectedCustomer={selectedCustomer}
+            t={t}
+            // Customer Section is nested here in the design
+            customerHeader={
+              <CustomerSection 
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                isCustomerSearchOpen={isCustomerSearchOpen}
+                setIsCustomerSearchOpen={setIsCustomerSearchOpen}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filteredCustomers={filteredCustomers}
+                isInlineCreating={isInlineCreating}
+                setIsInlineCreating={setIsInlineCreating}
+                inlineError={inlineError}
+                setInlineError={setInlineError}
+                newCustomer={newCustomer}
+                setNewCustomer={setNewCustomer}
+                handleCreateCustomer={handleCreateCustomer}
+                setCurrentStep={setCurrentStep}
+                t={t}
+              />
+            }
+          />
         </div>
-
-        {/* Column 2: Garment Grid */}
-        <div className="lg:col-span-6 flex flex-col overflow-hidden min-h-[400px] lg:min-h-0">
-          <div className="flex items-center justify-between mb-4 px-1 animate-fade-in-up stagger-2">
-            <h3 className="text-xs font-black uppercase tracking-widest text-theme-text-muted/70">{t('select_garments')}</h3>
-            <div className="flex gap-2">
-              <button onClick={() => setShowAddCategoryModal(true)} className="px-3 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase hover:bg-amber-600 transition flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">add</span>{t('category_label')}</button>
-              <button onClick={handleAddCustomGarment} className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase hover:bg-emerald-700 transition">{t('custom_item_btn')}</button>
-              <button className="px-3 py-1 rounded-full bg-emerald-100 text-theme-text text-[10px] font-bold uppercase">{t('popular')}</button>
-              <button className="px-3 py-1 rounded-full bg-theme-surface-container text-theme-text-muted text-[10px] font-bold uppercase">A-Z</button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto no-scrollbar">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:gap-4">
-              {pricing
-                .filter(p => activeCategory === 'All' || p.garment_type === activeCategory)
-                .map((item, idx) => (
-                  <div 
-                    key={idx}
-                    onClick={() => addToCart(item)}
-                    className="bg-theme-surface p-4 rounded-2xl border border-theme-border/50 shadow-sm hover:ring-2 hover:ring-emerald-500/20 transition-all cursor-pointer group relative overflow-hidden animate-fade-in-up"
-                    style={{ animationDelay: `${idx * 50}ms` }}
-                  >
-                    {/* Price Badge - Top Right */}
-                    <div className="absolute top-0 right-0 p-2">
-                      <span className="bg-theme-surface-container text-theme-text text-[10px] font-bold px-2 py-0.5 rounded-full">₹{item.price}</span>
-                    </div>
-                    {/* Icon Area */}
-                    <div className="w-full aspect-square bg-theme-surface-container rounded-xl mb-3 flex items-center justify-center text-theme-text-muted/70 group-hover:bg-theme-surface-container group-hover:text-emerald-500 transition-colors">
-                      <span className="material-symbols-outlined text-5xl">{getGarmentIcon(item.garment_type)}</span>
-                    </div>
-                    {/* Text */}
-                    <h4 className="font-bold text-theme-text text-center text-sm">{item.garment_type}</h4>
-                    <p className="text-[10px] text-theme-text-muted/70 text-center">{item.service_type}</p>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Column 3: Order Summary/Cart */}
-        <div className="lg:col-span-4 flex flex-col overflow-hidden min-h-[500px] lg:min-h-0 animate-fade-in-up stagger-3">
-          <div className="bg-theme-surface rounded-[2rem] border border-theme-border/50 shadow-xl shadow-emerald-900/5 flex flex-col overflow-hidden h-full">
-            {/* Summary Header */}
-            <div className="p-6 border-b border-theme-border bg-theme-surface-container/30">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-extrabold text-theme-text">{t('order_summary')}</h3>
-                <span className="text-[10px] font-black bg-emerald-100 text-theme-text px-2 py-1 rounded-lg">
-                  #{Math.random().toString(36).substring(2, 6).toUpperCase()}
-                </span>
-              </div>
-
-              {/* Customer Selection */}
-              {!selectedCustomer ? (
-                <div 
-                  onClick={() => setIsCustomerSearchOpen(true)}
-                  className="flex items-center gap-3 p-3 bg-theme-surface rounded-xl border border-theme-border/50 cursor-pointer hover:shadow-md transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                    <span className="material-symbols-outlined">person_add</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold">{t('assign_customer')}</p>
-                    <p className="text-[10px] text-theme-text-muted">{t('search_name_phone')}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 p-3 bg-theme-surface rounded-xl border border-theme-border/50 animate-slide-in-right" style={{ animationDuration: '0.3s' }}>
-                  <div className="w-10 h-10 rounded-lg primary-gradient flex items-center justify-center text-white font-bold text-sm shadow-md">
-                    {selectedCustomer.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold">{selectedCustomer.name}</p>
-                    <p className="text-[10px] text-theme-text-muted">Premium Member • {selectedCustomer.loyalty_points || 0} pts</p>
-                  </div>
-                  <button 
-                    onClick={() => setSelectedCustomer(null)}
-                    className="text-emerald-600 hover:bg-theme-surface-container p-1 rounded-lg transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-lg">edit</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Customer Search Overlay */}
-              {isCustomerSearchOpen && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-on-surface/20 backdrop-blur-sm">
-                  <div className="bg-theme-surface rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(11,28,48,0.2)] border border-theme-border p-6 w-full max-w-md animate-scale-in" style={{ animationDuration: '0.25s' }}>
-                    <div className="flex items-center gap-3 mb-6">
-                      <span className="material-symbols-outlined text-theme-text-muted/70">search</span>
-                      <input 
-                        autoFocus
-                        className="flex-1 bg-theme-surface-container border-none rounded-xl py-3 px-4 text-sm font-bold placeholder:text-theme-text-muted/70 outline-none"
-                        placeholder={t('start_typing')}
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                      />
-                      <button onClick={() => setIsCustomerSearchOpen(false)} className="p-2 hover:bg-theme-surface-container rounded-full transition-colors">
-                        <span className="material-symbols-outlined text-theme-text-muted/70 text-sm">close</span>
-                      </button>
-                    </div>
-                    
-                    <div className="max-h-72 overflow-y-auto space-y-2 no-scrollbar">
-                      {!isInlineCreating ? (
-                        filteredCustomers.length > 0 ? (
-                          filteredCustomers.map((c, i) => (
-                            <div 
-                              key={c.id} 
-                              onClick={() => { setSelectedCustomer(c); setIsCustomerSearchOpen(false); setCurrentStep(2); }}
-                              className="p-4 rounded-2xl hover:bg-theme-surface-container cursor-pointer flex justify-between items-center transition-all group animate-fade-in-up"
-                              style={{ animationDelay: `${i * 40}ms` }}
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-50 flex items-center justify-center font-bold text-theme-text text-xs shadow-inner">
-                                  {c.name.charAt(0)}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black text-theme-text">{c.name}</p>
-                                  <p className="text-[10px] text-theme-text-muted/70 font-bold">{c.phone}</p>
-                                </div>
-                              </div>
-                              <span className="material-symbols-outlined text-primary text-sm opacity-0 group-hover:opacity-100 transition-all">chevron_right</span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-8 animate-fade-in-up">
-                            <div className="w-12 h-12 bg-theme-surface-container rounded-full flex items-center justify-center mx-auto mb-4">
-                              <span className="material-symbols-outlined text-theme-text-muted/70">no_accounts</span>
-                            </div>
-                            <p className="text-[10px] text-theme-text-muted/70 uppercase font-black mb-4 tracking-widest">{t('no_client_matches')}</p>
-                            <button 
-                              onClick={() => setIsInlineCreating(true)}
-                              className="px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-black shadow-lg shadow-emerald-900/10 active:scale-95 transition-all"
-                            >
-                              Quick Add Client
-                            </button>
-                          </div>
-                        )
-                      ) : (
-                        <div className="py-2 animate-slide-in-right shrink-0" style={{ animationDuration: '0.2s' }}>
-                          <p className="text-xs font-black uppercase tracking-widest text-theme-text mb-4 px-1">{t('quick_registration')}</p>
-                          {inlineError && (
-                            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-[10px] font-bold mb-4 animate-shake">
-                              {inlineError}
-                            </div>
-                          )}
-                          <div className="space-y-3">
-                            <input 
-                              autoFocus
-                              className="w-full bg-theme-surface-container border border-transparent rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/70 transition-all outline-none" 
-                              placeholder="Full Name" 
-                              value={newCustomer.name} 
-                              onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })} 
-                            />
-                            <input 
-                              className="w-full bg-theme-surface-container border border-transparent rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/70 transition-all outline-none" 
-                              placeholder={t('phone_number')} 
-                              value={newCustomer.phone} 
-                              onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })} 
-                            />
-                            <input 
-                              className="w-full bg-theme-surface-container border border-transparent rounded-xl py-3 px-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/70 transition-all outline-none" 
-                              placeholder={t('address_optional')} 
-                              value={newCustomer.address} 
-                              onChange={e => setNewCustomer({ ...newCustomer, address: e.target.value })} 
-                            />
-                            <div className="flex gap-3 pt-2">
-                              <button onClick={() => setIsInlineCreating(false)} className="flex-1 py-3 text-xs font-bold text-theme-text-muted/70 hover:text-theme-text hover:bg-theme-surface-container rounded-xl transition-all">Cancel</button>
-                              <button onClick={handleCreateCustomer} disabled={!newCustomer.name || !newCustomer.phone} className="flex-1 py-3 primary-gradient text-white rounded-xl text-xs font-black shadow-md disabled:opacity-50 active:scale-95 transition-all">{t('save_assign')}</button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Quick Add Button underneath list if showing results */}
-                    {!isInlineCreating && filteredCustomers.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-theme-border animate-fade-in-up">
-                        <button onClick={() => setIsInlineCreating(true)} className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-theme-text w-full justify-center p-3 rounded-xl hover:bg-theme-surface-container transition-colors">
-                          <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                          Create New Client
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-              {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
-                  <span className="material-symbols-outlined text-6xl mb-4 animate-float">shopping_bag</span>
-                  <p className="text-xs font-black uppercase tracking-widest text-center leading-relaxed">Cart is waiting<br/>for orders</p>
-                </div>
-              ) : (
-                cart.map((item, i) => (
-                  <div key={i} className="flex flex-col gap-2 p-3 bg-theme-surface rounded-2xl border border-theme-border animate-slide-in-right" style={{ animationDelay: `${i * 60}ms` }}>
-                    <div className="flex items-center gap-4 group">
-                      <div className="w-10 h-10 rounded-lg bg-theme-surface-container flex items-center justify-center text-theme-text">
-                        <span className="material-symbols-outlined text-lg">{getGarmentIcon(item.garment_type)}</span>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <h5 className="text-xs font-bold text-theme-text">{item.garment_type}</h5>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] font-bold text-theme-text-muted/70">₹</span>
-                            <input 
-                              type="number" 
-                              className="w-16 bg-theme-surface-container border-none rounded p-1 text-xs font-bold text-right outline-none focus:ring-1 focus:ring-emerald-500/20"
-                              value={item.price}
-                              onChange={(e) => updateItemPrice(i, e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <p className="text-[9px] text-theme-text-muted/70 font-bold uppercase tracking-wider">{item.service_type}</p>
-                      </div>
-                      <button onClick={() => removeFromCart(i)} className="text-theme-text-muted/70 hover:text-red-500 transition-colors">
-                        <span className="material-symbols-outlined text-lg">delete</span>
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t border-theme-border mt-1">
-                       <div className="flex gap-2">
-                          {item.tag_id ? (
-                            <span className="px-2 py-0.5 bg-theme-surface-container text-emerald-600 rounded text-[8px] font-black uppercase tracking-tight italic">Tag: {item.tag_id}</span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-theme-surface-container text-theme-text-muted/70 rounded text-[8px] font-bold uppercase tracking-tight">No Tag</span>
-                          )}
-                          {item.bag_id && (
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-tight italic">Bag: {item.bag_id}</span>
-                          )}
-                       </div>
-                       <button 
-                         onClick={() => {
-                           setItemEditIndex(i);
-                           setItemEditData({
-                             tag_id: item.tag_id || '',
-                             bag_id: item.bag_id || '',
-                             notes: item.notes || '',
-                             fabric_hint: item.fabric_hint || '',
-                             stain_analysis: item.stain_analysis || null
-                           });
-                           setStainError('');
-                           setShowItemEditModal(true);
-                         }}
-                         className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-widest hover:text-theme-text"
-                       >
-                         <span className="material-symbols-outlined text-[12px]">edit_note</span>
-                         Track
-                       </button>
-                    </div>
-                    {item.notes && (
-                      <p className="text-[8px] text-amber-600 font-medium italic truncate px-1">Note: {item.notes}</p>
-                    )}
-                    {item.stain_analysis?.stains?.[0] && (
-                      <div className="px-1">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-[8px] font-black uppercase tracking-tight">
-                          <span className="material-symbols-outlined text-[10px]">biotech</span>
-                          {item.stain_analysis.stains[0].label} ({Math.round((item.stain_analysis.stains[0].confidence || 0) * 100)}%)
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Summary Totals */}
-            <div className="p-6 bg-theme-surface-container/50 border-t border-theme-border">
-              <div className="space-y-2 mb-6">
-                <div className="flex justify-between text-xs font-medium text-theme-text-muted">
-                  <span>Subtotal</span>
-                  <span>₹{subtotal.toLocaleString('en-IN')}</span>
-                </div>
-                {applicableVolDiscount > 0 && (
-                  <div className="flex justify-between text-xs font-medium text-blue-600 animate-fade-in">
-                    <span>Volume Discount ({volDiscountInfo.discount_percent}%)</span>
-                    <span>-₹{applicableVolDiscount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-xs font-medium text-theme-text-muted">
-                  <span>{t('tax_label_18')}</span>
-                  <span>₹{tax.toLocaleString('en-IN')}</span>
-                </div>
-                {couponData && (
-                  <div className="flex justify-between text-xs font-medium text-purple-600 animate-fade-in">
-                    <span>Promo: {couponData.code}</span>
-                    <span>-₹{couponDiscount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-                {selectedCustomer && (
-                  <div className="flex justify-between text-xs font-medium text-emerald-600">
-                    <span>{t('member_advantage')}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-theme-surface-container px-1.5 rounded">{t('applied')}</span>
-                  </div>
-                )}
-                <div className="flex gap-2 mt-4">
-                  <input 
-                    type="text" 
-                    placeholder={t('promo_code_placeholder')} 
-                    className="flex-1 bg-theme-surface border border-theme-border rounded-xl px-3 py-2 text-[10px] font-black tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
-                    value={couponCode}
-                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
-                  />
-                  <button 
-                    onClick={handleApplyCoupon}
-                    className="px-4 py-2 bg-theme-text text-background rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                  >
-                    Apply
-                  </button>
-                </div>
-                <div className="pt-4 border-t border-theme-border flex justify-between items-end">
-                  <span className="text-sm font-black uppercase tracking-widest text-theme-text">Total</span>
-                  <span className="text-2xl font-black text-theme-text">
-                    <AnimatedTotal value={total} />
-                  </span>
-                </div>
-              </div>
-              <button 
-                disabled={cart.length === 0 || !selectedCustomer}
-                onClick={() => setCurrentStep(3)}
-                className="w-full primary-gradient text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-emerald-900/20 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-2"
-              >
-                <span>{t('proceed_to_schedule')}</span>
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
       )}
 
       {/* Schedule Step */}
       {currentStep === 3 && (
-        <div className="flex-1 flex flex-col items-center justify-center animate-fade-in-up">
-          <div className="w-full max-w-2xl bg-theme-surface rounded-[2rem] p-8 shadow-xl border border-theme-border/50 card-hover">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-theme-surface-container text-emerald-600 flex items-center justify-center">
-                <span className="material-symbols-outlined text-2xl">schedule</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-black font-headline text-theme-text">{t('scheduling_details')}</h2>
-                <p className="text-sm font-medium text-theme-text-muted">{t('scheduling_desc')}</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="p-5 rounded-2xl border border-theme-border bg-theme-surface-container/50">
-                <h3 className="text-xs font-black uppercase tracking-widest text-theme-text-muted/70 mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px]">local_shipping</span> Pickup Window
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('date_label')}</label>
-                    <input type="date" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.pickupDate} onChange={e => setSchedule({...schedule, pickupDate: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('time_label')}</label>
-                    <input type="time" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.pickupTime} onChange={e => setSchedule({...schedule, pickupTime: e.target.value})} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl border border-theme-border bg-theme-surface-container/50">
-                <h3 className="text-xs font-black uppercase tracking-widest text-theme-text-muted/70 mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px]">how_to_reg</span> Delivery Window
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('date_label')}</label>
-                    <input type="date" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.deliveryDate} onChange={e => setSchedule({...schedule, deliveryDate: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-theme-text-muted mb-1 block uppercase">{t('time_label')}</label>
-                    <input type="time" className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all" value={schedule.deliveryTime} onChange={e => setSchedule({...schedule, deliveryTime: e.target.value})} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Validation Message */}
-            {schedule.pickupDate && schedule.deliveryDate && new Date(`${schedule.pickupDate}T${schedule.pickupTime || '00:00'}`) > new Date(`${schedule.deliveryDate}T${schedule.deliveryTime || '00:00'}`) && (
-              <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl flex items-center gap-3 animate-shake">
-                <span className="material-symbols-outlined text-xl">error</span>
-                <span className="text-sm font-bold">{t('scheduling_error')}</span>
-              </div>
-            )}
-
-            <div className="flex gap-4 mt-8 pt-6 border-t border-theme-border">
-              <button onClick={() => setCurrentStep(2)} className="px-8 py-4 rounded-2xl bg-theme-surface border border-theme-border font-bold text-theme-text-muted hover:bg-theme-surface-container transition-colors">Back</button>
-              <button 
-                onClick={() => setCurrentStep(4)} 
-                disabled={
-                  !schedule.pickupDate || 
-                  !schedule.deliveryDate || 
-                  new Date(`${schedule.pickupDate}T${schedule.pickupTime || '00:00'}`) > new Date(`${schedule.deliveryDate}T${schedule.deliveryTime || '00:00'}`)
-                }
-                className="flex-1 px-8 py-4 rounded-2xl primary-gradient text-white font-black shadow-lg shadow-emerald-900/10 active:scale-95 transition-all flex justify-center items-center gap-2 disabled:opacity-50"
-              >
-                Proceed to Payment <span className="material-symbols-outlined text-lg">arrow_forward</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <ScheduleSection 
+          schedule={schedule}
+          setSchedule={setSchedule}
+          setCurrentStep={setCurrentStep}
+          t={t}
+        />
       )}
 
       {/* Payment Step */}
       {currentStep === 4 && (
-        <div className="flex-1 flex flex-col items-center justify-center animate-fade-in-up">
-          <div className="w-full max-w-2xl bg-theme-surface rounded-[2rem] p-8 shadow-xl border border-theme-border/50 card-hover overflow-y-auto max-h-[90vh] no-scrollbar">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-theme-surface-container text-emerald-600 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-2xl">payments</span>
-                </div>
-                <h2 className="text-2xl font-black font-headline text-theme-text">Payment Settlement</h2>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-theme-text-muted/70 uppercase tracking-widest">Balance Due</p>
-                <div className="text-3xl font-black text-theme-text font-headline">
-                  ₹{(total - payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0)).toLocaleString('en-IN')}
-                </div>
-              </div>
-            </div>
-            {/* Pay at Pickup Toggle */}
-            <label className="flex items-center justify-between p-4 bg-theme-surface-container rounded-2xl cursor-pointer mb-6 group hover:bg-theme-surface-container transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-theme-text-muted/70 group-hover:text-emerald-600">directions_run</span>
-                <span className="text-sm font-bold text-theme-text">Pay at Collection</span>
-              </div>
-              <input 
-                type="checkbox" 
-                className="w-5 h-5 accent-emerald-600"
-                checked={payAtPickup}
-                onChange={(e) => {
-                  setPayAtPickup(e.target.checked);
-                  if (e.target.checked) setPayments([]);
-                }}
-              />
-            </label>
-
-            {selectedCustomer?.loyalty_points > 0 && (
-              <div className="mb-6 p-5 bg-amber-50 rounded-2xl border border-amber-100 animate-fade-in">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-amber-600">stars</span>
-                    <span className="text-xs font-black uppercase tracking-widest text-amber-900">Loyalty Rewards</span>
-                  </div>
-                  <span className="text-xs font-bold text-amber-700">{selectedCustomer.loyalty_points} Points Available</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max={Math.min(selectedCustomer.loyalty_points, totalRaw)}
-                    value={redeemedPoints}
-                    onChange={(e) => setRedeemedPoints(parseInt(e.target.value))}
-                    className="flex-1 h-2 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
-                  />
-                  <div className="w-20 text-right">
-                    <span className="text-sm font-black text-amber-900">₹{redeemedPoints}</span>
-                  </div>
-                </div>
-                <p className="text-[10px] font-medium text-amber-600 mt-2 italic">1 point = ₹1 discount. Points will be deducted upon confirmation.</p>
-              </div>
-            )}
-
-            {!payAtPickup && (
-              <div className="space-y-6">
-                {/* Active Payments */}
-                {payments.map((p, idx) => (
-                  <div key={idx} className="p-5 rounded-2xl border-2 border-emerald-500 bg-theme-surface-container/30 animate-scale-in">
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-emerald-600 text-lg">
-                          {p.method === 'cash' ? 'payments' : p.method === 'card' ? 'credit_card' : 'qr_code_scanner'}
-                        </span>
-                        <span className="text-xs font-black uppercase tracking-widest text-theme-text">{p.method}</span>
-                      </div>
-                      <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-theme-text-muted/70 hover:text-red-500 transition-colors">
-                        <span className="material-symbols-outlined text-lg">delete</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[9px] font-black uppercase text-theme-text-muted/70 tracking-wider block mb-1">Amount to Charge</label>
-                        <input 
-                          type="number" 
-                          className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-black text-theme-text outline-none"
-                          value={p.amount}
-                          onChange={(e) => {
-                            const newPayments = [...payments];
-                            newPayments[idx].amount = e.target.value;
-                            setPayments(newPayments);
-                          }}
-                        />
-                      </div>
-                      {p.method === 'cash' && (
-                        <div>
-                          <label className="text-[9px] font-black uppercase text-theme-text-muted/70 tracking-wider block mb-1">Tendered</label>
-                          <input 
-                            type="number" 
-                            className="w-full bg-theme-surface border border-theme-border rounded-xl p-3 text-sm font-black text-theme-text outline-none"
-                            placeholder="Enter amount..."
-                            value={p.tendered || ''}
-                            onChange={(e) => {
-                              const newPayments = [...payments];
-                              newPayments[idx].tendered = e.target.value;
-                              setPayments(newPayments);
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                    {p.method === 'cash' && p.tendered > p.amount && (
-                      <div className="mt-4 pt-4 border-t border-theme-border flex justify-between items-center">
-                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Return Change</span>
-                        <span className="text-lg font-black text-theme-text">₹{(p.tendered - p.amount).toLocaleString('en-IN')}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* Add Payment Method */}
-                <div className="grid grid-cols-3 gap-3">
-                  {['cash', 'card', 'online'].map(m => (
-                    <button 
-                      key={m}
-                      disabled={payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0) >= total}
-                      onClick={() => {
-                        const remaining = total - payments.reduce((acc, p) => acc + (parseFloat(p.amount) || 0), 0);
-                        setPayments([...payments, { method: m, amount: remaining > 0 ? remaining : 0 }]);
-                      }}
-                      className="flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-theme-border bg-theme-surface hover:border-theme-border hover:bg-theme-surface-container transition-all group disabled:opacity-30"
-                    >
-                      <span className="material-symbols-outlined text-theme-text-muted/70 group-hover:text-emerald-600">
-                        {m === 'cash' ? 'payments' : m === 'card' ? 'credit_card' : 'qr_code_scanner'}
-                      </span>
-                      <span className="text-[10px] font-bold uppercase text-theme-text-muted/70 group-hover:text-theme-text">{m}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4 pt-8 mt-8 border-t border-theme-border">
-              <button 
-                onClick={() => setCurrentStep(3)} 
-                disabled={submitting}
-                className="px-8 py-4 rounded-2xl bg-theme-surface border border-theme-border font-bold text-theme-text-muted hover:bg-theme-surface-container transition-colors disabled:opacity-50"
-              >
-                Back
-              </button>
-              <button 
-                onClick={() => handleSubmitOrder()} 
-                disabled={submitting || (!payAtPickup && payments.length === 0)} 
-                className="flex-1 px-8 py-4 rounded-2xl primary-gradient text-white font-black shadow-xl shadow-emerald-900/10 active:scale-95 transition-all flex justify-center items-center gap-2 disabled:opacity-50"
-              >
-                {submitting ? (
-                  <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-xl">verified_user</span>
-                    {payAtPickup ? 'Create Order (Pending)' : 'Finalize & Post Payment'}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <PaymentSection 
+          total={total}
+          payments={payments}
+          setPayments={setPayments}
+          payAtPickup={payAtPickup}
+          setPayAtPickup={setPayAtPickup}
+          selectedCustomer={selectedCustomer}
+          redeemedPoints={redeemedPoints}
+          setRedeemedPoints={setRedeemedPoints}
+          totalRaw={totalRaw}
+          submitting={submitting}
+          handleSubmitOrder={handleSubmitOrder}
+          setCurrentStep={setCurrentStep}
+          t={t}
+        />
       )}
 
       {/* Duplicate Warning Modal */}

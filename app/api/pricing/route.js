@@ -9,7 +9,12 @@ export async function GET(request) {
     if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
     const res = await query('SELECT * FROM pricing WHERE store_id = $1 ORDER BY garment_type, service_type', [auth.user.store_id]);
-    return NextResponse.json(res.rows);
+    
+    return NextResponse.json(res.rows, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=120',
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
