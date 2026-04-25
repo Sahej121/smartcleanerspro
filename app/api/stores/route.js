@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query, getClient } from '@/lib/db/db';
-import { verifyToken, hashPassword } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { requireRole, hashPassword } from '@/lib/auth';
 import { canCreateStore } from '@/lib/tier-config';
 import { reconcileStoreLimits } from '@/lib/tier-enforcement';
 
@@ -41,16 +40,11 @@ const defaultInventory = [
 
 export async function POST(req) {
   try {
-    const payload = await verifyToken();
-
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireRole(req, ['owner']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-
-    // Only owners can create new stores
-    if (!payload || payload.role !== 'owner') {
-      return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
-    }
+    const payload = auth.user;
 
     const body = await req.json();
     const { store_name, city, subscription_tier, admin_name, admin_email, owner_id, manager_name, manager_email } = body;
@@ -292,15 +286,11 @@ export async function POST(req) {
 
 export async function GET(request) {
   try {
-    const payload = await verifyToken();
-
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireRole(request, ['owner', 'manager']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-
-    if (!payload || (payload.role !== 'owner' && payload.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const payload = auth.user;
 
     const isSaasOwner = payload.id === 1;
     const { searchParams } = new URL(request.url);

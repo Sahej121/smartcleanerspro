@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { requireRole } from '@/lib/auth';
 import { transaction } from '@/lib/db/db';
 import { reconcileStoreLimits } from '@/lib/tier-enforcement';
 
 export async function PATCH(req, { params }) {
   try {
-    const payload = await verifyToken();
-
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireRole(req, ['owner']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-
-    if (!payload || payload.role !== 'owner') {
-      return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
-    }
+    const payload = auth.user;
 
     const { id } = await params;
     const body = await req.json();

@@ -1,25 +1,15 @@
 import { NextResponse } from 'next/server';
 import { query, logSystemEvent } from '@/lib/db/db';
-import { verifyToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { requireRole } from '@/lib/auth';
 
 export async function POST(req, { params }) {
   try {
     const { id } = await params;
     const { status } = await req.json();
-    
-    const cookieStore = await cookies();
-    const token = cookieStore.get('cleanflow_session')?.value;
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
-
-    // Only owners can change store status
-    if (!payload || payload.role !== 'owner') {
-      return NextResponse.json({ error: 'Forbidden. Owner access required.' }, { status: 403 });
+    const auth = await requireRole(req, ['owner']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     if (!['active', 'suspended', 'idle'].includes(status)) {

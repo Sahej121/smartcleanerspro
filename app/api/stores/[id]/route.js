@@ -1,20 +1,14 @@
 import { NextResponse } from 'next/server';
 import { query, transaction } from '@/lib/db/db';
-import { verifyToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { requireRole } from '@/lib/auth';
 
 export async function PATCH(req, { params }) {
   try {
-    const payload = await verifyToken();
-
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireRole(req, ['owner', 'manager']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-
-    // Only owners or the manager of this store should be able to edit it
-    if (!payload || (payload.role !== 'owner' && payload.role !== 'manager')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const payload = auth.user;
 
     const { id } = await params;
     const body = await req.json();
@@ -81,15 +75,15 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const payload = await verifyToken();
-
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireRole(req, ['owner']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+    const payload = auth.user;
     const { id } = await params;
 
     // Strict Superadmin Check
-    if (!payload || parseInt(payload.id) !== 1) {
+    if (parseInt(payload.id) !== 1) {
       return NextResponse.json({ error: 'Forbidden: Only the Superadmin can delete nodes' }, { status: 403 });
     }
 

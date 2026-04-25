@@ -1,21 +1,17 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db/db';
-import { verifyToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { requireRole } from '@/lib/auth';
 
 export async function GET(req) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('cleanflow_session')?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireRole(req, ['owner']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-
-    const payload = await verifyToken(token);
+    const payload = auth.user;
 
     // Only SaaS root owner can access master stats
-    if (!payload || payload.role !== 'owner' || payload.id !== 1) {
+    if (payload.id !== 1) {
       return NextResponse.json({ error: 'Forbidden. Root owner access required.' }, { status: 403 });
     }
 
