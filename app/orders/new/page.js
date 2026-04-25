@@ -879,6 +879,44 @@ export default function NewOrder() {
           </div>
         </div>
       )}
+      {/* Sticky Mobile Action Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[50] bg-theme-surface/90 backdrop-blur-xl border-t border-theme-border p-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] animate-fade-in-up">
+        <div className="flex items-center justify-between gap-4 max-w-md mx-auto">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">Total Amount</span>
+            <span className="text-xl font-black text-theme-text font-headline">₹{total}</span>
+          </div>
+          
+          {currentStep === 2 && (
+            <button 
+              disabled={cart.length === 0}
+              onClick={() => setCurrentStep(3)}
+              className="flex-1 max-w-[200px] py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              Next Step <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          )}
+
+          {currentStep === 3 && (
+            <button 
+              onClick={() => setCurrentStep(4)}
+              className="flex-1 max-w-[200px] py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              Payment <span className="material-symbols-outlined text-sm">payments</span>
+            </button>
+          )}
+
+          {currentStep === 4 && (
+            <button 
+              disabled={submitting}
+              onClick={() => handleSubmitOrder()}
+              className="flex-1 max-w-[200px] py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-900/10 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {submitting ? 'Processing...' : 'Complete'} <span className="material-symbols-outlined text-sm">check_circle</span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
