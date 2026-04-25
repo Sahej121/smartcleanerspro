@@ -1,5 +1,5 @@
 import { query, getClient } from '@/lib/db/db';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { sanitizeText } from '@/lib/sanitize';
 
@@ -68,36 +68,35 @@ export async function POST(request) {
     const body = await request.json();
     const { customer_id, items, payment_method, notes, schedule, force, coupon_id, redeemedPoints: bodyRedeemedPoints } = body;
 
+    let totalItems = 0;
+    for (const item of items) totalItems += (item.quantity || 1);
+
+    const [
+      customerCheckRes,
+      recentOrderRes,
+      seqRes,
+      volDiscountRes,
+      couponRes
+    ] = await Promise.all([
+      customer_id ? client.query('SELECT id FROM customers WHERE id = $1 AND store_id = $2', [customer_id, auth.user.store_id]) : Promise.resolve({rows:[]}),
+      (!force && customer_id) ? client.query(`SELECT id FROM orders WHERE customer_id = $1 AND created_at > NOW() - INTERVAL '5 minutes' AND total_amount IS NOT NULL`, [customer_id]) : Promise.resolve({rows:[]}),
+      client.query("SELECT nextval('order_number_seq')"),
+      client.query('SELECT discount_percent FROM volume_discounts WHERE is_active = TRUE AND min_quantity <= $1 ORDER BY min_quantity DESC LIMIT 1', [totalItems]),
+      coupon_id ? client.query('SELECT * FROM coupons WHERE id = $1 AND is_active = TRUE AND (expiry_date IS NULL OR expiry_date > NOW())', [coupon_id]) : Promise.resolve({rows:[]})
+    ]);
+
     // Verify customer belongs to this store
-    if (customer_id) {
-      const customerCheck = await client.query(
-        'SELECT id FROM customers WHERE id = $1 AND store_id = $2',
-        [customer_id, auth.user.store_id]
-      );
-      if (customerCheck.rows.length === 0) {
-        return NextResponse.json({ error: 'Invalid customer for this store.' }, { status: 403 });
-      }
+    if (customer_id && customerCheckRes.rows.length === 0) {
+      return NextResponse.json({ error: 'Invalid customer for this store.' }, { status: 403 });
     }
     
     // Duplicate Order Detection (Last 5 mins)
-    if (!force) {
-      const recentOrderRes = await client.query(
-        `SELECT id FROM orders 
-         WHERE customer_id = $1 
-         AND created_at > NOW() - INTERVAL '5 minutes'
-         AND total_amount IS NOT NULL`, // simplified check for recently active customer
-        [customer_id]
-      );
-      
-      if (recentOrderRes.rows.length > 0) {
-        // More specific check: same items/total
-        // We'll return a 409 Conflict if there's any recent order, let frontend handle 'force'
-        return NextResponse.json({ 
-          error: 'Possible duplicate order detected.', 
-          code: 'DUPLICATE_DETECTED',
-          recent_order_id: recentOrderRes.rows[0].id 
-        }, { status: 409 });
-      }
+    if (!force && recentOrderRes.rows.length > 0) {
+      return NextResponse.json({ 
+        error: 'Possible duplicate order detected.', 
+        code: 'DUPLICATE_DETECTED',
+        recent_order_id: recentOrderRes.rows[0].id 
+      }, { status: 409 });
     }
     
     // Sanitize free-text fields
@@ -107,17 +106,8 @@ export async function POST(request) {
 
     // Generate order number atomically
     const prefix = (schedule && schedule.pickupDate) ? 'WA' : 'CF';
-    const seqRes = await client.query("SELECT nextval('order_number_seq')");
     const orderNumber = `${prefix}-${seqRes.rows[0].nextval}`;
 
-    // Calculate volume discount
-    let totalItems = 0;
-    for (const item of items) totalItems += (item.quantity || 1);
-    
-    const volDiscountRes = await client.query(
-      'SELECT discount_percent FROM volume_discounts WHERE is_active = TRUE AND min_quantity <= $1 ORDER BY min_quantity DESC LIMIT 1',
-      [totalItems]
-    );
     const volDiscountPercent = volDiscountRes.rows.length > 0 ? parseFloat(volDiscountRes.rows[0].discount_percent) : 0;
     
     // Calculate total
@@ -130,19 +120,13 @@ export async function POST(request) {
     
     // Calculate Coupon Discount
     let couponDiscountAmount = 0;
-    if (coupon_id) {
-      const couponRes = await client.query(
-        'SELECT * FROM coupons WHERE id = $1 AND is_active = TRUE AND (expiry_date IS NULL OR expiry_date > NOW())',
-        [coupon_id]
-      );
-      if (couponRes.rows.length > 0) {
-        const coupon = couponRes.rows[0];
-        if (subtotal >= parseFloat(coupon.min_order_value)) {
-          if (coupon.discount_type === 'percent') {
-            couponDiscountAmount = Math.round(subtotal * (parseFloat(coupon.discount_value) / 100) * 100) / 100;
-          } else {
-            couponDiscountAmount = parseFloat(coupon.discount_value);
-          }
+    if (couponRes.rows.length > 0) {
+      const coupon = couponRes.rows[0];
+      if (subtotal >= parseFloat(coupon.min_order_value)) {
+        if (coupon.discount_type === 'percent') {
+          couponDiscountAmount = Math.round(subtotal * (parseFloat(coupon.discount_value) / 100) * 100) / 100;
+        } else {
+          couponDiscountAmount = parseFloat(coupon.discount_value);
         }
       }
     }
@@ -172,75 +156,102 @@ export async function POST(request) {
     );
     const orderId = orderRes.rows[0].id;
 
-    // Insert items
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const tagId = item.tag_id || `${orderNumber}-${i + 1}`;
+    // Insert items in bulk
+    if (items.length > 0) {
+      const itemValues = [];
+      const itemParams = [];
+      let paramIndex = 1;
+      
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const tagId = item.tag_id || `${orderNumber}-${i + 1}`;
+        itemValues.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, 'received', $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);
+        itemParams.push(orderId, item.garment_type, item.service_type, item.quantity || 1, item.price, item.notes || null, tagId, item.bag_id || null, item.incident_status || 'none', item.incident_notes || null);
+      }
+      
       const itemRes = await client.query(
         `INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status, notes, tag_id, bag_id, incident_status, incident_notes)
-         VALUES ($1, $2, $3, $4, $5, 'received', $6, $7, $8, $9, $10) RETURNING id`,
-        [orderId, item.garment_type, item.service_type, item.quantity || 1, item.price, item.notes || null, tagId, item.bag_id || null, item.incident_status || 'none', item.incident_notes || null]
+         VALUES ${itemValues.join(', ')} RETURNING id`,
+        itemParams
       );
+
+      const workflowValues = [];
+      const workflowParams = [];
+      paramIndex = 1;
+
+      for (let i = 0; i < itemRes.rows.length; i++) {
+        workflowValues.push(`($${paramIndex++}, 'received', $${paramIndex++})`);
+        workflowParams.push(itemRes.rows[i].id, auth.user.id);
+      }
+
       await client.query(
-        `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, 'received', $2)`,
-        [itemRes.rows[0].id, auth.user.id]
+        `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ${workflowValues.join(', ')}`,
+        workflowParams
       );
     }
 
     // ── Auto-decrement inventory based on order items ──
     // Best-effort: inventory issues must never block order creation
-    try {
-      const storeId = auth.user.store_id;
-      let totalGarments = 0;
-      let washKg = 0;
-      let dryCleanPieces = 0;
+    after(async () => {
+      const bgClient = await getClient();
+      try {
+        const storeId = auth.user.store_id;
+        let totalGarments = 0;
+        let washKg = 0;
+        let dryCleanPieces = 0;
 
-      for (const item of items) {
-        const qty = item.quantity || 1;
-        totalGarments += qty;
+        for (const item of items) {
+          const qty = item.quantity || 1;
+          totalGarments += qty;
 
-        const svc = (item.service_type || '').toLowerCase();
-        if (svc.includes('wash') || svc.includes('fold') || svc.includes('laundry')) {
-          washKg += qty;
+          const svc = (item.service_type || '').toLowerCase();
+          if (svc.includes('wash') || svc.includes('fold') || svc.includes('laundry')) {
+            washKg += qty;
+          }
+          if (svc.includes('dry clean') || svc.includes('dryclean')) {
+            dryCleanPieces += qty;
+          }
         }
-        if (svc.includes('dry clean') || svc.includes('dryclean')) {
-          dryCleanPieces += qty;
+
+        // Helper: decrement an inventory item by name pattern
+        const decrement = async (pattern, amount) => {
+          if (amount <= 0) return;
+          await bgClient.query(
+            `UPDATE inventory SET quantity = GREATEST(0, quantity - $1),
+               last_updated_at = CURRENT_TIMESTAMP
+             WHERE store_id = $2 AND item_name ILIKE $3`,
+            [amount, storeId, pattern]
+          );
+        };
+
+        const decrements = [];
+        // Per-garment consumables
+        decrements.push(decrement('%Hanger%', totalGarments));
+        decrements.push(decrement('%Garment Bag%', totalGarments));
+        decrements.push(decrement('%Cover%', totalGarments));
+        decrements.push(decrement('%Tag%', totalGarments));
+        decrements.push(decrement('%Label%', totalGarments));
+        decrements.push(decrement('%Packaging%', Math.ceil(totalGarments / 5))); // ~1 roll per 5 items
+
+        // Wash consumables (liters per kg)
+        if (washKg > 0) {
+          decrements.push(decrement('%Detergent%', washKg * 0.15));      // ~150ml per kg
+          decrements.push(decrement('%Fabric Softener%', washKg * 0.05)); // ~50ml per kg
         }
+
+        // Dry clean consumables
+        if (dryCleanPieces > 0) {
+          decrements.push(decrement('%Dry Clean%Solvent%', dryCleanPieces * 0.3)); // ~300ml per piece
+          decrements.push(decrement('%Stain Remover%', dryCleanPieces * 0.1));     // ~100ml per piece
+        }
+
+        await Promise.all(decrements);
+      } catch (invErr) {
+        console.error('[Inventory Auto-Decrement] Non-blocking error:', invErr.message);
+      } finally {
+        bgClient.release();
       }
-
-      // Helper: decrement an inventory item by name pattern
-      const decrement = async (pattern, amount) => {
-        if (amount <= 0) return;
-        await client.query(
-          `UPDATE inventory SET quantity = GREATEST(0, quantity - $1),
-             last_updated_at = CURRENT_TIMESTAMP
-           WHERE store_id = $2 AND item_name ILIKE $3`,
-          [amount, storeId, pattern]
-        );
-      };
-
-      // Per-garment consumables
-      await decrement('%Hanger%', totalGarments);
-      await decrement('%Garment Bag%', totalGarments);
-      await decrement('%Cover%', totalGarments);
-      await decrement('%Tag%', totalGarments);
-      await decrement('%Label%', totalGarments);
-      await decrement('%Packaging%', Math.ceil(totalGarments / 5)); // ~1 roll per 5 items
-
-      // Wash consumables (liters per kg)
-      if (washKg > 0) {
-        await decrement('%Detergent%', washKg * 0.15);      // ~150ml per kg
-        await decrement('%Fabric Softener%', washKg * 0.05); // ~50ml per kg
-      }
-
-      // Dry clean consumables
-      if (dryCleanPieces > 0) {
-        await decrement('%Dry Clean%Solvent%', dryCleanPieces * 0.3); // ~300ml per piece
-        await decrement('%Stain Remover%', dryCleanPieces * 0.1);     // ~100ml per piece
-      }
-    } catch (invErr) {
-      console.error('[Inventory Auto-Decrement] Non-blocking error:', invErr.message);
-    }
+    });
 
     // Insert payments (handles split / multiple initial payments)
     // body.payments should be an array like [{ method: 'cash', amount: 500, tendered: 600 }]

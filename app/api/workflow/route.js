@@ -1,5 +1,5 @@
 import { query } from '@/lib/db/db';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 
 import { requireRole } from '@/lib/auth';
 
@@ -12,15 +12,22 @@ export async function GET(request) {
     const result = {};
 
     for (const stage of stages) {
-      const res = await query(`
-        SELECT oi.*, o.order_number, o.pickup_status, o.delivery_status, c.name as customer_name
-        FROM order_items oi
-        JOIN orders o ON oi.order_id = o.id
-        LEFT JOIN customers c ON o.customer_id = c.id
-        WHERE oi.status = $1 AND o.store_id = $2
-        ORDER BY oi.created_at ASC
-      `, [stage, auth.user.store_id]);
-      result[stage] = res.rows;
+      result[stage] = [];
+    }
+
+    const res = await query(`
+      SELECT oi.*, o.order_number, o.pickup_status, o.delivery_status, c.name as customer_name
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      LEFT JOIN customers c ON o.customer_id = c.id
+      WHERE oi.status = ANY($1) AND o.store_id = $2
+      ORDER BY oi.created_at ASC
+    `, [stages, auth.user.store_id]);
+
+    for (const row of res.rows) {
+      if (result[row.status]) {
+        result[row.status].push(row);
+      }
     }
 
     return NextResponse.json(result);
@@ -89,47 +96,51 @@ export async function POST(request) {
       if (orderRes.rows[0].status !== 'ready') {
         await query('UPDATE orders SET status = $1 WHERE id = $2', ['ready', item.order_id]);
         
-        // Trigger Notification
-        if (item.customer_phone) {
-          const message = `Hi ${item.customer_name}! Your order #${item.order_number} is now READY for pickup/delivery at DrycleanersFlow. See you soon!`;
-          try {
-            const { sendWhatsAppMessage } = require('@/lib/whatsapp/twilioClient');
-            await sendWhatsAppMessage(item.customer_phone, message);
-          } catch (notifErr) {
-            console.error('Notification failed:', notifErr);
+        // Trigger Notification in Background
+        after(async () => {
+          if (item.customer_phone) {
+            const message = `Hi ${item.customer_name}! Your order #${item.order_number} is now READY for pickup/delivery at DrycleanersFlow. See you soon!`;
+            try {
+              const { sendWhatsAppMessage } = require('@/lib/whatsapp/twilioClient');
+              await sendWhatsAppMessage(item.customer_phone, message);
+            } catch (notifErr) {
+              console.error('Notification failed:', notifErr);
+            }
+            
+            await query(`
+              INSERT INTO system_logs (event_type, description, severity, store_id)
+              VALUES ($1, $2, $3, $4)
+            `, ['STAFF_ALERT', `Notification sent to ${item.customer_name} for Order #${item.order_number}`, 'info', auth.user.store_id]);
           }
-          
-          await query(`
-            INSERT INTO system_logs (event_type, description, severity, store_id)
-            VALUES ($1, $2, $3, $4)
-          `, ['STAFF_ALERT', `Notification sent to ${item.customer_name} for Order #${item.order_number}`, 'info', auth.user.store_id]);
-        }
+        });
       }
     } else if (anyProcessing) {
       await query('UPDATE orders SET status = $1 WHERE id = $2', ['processing', item.order_id]);
     }
 
-    // 6. Automate Task Updates
-    // Complete previous task if it exists
-    await query(
-      `UPDATE staff_tasks 
-       SET is_completed = TRUE 
-       WHERE task_description LIKE $1 AND is_completed = FALSE`,
-      [`%Item #${itemId}%Stage: ${item.status}%`]
-    );
-
-    // Create next task (only if not ready)
-    if (nextStatus !== 'ready') {
-      const nextTaskDesc = `Process ${item.garment_type} (Order #${item.order_number}) - Item #${itemId} - Stage: ${nextStatus}`;
+    // 6. Automate Task Updates in Background
+    after(async () => {
+      // Complete previous task if it exists
       await query(
-        `INSERT INTO staff_tasks (user_id, task_description, due_date, store_id)
-         SELECT id, $1, NOW() + INTERVAL '2 hours', $2
-         FROM users 
-         WHERE role = 'staff' AND store_id = $2
-         LIMIT 1`, 
-        [nextTaskDesc, auth.user.store_id]
+        `UPDATE staff_tasks 
+         SET is_completed = TRUE 
+         WHERE task_description LIKE $1 AND is_completed = FALSE`,
+        [`%Item #${itemId}%Stage: ${item.status}%`]
       );
-    }
+
+      // Create next task (only if not ready)
+      if (nextStatus !== 'ready') {
+        const nextTaskDesc = `Process ${item.garment_type} (Order #${item.order_number}) - Item #${itemId} - Stage: ${nextStatus}`;
+        await query(
+          `INSERT INTO staff_tasks (user_id, task_description, due_date, store_id)
+           SELECT id, $1, NOW() + INTERVAL '2 hours', $2
+           FROM users 
+           WHERE role = 'staff' AND store_id = $2
+           LIMIT 1`, 
+          [nextTaskDesc, auth.user.store_id]
+        );
+      }
+    });
 
     return NextResponse.json({ success: true, nextStatus });
   } catch (error) {

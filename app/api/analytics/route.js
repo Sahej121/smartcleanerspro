@@ -7,20 +7,22 @@ export async function GET() {
 
     // Execute all queries in parallel to minimize cross-region latency
     const [
-      totalRevenue,
-      todayRevenue,
+      metrics,
       dailyRevenue,
       ordersByStatus,
-      totalOrders,
-      avgOrderValue,
       topServices,
       topGarments,
-      avgTurnaround,
-      staffCount,
       paymentMethods
     ] = await Promise.all([
-      query(`SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid'`),
-      query(`SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND created_at::date = $1::date`, [today]),
+      query(`
+        SELECT 
+          (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE payment_status = 'paid') as total_revenue,
+          (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE payment_status = 'paid' AND created_at::date = $1::date) as today_revenue,
+          (SELECT COUNT(*) FROM orders) as total_orders,
+          (SELECT COALESCE(AVG(total_amount), 0) FROM orders WHERE payment_status = 'paid') as avg_order_value,
+          (SELECT COUNT(*) FROM users) as staff_count,
+          (SELECT AVG(EXTRACT(EPOCH FROM (COALESCE(delivery_date::timestamptz, NOW()) - created_at)) / 86400) FROM orders WHERE status IN ('ready', 'delivered')) as avg_turnaround
+      `, [today]),
       query(`
         SELECT created_at::date as day, COALESCE(SUM(total_amount), 0) as revenue, COUNT(*) as order_count
         FROM orders 
@@ -29,8 +31,6 @@ export async function GET() {
         ORDER BY day ASC
       `),
       query(`SELECT status, COUNT(*) as count FROM orders GROUP BY status`),
-      query('SELECT COUNT(*) as count FROM orders'),
-      query(`SELECT COALESCE(AVG(total_amount), 0) as avg FROM orders WHERE payment_status = 'paid'`),
       query(`
         SELECT service_type, COUNT(*) as count, SUM(price) as revenue
         FROM order_items
@@ -46,28 +46,24 @@ export async function GET() {
         LIMIT 5
       `),
       query(`
-        SELECT AVG(EXTRACT(EPOCH FROM (COALESCE(delivery_date::timestamptz, NOW()) - created_at)) / 86400) as avg_days
-        FROM orders WHERE status IN ('ready', 'delivered')
-      `),
-      query('SELECT COUNT(*) as count FROM users'),
-      query(`
         SELECT payment_method, COUNT(*) as count, SUM(amount) as total
         FROM payments
         GROUP BY payment_method
       `)
     ]);
 
+    const m = metrics.rows[0];
     const data = {
-      totalRevenue: parseFloat(totalRevenue.rows[0].total),
-      todayRevenue: parseFloat(todayRevenue.rows[0].total),
+      totalRevenue: parseFloat(m.total_revenue),
+      todayRevenue: parseFloat(m.today_revenue),
       dailyRevenue: dailyRevenue.rows,
       ordersByStatus: ordersByStatus.rows,
-      totalOrders: parseInt(totalOrders.rows[0].count),
-      avgOrderValue: Math.round(parseFloat(avgOrderValue.rows[0].avg)),
+      totalOrders: parseInt(m.total_orders),
+      avgOrderValue: Math.round(parseFloat(m.avg_order_value)),
       topServices: topServices.rows,
       topGarments: topGarments.rows,
-      avgTurnaround: avgTurnaround.rows[0].avg_days ? Math.round(parseFloat(avgTurnaround.rows[0].avg_days) * 10) / 10 : 0,
-      staffCount: parseInt(staffCount.rows[0].count),
+      avgTurnaround: m.avg_turnaround ? Math.round(parseFloat(m.avg_turnaround) * 10) / 10 : 0,
+      staffCount: parseInt(m.staff_count),
       paymentMethods: paymentMethods.rows,
     };
 

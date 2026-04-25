@@ -12,7 +12,7 @@ export async function GET(request) {
     
     return NextResponse.json(res.rows, {
       headers: {
-        'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=120',
+        'Cache-Control': 'private, max-age=3600, stale-while-revalidate=86400',
       },
     });
   } catch (error) {
