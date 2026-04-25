@@ -22,15 +22,10 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const itemsRes = await query(
-      'SELECT * FROM order_items WHERE order_id = $1',
-      [id]
-    );
-
-    const paymentsRes = await query(
-      'SELECT * FROM payments WHERE order_id = $1',
-      [id]
-    );
+    const [itemsRes, paymentsRes] = await Promise.all([
+      query('SELECT * FROM order_items WHERE order_id = $1', [id]),
+      query('SELECT * FROM payments WHERE order_id = $1', [id])
+    ]);
 
     const order = orderRes.rows[0];
     const items = itemsRes.rows;

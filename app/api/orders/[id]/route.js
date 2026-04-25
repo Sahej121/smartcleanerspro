@@ -24,15 +24,16 @@ export async function GET(request, { params }) {
 
     const order = orderRes.rows[0];
 
-    const itemsRes = await query(
-      `SELECT oi.*, 
-        (SELECT STRING_AGG(gw.stage || ':' || gw.timestamp, '|' ORDER BY gw.timestamp) 
-         FROM garment_workflow gw WHERE gw.order_item_id = oi.id) as workflow_history
-       FROM order_items oi WHERE oi.order_id = $1`,
-      [id]
-    );
-
-    const paymentsRes = await query('SELECT * FROM payments WHERE order_id = $1', [id]);
+    const [itemsRes, paymentsRes] = await Promise.all([
+      query(
+        `SELECT oi.*, 
+          (SELECT STRING_AGG(gw.stage || ':' || gw.timestamp, '|' ORDER BY gw.timestamp) 
+           FROM garment_workflow gw WHERE gw.order_item_id = oi.id) as workflow_history
+         FROM order_items oi WHERE oi.order_id = $1`,
+        [id]
+      ),
+      query('SELECT * FROM payments WHERE order_id = $1', [id])
+    ]);
 
     return NextResponse.json({ ...order, items: itemsRes.rows, payments: paymentsRes.rows });
   } catch (error) {

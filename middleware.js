@@ -101,7 +101,8 @@ export async function middleware(request) {
 
   const isPublicRoute = [
     '/', '/features', '/how-it-works', '/pricing', '/contact', 
-    '/checkout', '/register', '/policy', '/login', '/suspended'
+    '/checkout', '/register', '/policy', '/login', '/suspended',
+    '/waiting', '/enterprise-upgrade'
   ].includes(pathname) || pathname.startsWith('/api/webhooks/') || pathname.startsWith('/checkout/success');
 
   if (isPublicRoute) {

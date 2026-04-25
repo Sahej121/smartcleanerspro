@@ -12,12 +12,13 @@ export default function MainLayout({ children }) {
   const { user } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAuthPage = pathname === '/login' || pathname === '/signup';
-  const isPublicPage = ['/', '/features', '/how-it-works', '/pricing', '/contact', '/policy', '/checkout', '/register'].includes(pathname);
+  const isPublicPage = ['/', '/features', '/how-it-works', '/pricing', '/contact', '/policy', '/checkout', '/register', '/waiting', '/enterprise-upgrade'].includes(pathname) || pathname.startsWith('/checkout/');
   const userTier = normalizeTier(user?.tier);
   const isSuperAdmin = user?.role === 'owner' && (user?.id == 1);
   const themeClass = (userTier === 'enterprise' && !isSuperAdmin) ? 'theme-enterprise' : 'theme-standard';
+  const isMarketingPage = isPublicPage && pathname !== '/';
 
-  if (isAuthPage || (!user && isPublicPage)) {
+  if (isAuthPage || isMarketingPage || (!user && isPublicPage)) {
     return (
       <ScrollObserver>
         <main className={`min-h-screen bg-background text-theme-text ${themeClass}`}>{children}</main>

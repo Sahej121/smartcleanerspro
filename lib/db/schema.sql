@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT UNIQUE,
   phone TEXT,
-  role TEXT CHECK(role IN ('owner','manager','frontdesk','staff','driver')) DEFAULT 'staff',
+  role TEXT CHECK(role IN ('superadmin','owner','manager','frontdesk','staff','driver')) DEFAULT 'staff',
   store_id INTEGER REFERENCES stores(id),
   password_hash TEXT,
   pin_hash TEXT,
