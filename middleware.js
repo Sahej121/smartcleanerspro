@@ -3,10 +3,9 @@ import { createMiddlewareSupabase } from '@/lib/supabase-middleware';
 import { verifyPinTokenEdge } from '@/lib/auth-edge';
 
 // Simple in-memory rate limiting map
-// Note: In production with multiple server instances, use Redis.
 const rateLimitMap = new Map();
 
-// --- Inlined tier helpers for Edge middleware (cannot import tier-config.js) ---
+// --- Inlined tier helpers for Edge middleware ---
 const TIER_LEGACY_MAP = {
   starter: 'software_only',
   standard: 'software_only',
@@ -48,7 +47,7 @@ function canAccessRouteMw(tier, route) {
 }
 
 export const config = {
-  runtime: 'experimental-edge', // Ensure we use Edge runtime for global speed
+  runtime: 'experimental-edge',
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
@@ -56,8 +55,9 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public (public assets)
+     * - api/auth (auth endpoints handle their own auth)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public|icons|images|manifest.json|sw.js|api/auth).*)',
   ],
 };
 
@@ -69,26 +69,22 @@ export async function middleware(request) {
   const country = request.geo?.country || 'unknown';
   const city = request.geo?.city || 'unknown';
 
-  // We will inject geolocation headers into the final response
-
-  // --- 1. Rate Limiting (Increased for Local Dev/Tests) ---
+  // --- 1. Rate Limiting ---
   const now = Date.now();
   const windowMs = 60 * 1000;
   const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1');
   
-  // Custom limits per endpoint
   let limit = isLocal ? 1000 : 100;
   if (pathname.startsWith('/api/auth/login')) {
-    limit = isLocal ? 100 : 20; // Increased limit for testing/login
+    limit = isLocal ? 100 : 20;
   } else if (pathname.startsWith('/api/webhooks')) {
-    limit = isLocal ? 1000 : 50; // Moderate for webhooks
+    limit = isLocal ? 1000 : 50;
   }
 
   const userRequests = rateLimitMap.get(ip) || [];
   const recentRequests = userRequests.filter(timestamp => now - timestamp < windowMs);
   
   if (recentRequests.length >= limit) {
-    console.warn(`[RATE LIMIT] Exceeded for IP: ${ip} on path: ${pathname} (Limit: ${limit})`);
     return new NextResponse('Too Many Requests. Rate limit exceeded.', { 
       status: 429,
       headers: { 'Retry-After': '60' }
@@ -98,97 +94,62 @@ export async function middleware(request) {
   recentRequests.push(now);
   rateLimitMap.set(ip, recentRequests);
 
-  // Cleanup map periodically (simple heuristic)
-  if (rateLimitMap.size > 1000) {
-    for (const [key, value] of rateLimitMap.entries()) {
-      if (value.length === 0 || now - value[value.length - 1] > windowMs) {
-        rateLimitMap.delete(key);
-      }
-    }
-  }
+  // --- 2. Lightweight Session Check ---
+  // Before doing any heavy Supabase work, check for the presence of session cookies
+  const allCookies = request.cookies.getAll();
+  const hasSupabaseCookie = allCookies.some(c => c.name.startsWith('sb-'));
+  const pinToken = request.cookies.get('cleanflow_pin_session')?.value;
 
-  // --- 2. Route Protection ---
-  // Allow public assets, API auth routes, and PWA files
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/images/') ||
-    pathname.startsWith('/api/auth/') ||
-    pathname.startsWith('/api/webhooks/') ||
-    pathname.startsWith('/icons/') ||
-    pathname === '/manifest.json' ||
-    pathname === '/favicon.ico' ||
-    pathname === '/sw.js' ||
-    pathname === '/suspended' ||
-    pathname === '/' ||
-    pathname === '/features' ||
-    pathname === '/how-it-works' ||
-    pathname === '/pricing' ||
-    pathname === '/contact' ||
-    pathname === '/checkout' ||
-    pathname === '/register' ||
-    pathname.startsWith('/checkout/success') ||
-    pathname === '/api/payments/checkout' ||
-    pathname === '/api/payments/verify-session' ||
-    pathname === '/policy'
-  ) {
-    // Still refresh the Supabase session for public routes (token rotation)
+  // Public routes (matching the config.matcher exclusions mostly, but for logic safety)
+  const isPublicRoute = [
+    '/', '/features', '/how-it-works', '/pricing', '/contact', 
+    '/checkout', '/register', '/policy', '/login', '/suspended'
+  ].includes(pathname) || pathname.startsWith('/api/webhooks/') || pathname.startsWith('/checkout/success');
+
+  if (isPublicRoute) {
     const { response } = createMiddlewareSupabase(request);
     response.headers.set('x-user-country', country);
     response.headers.set('x-user-city', city);
     return addSecurityHeaders(response);
   }
 
-  // Auth pages
-  const isAuthPage = pathname === '/login';
-
-  // --- Supabase Session Verification ---
-  const { supabase, response } = createMiddlewareSupabase(request);
-  response.headers.set('x-user-country', country);
-  response.headers.set('x-user-city', city);
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // --- PIN Session Fallback (Shadow Auth) ---
-  const pinToken = request.cookies.get('cleanflow_pin_session')?.value;
-  const pinUser = pinToken ? await verifyPinTokenEdge(pinToken) : null;
-
-  if (pathname === '/' || pathname.startsWith('/login')) {
-    console.log(`[MW] Path: ${pathname}, User: ${user?.id || 'none'}, PIN User: ${pinUser?.id || 'none'}`);
-  }
-
-  // No session (neither Supabase nor PIN), trying to access protected route
-  if (!user && !pinUser && !isAuthPage) {
+  // If no session indicators at all for a protected route, redirect immediately
+  if (!hasSupabaseCookie && !pinToken) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Has session, trying to access auth pages
-  // We remove this redirect so that even if a session persists (but is invalid for the app),
-  // the user can always reach the login page to re-authenticate.
-  /*
-  if ((user || pinUser) && isAuthPage) {
-    return NextResponse.redirect(new URL('/', request.url));
+  // --- 3. Full Session Verification ---
+  const { supabase, response } = createMiddlewareSupabase(request);
+  response.headers.set('x-user-country', country);
+  response.headers.set('x-user-city', city);
+  
+  let user = null;
+  if (hasSupabaseCookie) {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
   }
-  */
 
-  // --- 3. Tier-Based Feature Gating ---
-  // Read tier from either Supabase user_metadata or PIN JWT payload
-  if ((user || pinUser) && !isAuthPage) {
+  const pinUser = pinToken ? await verifyPinTokenEdge(pinToken) : null;
+
+  if (!user && !pinUser) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // --- 4. Tier-Based Feature Gating ---
+  if (user || pinUser) {
     const tier = normalizeTierMw(user?.user_metadata?.tier || pinUser?.tier);
     const appRole = user?.user_metadata?.role || pinUser?.role;
     const appId = user?.user_metadata?.app_user_id || pinUser?.id;
 
-    // SaaS owner (id=1, role=owner) bypasses all tier restrictions
     const isSaasOwner = appRole === 'owner' && appId === 1;
 
     if (!isSaasOwner && !canAccessRouteMw(tier, pathname)) {
-      // If it's an API request, return JSON 403 instead of redirecting to an HTML page
       if (pathname.startsWith('/api/')) {
         return NextResponse.json(
           { error: 'Feature restricted by subscription tier' }, 
           { status: 403 }
         );
       }
-      // Redirect to dashboard — the gated page should not be visible at all
-      console.log(`[MW] Gated Redirect: ${pathname} -> / (Tier: ${tier})`);
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
@@ -203,4 +164,3 @@ function addSecurityHeaders(response) {
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   return response;
 }
-
