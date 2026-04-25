@@ -12,10 +12,12 @@ export async function GET(request) {
     const search = searchParams.get('search');
 
     let sql = `
-      SELECT c.*, 
-        (SELECT COUNT(*) FROM orders WHERE customer_id = c.id) as order_count,
-        (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE customer_id = c.id AND payment_status = 'paid') as total_spent
+      SELECT 
+        c.*, 
+        COUNT(o.id) as order_count,
+        COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_amount ELSE 0 END), 0) as total_spent
       FROM customers c
+      LEFT JOIN orders o ON c.id = o.customer_id
       WHERE c.store_id = $1
     `;
     const params = [auth.user.store_id];
@@ -25,7 +27,7 @@ export async function GET(request) {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    sql += ' ORDER BY c.created_at DESC';
+    sql += ' GROUP BY c.id ORDER BY c.created_at DESC';
 
     const res = await query(sql, params);
     return NextResponse.json(res.rows);

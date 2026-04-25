@@ -13,10 +13,14 @@ export async function GET(request) {
     const search = searchParams.get('search');
 
     let sql = `
-      SELECT o.*, c.name as customer_name, c.phone as customer_phone,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
+      SELECT 
+        o.*, 
+        c.name as customer_name, 
+        c.phone as customer_phone,
+        COUNT(oi.id) as item_count
       FROM orders o
       LEFT JOIN customers c ON o.customer_id = c.id
+      LEFT JOIN order_items oi ON o.id = oi.order_id
       WHERE o.store_id = $1
     `;
     const conditions = [];
@@ -38,7 +42,7 @@ export async function GET(request) {
       sql += ' AND ' + conditions.join(' AND ');
     }
 
-    sql += ' ORDER BY o.created_at DESC';
+    sql += ' GROUP BY o.id, c.name, c.phone ORDER BY o.created_at DESC';
 
     const res = await query(sql, params);
     

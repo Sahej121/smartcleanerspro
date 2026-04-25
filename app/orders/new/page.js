@@ -75,29 +75,34 @@ export default function NewOrder() {
   const editId = searchParams.get('edit');
 
   useEffect(() => {
-    fetch('/api/customers').then(r => r.json()).then(data => Array.isArray(data) ? setCustomers(data) : setCustomers([]));
-    fetch('/api/pricing')
-      .then(r => r.json())
-      .then(data => {
-        if (!Array.isArray(data)) {
-          setPricing([]);
-          return;
-        }
-        const hasPackages = data.some(p => p.garment_type === 'Full Package');
+    const loadData = async () => {
+      try {
+        const res = await fetch('/api/orders/bootstrap');
+        if (!res.ok) throw new Error('Failed to bootstrap order data');
+        const data = await res.json();
+        
+        setCustomers(data.customers || []);
+        
+        // Handle pricing and default packages
+        let pricingData = data.pricing || [];
+        const hasPackages = pricingData.some(p => p.garment_type === 'Full Package');
         if (!hasPackages) {
-          data.unshift(
+          pricingData.unshift(
             { id: 'pkg-1', garment_type: 'Full Package', service_type: 'Wash & Fold (Per Kg)', price: 150 },
             { id: 'pkg-2', garment_type: 'Full Package', service_type: 'Premium Dry Clean Bundle', price: 999 }
           );
         }
-        setPricing(data);
-      });
+        setPricing(pricingData);
 
-    fetch('/api/pricing/volume-discounts')
-      .then(r => r.ok ? r.json() : [])
-      .then(data => {
-        if (data.length > 0) setVolDiscountInfo(data[0]); 
-      }).catch(() => {});
+        if (data.discounts?.length > 0) {
+          setVolDiscountInfo(data.discounts[0]);
+        }
+      } catch (e) {
+        console.error('Bootstrap failed:', e);
+      }
+    };
+
+    loadData();
 
     if (editId) {
       fetch(`/api/orders/${editId}`)
