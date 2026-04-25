@@ -32,12 +32,77 @@ export default function OperationsPage() {
 
   const advanceItem = async (itemId) => {
     if (role === ROLES.STAFF) return; // Guard
-    await fetch(`/api/workflow/${itemId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'advance' }),
+
+    // Save previous state for rollback
+    const previousWorkflow = { ...workflow };
+    
+    // Find the item and calculate next state
+    let targetItem = null;
+    let currentStageKey = null;
+    
+    for (const stage of STAGES) {
+      const items = workflow[stage.key] || [];
+      const found = items.find(i => i.id === itemId);
+      if (found) {
+        targetItem = { ...found };
+        currentStageKey = stage.key;
+        break;
+      }
+    }
+    
+    if (!targetItem || !currentStageKey) return;
+    
+    const STAGE_ORDER = STAGES.map(s => s.key);
+    let nextStageKey;
+    const currentIndex = STAGE_ORDER.indexOf(currentStageKey);
+    
+    if (currentIndex === -1) {
+       nextStageKey = 'ready'; // fallback
+    } else if (currentIndex < STAGE_ORDER.length - 1) {
+       nextStageKey = STAGE_ORDER[currentIndex + 1];
+    } else {
+       return; // Already at ready
+    }
+
+    // Branching logic: sorting -> dry_cleaning OR washing
+    if (currentStageKey === 'sorting') {
+      const isDryCleaning = targetItem.service_type?.toLowerCase().includes('dry cleaning');
+      nextStageKey = isDryCleaning ? 'dry_cleaning' : 'washing';
+    }
+    
+    targetItem.status = nextStageKey;
+    
+    // Optimistically update UI
+    setWorkflow(prev => {
+      const newWorkflow = { ...prev };
+      // Remove from old
+      if (newWorkflow[currentStageKey]) {
+        newWorkflow[currentStageKey] = newWorkflow[currentStageKey].filter(i => i.id !== itemId);
+      }
+      // Add to new
+      if (!newWorkflow[nextStageKey]) newWorkflow[nextStageKey] = [];
+      newWorkflow[nextStageKey] = [...newWorkflow[nextStageKey], targetItem];
+      return newWorkflow;
     });
-    fetchWorkflow();
+
+    try {
+      const res = await fetch(`/api/workflow/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'advance' }),
+      });
+      if (!res.ok) throw new Error('API failed');
+      
+      // Fetch latest state in background to sync any other changes silently
+      fetch('/api/workflow')
+        .then(r => r.json())
+        .then(data => setWorkflow(data));
+    } catch (err) {
+      console.error('Failed to advance item:', err);
+      // Rollback on failure
+      setWorkflow(previousWorkflow);
+      alert('Failed to update status. Reverting changes.');
+    }
   };
 
   if (loading) return (

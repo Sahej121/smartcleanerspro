@@ -22,27 +22,28 @@ export default function ContactPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+    // Optimistic Update: instantly show success
+    setSubmitted(true);
 
-      if (res.ok) {
-        setSubmitted(true);
-      } else {
+    // Fire API silently in the background
+    fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    })
+    .then(async (res) => {
+      if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Failed to send message');
+        throw new Error(data.error || 'Failed to send message');
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    })
+    .catch((err) => {
+      // Revert optimistic update on failure
+      setSubmitted(false);
+      setError(err.message || 'Network error. Please try again.');
+    });
   };
 
   return (
