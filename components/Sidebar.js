@@ -91,7 +91,7 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
         />
       )}
       
-      <aside className={`fixed left-0 top-0 h-screen w-64 bg-theme-surface glass-sidebar flex flex-col p-4 gap-y-2 z-[60] transition-transform duration-300 ease-in-out border-r border-theme-border ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed left-0 top-0 h-[100dvh] w-64 bg-theme-surface glass-sidebar flex flex-col p-4 gap-y-2 z-[60] transition-transform duration-300 ease-in-out border-r border-theme-border ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
       {/* Logo Area */}
       <div className="flex items-center gap-3 px-3 py-6 mb-4 group">
         <div className="relative">

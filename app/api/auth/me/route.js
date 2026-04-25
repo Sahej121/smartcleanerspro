@@ -35,6 +35,8 @@ export async function GET() {
         tier: session.tier,
         suspended: session.suspended,
         auth_id: session.auth_id || null,
+        language: session.language,
+        branding: session.branding
       }
     }, {
       headers: {

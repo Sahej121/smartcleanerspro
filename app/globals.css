@@ -219,6 +219,7 @@
   .glass-card-premium {
     background: var(--theme-surface);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--theme-border);
     box-shadow: var(--theme-shadow);
     @apply rounded-[2.5rem] transition-all duration-300;
@@ -489,10 +490,6 @@
 
 html {
   scroll-behavior: smooth;
-}
-
-body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .mesh-background {

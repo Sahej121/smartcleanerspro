@@ -29,7 +29,7 @@ export default function MainLayout({ children }) {
     <ScrollObserver>
       <div className={`flex min-h-screen bg-background text-theme-text overflow-hidden ${themeClass}`}>
         <Sidebar mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
-        <div className="flex-1 lg:ml-64 w-full flex flex-col h-screen overflow-y-auto relative">
+        <div className="flex-1 lg:ml-64 w-full flex flex-col h-[100dvh] overflow-y-auto relative">
           <Header setMobileMenuOpen={setMobileMenuOpen} />
           <main className="flex-1 p-4 lg:p-8 w-full max-w-full overflow-x-hidden animate-page-fade-in" key={pathname}>
             {children}

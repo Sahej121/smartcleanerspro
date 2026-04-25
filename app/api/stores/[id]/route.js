@@ -18,7 +18,7 @@ export async function PATCH(req, { params }) {
 
     const { id } = await params;
     const body = await req.json();
-    const { store_name, city, address, phone } = body;
+    const { store_name, city, address, phone, branding_logo } = body;
 
     // Check ownership or assignment
     const storeCheck = await query(`SELECT owner_id FROM stores WHERE id = $1`, [id]);
@@ -54,6 +54,10 @@ export async function PATCH(req, { params }) {
     if (phone !== undefined) {
       updates.push(`phone = $${paramCount++}`);
       values.push(phone);
+    }
+    if (branding_logo !== undefined) {
+      updates.push(`branding_logo = $${paramCount++}`);
+      values.push(branding_logo);
     }
 
     if (updates.length === 0) {
