@@ -217,6 +217,9 @@
   .text-theme-muted { color: var(--theme-text-muted); }
   
   .glass-card-premium {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     background: var(--theme-surface);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);

@@ -6,6 +6,7 @@ import { AnimatedTotal } from '@/components/common/AnimatedStats';
 export default function OrderCart({
   cart,
   removeFromCart,
+  updateQuantity,
   updateItemPrice,
   getGarmentIcon,
   subtotal,
@@ -28,153 +29,307 @@ export default function OrderCart({
   t,
   customerHeader
 }) {
+  const [showProceedConfirm, setShowProceedConfirm] = React.useState(false);
+
   return (
-    <div className="lg:col-span-4 flex flex-col overflow-hidden min-h-[500px] lg:min-h-0 animate-fade-in-up stagger-3">
-      <div className="bg-theme-surface rounded-[2rem] border border-theme-border/50 shadow-xl shadow-emerald-900/5 flex flex-col overflow-hidden h-full">
+    <>
+    <div className="lg:col-span-4 flex flex-col overflow-hidden animate-fade-in-up stagger-3" style={{ height: 'calc(100vh - 160px)' }}>
+      <div className="glass-card-premium flex flex-col overflow-hidden" style={{height: 'calc(100vh - 176px)'}}>
         {/* Summary Header */}
         {customerHeader}
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
-          {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
-              <span className="material-symbols-outlined text-6xl mb-4 animate-float">shopping_bag</span>
-              <p className="text-xs font-black uppercase tracking-widest text-center leading-relaxed">Cart is waiting<br/>for orders</p>
-            </div>
-          ) : (
-            cart.map((item, i) => (
-              <div key={i} className="flex flex-col gap-2 p-3 bg-theme-surface rounded-2xl border border-theme-border animate-slide-in-right" style={{ animationDelay: `${i * 60}ms` }}>
-                <div className="flex items-center gap-4 group">
-                  <div className="w-10 h-10 rounded-lg bg-theme-surface-container flex items-center justify-center text-theme-text">
-                    <span className="material-symbols-outlined text-lg">{getGarmentIcon(item.garment_type)}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between">
-                      <h5 className="text-xs font-bold text-theme-text">{item.garment_type}</h5>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-bold text-theme-text-muted/70">₹</span>
-                        <input 
-                          type="number" 
-                          className="w-16 bg-theme-surface-container border-none rounded p-1 text-xs font-bold text-right outline-none focus:ring-1 focus:ring-emerald-500/20"
-                          value={item.price}
-                          onChange={(e) => updateItemPrice(i, e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-theme-text-muted/70 font-bold uppercase tracking-wider">{item.service_type}</p>
-                  </div>
-                  <button onClick={() => removeFromCart(i)} className="text-theme-text-muted/70 hover:text-red-500 transition-colors">
-                    <span className="material-symbols-outlined text-lg">delete</span>
-                  </button>
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 no-scrollbar">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center py-20">
+                <div className="w-24 h-24 rounded-full bg-theme-surface-container flex items-center justify-center mb-6 animate-float">
+                  <span className="material-symbols-outlined text-5xl text-theme-text-muted/30">shopping_bag</span>
                 </div>
-                
-                <div className="flex items-center justify-between pt-2 border-t border-theme-border mt-1">
-                   <div className="flex gap-2">
-                      {item.tag_id ? (
-                        <span className="px-2 py-0.5 bg-theme-surface-container text-emerald-600 rounded text-[8px] font-black uppercase tracking-tight italic">Tag: {item.tag_id}</span>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-theme-surface-container text-theme-text-muted/70 rounded text-[8px] font-bold uppercase tracking-tight">No Tag</span>
-                      )}
-                      {item.bag_id && (
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-tight italic">Bag: {item.bag_id}</span>
-                      )}
-                   </div>
-                   <button 
-                     onClick={() => {
-                       setItemEditIndex(i);
-                       setItemEditData({
-                         tag_id: item.tag_id || '',
-                         bag_id: item.bag_id || '',
-                         notes: item.notes || '',
-                         fabric_hint: item.fabric_hint || '',
-                         stain_analysis: item.stain_analysis || null
-                       });
-                       setStainError('');
-                       setShowItemEditModal(true);
-                     }}
-                     className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-widest hover:text-theme-text"
-                   >
-                     <span className="material-symbols-outlined text-[12px]">edit_note</span>
-                     Track
-                   </button>
-                </div>
-                {item.notes && (
-                  <p className="text-[8px] text-amber-600 font-medium italic truncate px-1">Note: {item.notes}</p>
-                )}
-                {item.stain_analysis?.stains?.[0] && (
-                  <div className="px-1">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-[8px] font-black uppercase tracking-tight">
-                      <span className="material-symbols-outlined text-[10px]">biotech</span>
-                      {item.stain_analysis.stains[0].label} ({Math.round((item.stain_analysis.stains[0].confidence || 0) * 100)}%)
-                    </span>
-                  </div>
-                )}
+                <h4 className="text-sm font-black uppercase tracking-[0.2em] text-theme-text-muted/40 text-center">
+                  No items added yet
+                </h4>
+                <p className="text-[10px] font-bold text-theme-text-muted/30 mt-2 tracking-widest uppercase">
+                  Add services from the catalog
+                </p>
               </div>
-            ))
-          )}
+            ) : (
+              <div className="pb-4">
+                <div className="overflow-hidden rounded-[1.5rem] border-2 border-theme-border bg-theme-surface-container/70 ring-2 ring-theme-border/60">
+                {cart.map((item, i) => (
+                  <div
+                    key={i}
+                    className={`animate-slide-in-right group relative px-3 py-2.5 ${i < cart.length - 1 ? 'border-b-2 border-theme-border/90' : ''}`}
+                    style={{ animationDelay: `${i * 60}ms` }}
+                  >
+                    <div className="flex min-h-[52px] w-full items-center gap-2.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-theme-surface-container text-theme-text ring-1 ring-theme-border/50">
+                        <span className="material-symbols-outlined text-xl">
+                          {getGarmentIcon(item.garment_type)}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0 flex-1 flex flex-col justify-center">
+                        <h5 className="truncate text-[12px] font-semibold text-theme-text whitespace-nowrap overflow-hidden text-ellipsis">
+                          {item.garment_type}
+                        </h5>
+                        <span className="mt-1 inline-block max-w-full truncate text-[9px] font-black text-emerald-700 uppercase tracking-[0.08em] bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200/70">
+                          {item.service_type}
+                        </span>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-1.5 bg-theme-surface px-1.5 py-1 rounded-xl ring-1 ring-theme-border/50">
+                        <button
+                          onClick={() => updateQuantity(i, (item.quantity || 1) - 1)}
+                          disabled={(item.quantity || 1) <= 1}
+                          className="w-6 h-6 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          aria-label={`Decrease quantity for ${item.garment_type}`}
+                        >
+                          <span className="material-symbols-outlined text-[14px]">remove</span>
+                        </button>
+                        <span className="min-w-5 text-center text-[12px] font-black text-theme-text">
+                          {item.quantity || 1}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(i, (item.quantity || 1) + 1)}
+                          className="w-6 h-6 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all"
+                          aria-label={`Increase quantity for ${item.garment_type}`}
+                        >
+                          <span className="material-symbols-outlined text-[14px]">add</span>
+                        </button>
+                      </div>
+
+                      <div className="shrink-0 min-w-[52px] text-right">
+                        <p className="text-[12px] font-medium text-theme-text">
+                          ₹{((item.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => removeFromCart(i)}
+                        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-theme-text-muted/40 transition-all hover:bg-red-50 hover:text-red-500 active:scale-90"
+                        aria-label={`Remove ${item.garment_type}`}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                </div>
+              </div>
+            )}
         </div>
 
         {/* Summary Totals */}
-        <div className="p-6 bg-theme-surface-container/50 border-t border-theme-border">
-          <div className="space-y-2 mb-6">
-            <div className="flex justify-between text-xs font-medium text-theme-text-muted">
-              <span>Subtotal</span>
-              <span>₹{subtotal.toLocaleString('en-IN')}</span>
+        <div className="shrink-0 flex-shrink-0 relative z-10 p-4 bg-theme-surface-container/40 border-t border-theme-border/60 backdrop-blur-md">
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-theme-text-muted/70 uppercase tracking-widest">Subtotal</span>
+              <span className="font-black text-theme-text">₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
+            
             {applicableVolDiscount > 0 && (
-              <div className="flex justify-between text-xs font-medium text-blue-600 animate-fade-in">
-                <span>Volume Discount ({volDiscountInfo.discount_percent}%)</span>
-                <span>-₹{applicableVolDiscount.toLocaleString('en-IN')}</span>
+              <div className="flex justify-between items-center text-xs animate-fade-in bg-blue-50/50 p-2 rounded-lg border border-blue-100/30">
+                <span className="font-bold text-blue-600 uppercase tracking-widest">Volume Savings</span>
+                <span className="font-black text-blue-700">-₹{applicableVolDiscount.toLocaleString('en-IN')}</span>
               </div>
             )}
-            <div className="flex justify-between text-xs font-medium text-theme-text-muted">
-              <span>{t('tax_label_18')}</span>
-              <span>₹{tax.toLocaleString('en-IN')}</span>
+            
+            <div className="flex justify-between items-center text-[11px]">
+              <span className="font-bold text-theme-text-muted/70 uppercase tracking-widest">Est. Tax (18%)</span>
+              <span className="font-black text-theme-text">₹{tax.toLocaleString('en-IN')}</span>
             </div>
+
             {couponData && (
-              <div className="flex justify-between text-xs font-medium text-purple-600 animate-fade-in">
-                <span>Promo: {couponData.code}</span>
-                <span>-₹{couponDiscount.toLocaleString('en-IN')}</span>
+              <div className="flex justify-between items-center text-xs animate-fade-in bg-purple-50/50 p-2 rounded-lg border border-purple-100/30">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[14px] text-purple-600">confirmation_number</span>
+                  <span className="font-bold text-purple-600 uppercase tracking-widest">{couponData.code}</span>
+                </div>
+                <span className="font-black text-purple-700">-₹{couponDiscount.toLocaleString('en-IN')}</span>
               </div>
             )}
+
             {selectedCustomer && (
-              <div className="flex justify-between text-xs font-medium text-emerald-600">
-                <span>{t('member_advantage')}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-theme-surface-container px-1.5 rounded">{t('applied')}</span>
+              <div className="flex items-center gap-2 py-1 px-3 bg-emerald-50/50 rounded-lg border border-emerald-100/30 w-max">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-700">Member benefits active</span>
               </div>
             )}
-            <div className="flex gap-2 mt-4">
-              <input 
-                type="text" 
-                placeholder={t('promo_code_placeholder')} 
-                className="flex-1 bg-theme-surface border border-theme-border rounded-xl px-3 py-2 text-[10px] font-black tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
-                value={couponCode}
-                onChange={e => setCouponCode(e.target.value.toUpperCase())}
-              />
-              <button 
-                onClick={handleApplyCoupon}
-                className="px-4 py-2 bg-theme-text text-background rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-              >
-                Apply
-              </button>
+
+            <div className="mt-4 border-t border-theme-border/60 pt-3 border-b border-theme-border/60 pb-3">
+              <div className="flex gap-2">
+                <div className="relative flex-1 group">
+                  <input 
+                    type="text" 
+                    placeholder="PROMO CODE" 
+                    className="w-full bg-theme-surface border border-theme-border/80 rounded-xl px-4 py-2.5 text-[11px] font-black tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-theme-text-muted/30"
+                    value={couponCode}
+                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                  />
+                </div>
+                <button 
+                  onClick={handleApplyCoupon}
+                  className="px-6 py-2.5 bg-theme-text text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 active:scale-95 transition-all shadow-md shadow-theme-text/5"
+                >
+                  Apply
+                </button>
+              </div>
+              {couponData && (
+                <p className="mt-2 text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
+                  {couponData.code} applied - -₹{couponDiscount.toLocaleString('en-IN')}
+                </p>
+              )}
             </div>
-            <div className="pt-4 border-t border-theme-border flex justify-between items-end">
-              <span className="text-sm font-black uppercase tracking-widest text-theme-text">Total</span>
-              <span className="text-2xl font-black text-theme-text">
-                <AnimatedTotal value={total} />
-              </span>
+
+            <div className="pt-3 mt-1 flex justify-between items-center">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/60">Grand Total</span>
+                <div className="flex items-center gap-1 text-emerald-600">
+                  <span className="text-xs font-black">₹</span>
+                  <span className="text-[28px] font-black tracking-tight text-theme-text leading-none">
+                    <AnimatedTotal value={total} />
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
+          
           <button 
-            disabled={cart.length === 0 || !selectedCustomer}
-            onClick={() => setCurrentStep(3)}
-            className="w-full primary-gradient text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-emerald-900/20 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-2"
+            disabled={cart.length === 0}
+            onClick={() => setShowProceedConfirm(true)}
+            className="w-full primary-gradient text-white py-4 rounded-[1.5rem] font-black text-base shadow-xl shadow-emerald-900/15 active:scale-[0.98] transition-all disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center gap-3 group"
           >
-            <span>{t('proceed_to_schedule')}</span>
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <span className="uppercase tracking-widest">{t('proceed_to_schedule')}</span>
+            <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
           </button>
         </div>
       </div>
     </div>
+
+    {showProceedConfirm && (
+      <div className="fixed inset-0 z-[120] flex items-center justify-center bg-on-surface/40 backdrop-blur-md animate-fade-in p-4">
+        <div className="w-full max-w-xl rounded-[2rem] border border-theme-border bg-theme-surface shadow-2xl animate-scale-in max-h-[85vh] flex flex-col overflow-hidden">
+          <div className="p-5 border-b border-theme-border/60 shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-black text-theme-text uppercase tracking-[0.12em]">Confirm Order Items</h3>
+                <p className="text-[10px] font-bold text-theme-text-muted/70 uppercase tracking-wider mt-1">
+                  Review or edit items before scheduling
+                </p>
+              </div>
+              <button
+                onClick={() => setShowProceedConfirm(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-theme-text-muted hover:bg-theme-surface-container transition-all"
+                aria-label="Close confirmation"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 no-scrollbar">
+            {cart.map((item, i) => (
+              <div key={`${item.garment_type}-${i}`} className={`py-3 ${i < cart.length - 1 ? 'border-b border-theme-border/50' : ''}`}>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-theme-surface-container text-theme-text ring-1 ring-theme-border/50">
+                    <span className="material-symbols-outlined text-lg">
+                      {getGarmentIcon(item.garment_type)}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-semibold text-theme-text">{item.garment_type}</p>
+                    <span className="inline-block mt-1 max-w-full truncate text-[9px] font-black uppercase tracking-[0.08em] text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200/70">
+                      {item.service_type}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setItemEditIndex(i);
+                        setItemEditData({
+                          tag_id: item.tag_id || '',
+                          bag_id: item.bag_id || '',
+                          notes: item.notes || '',
+                          fabric_hint: item.fabric_hint || '',
+                          stain_analysis: item.stain_analysis || null
+                        });
+                        setStainError('');
+                        setShowProceedConfirm(false);
+                        setShowItemEditModal(true);
+                      }}
+                      className="mt-1 text-[9px] font-black uppercase tracking-[0.08em] text-emerald-700 hover:text-emerald-800 transition-colors"
+                    >
+                      Edit tracking details
+                    </button>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-1.5 bg-theme-surface px-1.5 py-1 rounded-xl ring-1 ring-theme-border/50">
+                    <button
+                      onClick={() => updateQuantity(i, (item.quantity || 1) - 1)}
+                      disabled={(item.quantity || 1) <= 1}
+                      className="w-6 h-6 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label={`Decrease quantity for ${item.garment_type}`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">remove</span>
+                    </button>
+                    <span className="min-w-5 text-center text-[12px] font-black text-theme-text">{item.quantity || 1}</span>
+                    <button
+                      onClick={() => updateQuantity(i, (item.quantity || 1) + 1)}
+                      className="w-6 h-6 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all"
+                      aria-label={`Increase quantity for ${item.garment_type}`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">add</span>
+                    </button>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-1.5 bg-theme-surface px-2 py-1.5 rounded-xl ring-1 ring-theme-border/50">
+                    <span className="text-[10px] font-black text-theme-text-muted">₹</span>
+                    <input
+                      type="number"
+                      className="w-12 border-none bg-transparent p-0 text-right text-[12px] font-black text-theme-text outline-none focus:ring-0"
+                      value={item.price}
+                      onChange={(e) => updateItemPrice(i, e.target.value)}
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => removeFromCart(i)}
+                    className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-theme-text-muted/40 transition-all hover:bg-red-50 hover:text-red-500 active:scale-90"
+                    aria-label={`Remove ${item.garment_type}`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-4 border-t border-theme-border/60 bg-theme-surface-container/40 shrink-0">
+            <div className="flex items-center justify-between text-[11px] font-black text-theme-text mb-3 uppercase tracking-wider">
+              <span>Current Total</span>
+              <span>₹{total.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowProceedConfirm(false)}
+                className="flex-1 py-3 bg-theme-surface-container text-theme-text-muted rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-theme-surface-container/80 transition-colors"
+              >
+                Keep Editing
+              </button>
+              <button
+                disabled={cart.length === 0}
+                onClick={() => {
+                  setShowProceedConfirm(false);
+                  setCurrentStep(3);
+                }}
+                className="flex-1 py-3 primary-gradient text-white rounded-xl font-black text-[10px] uppercase tracking-widest disabled:opacity-30 disabled:pointer-events-none"
+              >
+                Confirm & Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

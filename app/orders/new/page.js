@@ -428,38 +428,50 @@ export default function NewOrder() {
     );
   }
 
+  const getLabel = (key, fallback) => {
+    if (!t) return fallback;
+    const val = t(key);
+    return (val === key || val.toUpperCase() === key.toUpperCase()) ? fallback : val;
+  };
+
   const steps = [
-    { icon: 'person', label: t('customer_sidebar'), step: 1 },
-    { icon: 'dry_cleaning', label: t('service_type_label'), step: 2 },
-    { icon: 'schedule', label: t('schedule'), step: 3 },
-    { icon: 'payments', label: t('payment'), step: 4 },
+    { icon: 'person', label: getLabel('customer_sidebar', 'Customer'), step: 1 },
+    { icon: 'dry_cleaning', label: getLabel('service_type_label', 'Service'), step: 2 },
+    { icon: 'schedule', label: getLabel('schedule', 'Schedule'), step: 3 },
+    { icon: 'payments', label: getLabel('payment', 'Payment'), step: 4 },
   ];
 
   return (
-    <div className="flex flex-col gap-6 min-h-[calc(100vh-140px)] lg:h-[calc(100vh-140px)] lg:min-h-0">
+    <div className="flex flex-col gap-4 lg:overflow-y-auto">
       {/* Razorpay Checkout Script */}
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       {/* Progress Stepper */}
-      <div className="flex items-center justify-center animate-fade-in-up">
-        <div className="flex items-center w-full max-w-2xl">
+      <div className="flex items-center justify-center animate-fade-in-up py-2 shrink-0" style={{height: '80px'}}>
+        <div className="flex items-center w-full max-w-2xl bg-theme-surface/50 backdrop-blur-sm p-4 rounded-[2rem] border border-theme-border/40 shadow-sm">
           {steps.map((s, i) => (
             <div key={s.step} className="contents">
-              <div className="flex flex-col items-center gap-2 group">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+              <div className="flex flex-col items-center gap-2 group relative">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative z-10 ${
                   s.step <= currentStep 
-                    ? 'primary-gradient text-white ring-4 ring-emerald-50 shadow-lg shadow-emerald-200/30' 
-                    : 'bg-theme-surface-container text-theme-text-muted/70'
+                    ? 'primary-gradient text-white shadow-lg shadow-emerald-900/10 scale-110' 
+                    : 'bg-theme-surface-container text-theme-text-muted/30 group-hover:bg-theme-surface-container/80 transition-colors'
                 }`}>
-                  <span className="material-symbols-outlined text-lg">{s.icon}</span>
+                  <span className="material-symbols-outlined text-xl">{s.icon}</span>
                 </div>
-                <span className={`text-[11px] font-bold uppercase tracking-wider transition-colors ${
-                  s.step <= currentStep ? 'text-theme-text' : 'text-theme-text-muted/70'
+                <span className={`text-[9px] font-black uppercase tracking-[0.2em] transition-colors ${
+                  s.step <= currentStep ? 'text-theme-text' : 'text-theme-text-muted/40'
                 }`}>{s.label}</span>
+                
+                {s.step === currentStep && (
+                  <div className="absolute -bottom-1 w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                )}
               </div>
               {i < steps.length - 1 && (
-                <div className={`flex-1 h-[2px] mx-2 mb-6 transition-colors duration-300 ${
-                  s.step < currentStep ? 'bg-emerald-300' : 'bg-theme-surface-container'
-                }`}></div>
+                <div className="flex-1 px-4 mb-6">
+                  <div className={`h-[2px] w-full rounded-full transition-all duration-700 ${
+                    s.step < currentStep ? 'bg-emerald-500' : 'bg-theme-surface-container'
+                  }`}></div>
+                </div>
               )}
             </div>
           ))}
@@ -468,7 +480,7 @@ export default function NewOrder() {
 
       {/* POS 3-Column Layout */}
       {currentStep <= 2 && (
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-y-auto lg:overflow-hidden pb-20 lg:pb-0">
+        <div className="grid lg:grid-cols-12 gap-4 flex-1 overflow-y-auto" style={{minHeight: 0}}>
           <ServiceCatalog 
             garmentTypes={garmentTypes}
             activeCategory={activeCategory}
@@ -485,6 +497,7 @@ export default function NewOrder() {
           <OrderCart 
             cart={cart}
             removeFromCart={removeFromCart}
+            updateQuantity={updateQuantity}
             updateItemPrice={updateItemPrice}
             getGarmentIcon={getGarmentIcon}
             subtotal={subtotal}

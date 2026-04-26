@@ -28,7 +28,7 @@ export default function EnterpriseUpgradePage() {
   const isComplete = phase >= phases.length;
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background text-theme-text font-sans p-6 flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-[calc(100vh-64px)] bg-background text-theme-text font-sans p-6 flex flex-col items-center justify-center relative overflow-y-auto overflow-x-hidden">
       {/* Immersive Glows */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] pointer-events-none"></div>
 

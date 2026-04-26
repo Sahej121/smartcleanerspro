@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export default function SuspendedPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 animate-fade-in relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 animate-fade-in relative overflow-y-auto overflow-x-hidden">
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 opacity-40">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-300 rounded-full mix-blend-multiply filter blur-[120px]"></div>

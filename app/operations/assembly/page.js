@@ -117,7 +117,7 @@ export default function PremiumAssemblyPage() {
 
   // 1. Auth & Feature Gate
   if (authLoading || loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-8 relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-8 relative overflow-y-auto overflow-x-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="relative z-10 w-16 h-16 rounded-full border-4 border-theme-border border-t-primary animate-spin mb-6 shadow-[0_0_30px_rgba(16,185,129,0.3)]"></div>
       <p className="relative z-10 text-sm font-black text-theme-text-muted uppercase tracking-widest animate-pulse">{t('initializing_control_room')}</p>
@@ -127,7 +127,7 @@ export default function PremiumAssemblyPage() {
   const isPro = user?.role === 'owner' || hasFeature(user?.tier, 'assemblyWorkflow');
   if (!isPro) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden font-sans">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-y-auto overflow-x-hidden font-sans">
         
         <div className="absolute inset-0 z-0 opacity-10 blur-[8px] pointer-events-none select-none overflow-hidden flex items-center justify-center">
             <div className="w-[800px] h-[600px] border border-theme-border rounded-[4rem] p-12 bg-surface">
@@ -193,7 +193,7 @@ export default function PremiumAssemblyPage() {
   // 2. Station Selector (If not selected)
   if (!station) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 lg:p-12 overflow-hidden selection:bg-primary/30 font-sans">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 lg:p-12 overflow-y-auto overflow-x-hidden selection:bg-primary/30 font-sans">
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
           <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary rounded-full blur-[150px] animate-pulse opacity-50"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500 rounded-full blur-[120px] animate-breathe opacity-30"></div>

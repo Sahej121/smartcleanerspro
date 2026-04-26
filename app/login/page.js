@@ -62,6 +62,7 @@ export default function LoginPage() {
   const handleReset = async (e) => {
     e.preventDefault();
     setError('');
+    setResetMessage('');
     setLoading(true);
     try {
       const res = await fetch('/api/auth/reset-password', {
@@ -83,7 +84,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAF9] flex items-center justify-center p-6 relative overflow-y-auto overflow-x-hidden">
       {/* Animated Decorative Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-100/30 blur-[120px] rounded-full animate-float-slow"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full animate-float-slow" style={{ animationDelay: '4s' }}></div>

@@ -105,7 +105,7 @@ function WaitingContent() {
   }, [steps, isLogin, router]);
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 lg:p-12 selection:bg-emerald-500/30 overflow-hidden font-sans relative">
+    <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 lg:p-12 selection:bg-emerald-500/30 overflow-y-auto overflow-x-hidden font-sans relative">
       <BubbleMatrix />
       
       {/* Dynamic Background Blobs */}

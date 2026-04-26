@@ -89,7 +89,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-8 font-sans selection:bg-primary/30 relative overflow-hidden">
+    <div className="min-h-screen bg-background p-4 lg:p-8 font-sans selection:bg-primary/30 relative overflow-y-auto overflow-x-hidden">
       {/* Background Ambience */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
 
