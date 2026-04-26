@@ -346,7 +346,7 @@ export async function GET(request) {
     
     // --- SELF-HEALING HOOK ---
     // If the user is an owner, ensure their fleet is consistent
-    if (payload.role === 'owner') {
+    if (payload.role === 'owner' || payload.role === 'superadmin') {
       try {
         const client = await getClient();
         try {

@@ -67,7 +67,7 @@ export default async function RootLayout({ children }) {
     id: session.id,
     name: session.name,
     email: session.email,
-    role: session.role === 'manager' ? 'admin' : session.role === 'superadmin' ? 'owner' : session.role,
+    role: session.role === 'manager' ? 'admin' : session.role,
     store_id: session.store_id,
     tier: session.tier,
     suspended: session.suspended,

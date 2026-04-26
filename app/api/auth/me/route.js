@@ -24,7 +24,6 @@ export async function GET() {
     // Normalize backend roles for the current client dashboard model.
     let feRole = session.role;
     if (session.role === 'manager') feRole = 'admin';
-    if (session.role === 'superadmin') feRole = 'owner';
 
     return NextResponse.json({ 
       user: {

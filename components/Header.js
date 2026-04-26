@@ -144,7 +144,7 @@ export default function Header({ setMobileMenuOpen }) {
                   My Account
                 </Link>
                 
-                {role === 'owner' && (
+                {(role === 'owner' || role === 'superadmin') && (
                   <Link 
                     href="/admin/settings" 
                     className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-theme-text hover:bg-theme-surface-container transition-colors"

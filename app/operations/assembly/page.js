@@ -124,7 +124,7 @@ export default function PremiumAssemblyPage() {
     </div>
   );
 
-  const isPro = user?.role === 'owner' || hasFeature(user?.tier, 'assemblyWorkflow');
+  const isPro = user?.role === 'owner' || user?.role === 'superadmin' || hasFeature(user?.tier, 'assemblyWorkflow');
   if (!isPro) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-y-auto overflow-x-hidden font-sans">

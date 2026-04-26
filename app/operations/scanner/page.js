@@ -84,7 +84,7 @@ export default function ScannerPage() {
     setUpdatingItem(null);
   };
 
-  const canAdvance = [ROLES.STAFF, ROLES.OWNER, ROLES.ADMIN].includes(role);
+  const canAdvance = [ROLES.STAFF, ROLES.OWNER, ROLES.ADMIN, ROLES.SUPERADMIN].includes(role);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${flash ? 'bg-emerald-500/10' : 'bg-transparent'}`}>

@@ -4,7 +4,7 @@ import { hashPassword } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const email = 'sahej@cleanflow.com';
+    const email = 'sehajbudhiraja2000@gmail.com';
     const password = 'password123';
     const pin = '1234';
     
@@ -19,7 +19,7 @@ export async function GET() {
 
     await query(
       `INSERT INTO users (name, email, phone, password_hash, pin_hash, role) VALUES ($1, $2, $3, $4, $5, $6)`,
-      ['Sahej (Superadmin)', email, '', hashedPassword, hashedPin, 'owner']
+      ['Sahej (Superadmin)', email, '', hashedPassword, hashedPin, 'superadmin']
     );
 
     return NextResponse.json({ success: true, message: 'Superadmin created', email, password, pin });

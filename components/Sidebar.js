@@ -7,7 +7,7 @@ import { useBranding } from '@/lib/BrandingContext';
 import { canAccessRoute, normalizeTier } from '@/lib/tier-config';
 
 const getNavLinks = (role, userTier, isSaasOwner) => {
-  if (role === ROLES.OWNER && isSaasOwner) {
+  if ((role === ROLES.OWNER || role === ROLES.SUPERADMIN) && isSaasOwner) {
     return [
       { href: '/', labelKey: 'nav_dashboard', icon: 'grid_view' },
       { href: '/master/nodes', labelKey: 'nav_manage_nodes', icon: 'dns' },
@@ -65,7 +65,7 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
   const { role: roleFromContext, user, logout } = useUser();
   const { systemName } = useBranding();
 
-  const isSaasOwner = user?.role === 'owner' && (user?.id == 1);
+  const isSaasOwner = (user?.role === 'owner' || user?.role === 'superadmin') && (user?.id == 1);
   const userTier = normalizeTier(user?.tier);
   const role = roleFromContext || (isSaasOwner ? ROLES.OWNER : 'guest');
   const filteredLinks = getNavLinks(role, userTier, isSaasOwner) || [];

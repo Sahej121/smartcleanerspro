@@ -28,7 +28,7 @@ export default function OrderDetail({ params }) {
   };
   const { id } = use(params);
   const { role } = useUser();
-  const isAdmin = role === ROLES.OWNER || role === ROLES.MANAGER;
+  const isAdmin = role === ROLES.OWNER || role === ROLES.MANAGER || role === ROLES.SUPERADMIN;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRefundModal, setShowRefundModal] = useState(false);

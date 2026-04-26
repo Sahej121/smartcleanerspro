@@ -17,7 +17,7 @@ const STAGES = [
 
 export default function OperationsPage() {
   const { role } = useUser();
-  const isAdmin = role === ROLES.OWNER || role === ROLES.MANAGER;
+  const isAdmin = role === ROLES.OWNER || role === ROLES.MANAGER || role === ROLES.SUPERADMIN;
   const [workflow, setWorkflow] = useState({});
   const [loading, setLoading] = useState(true);
 

@@ -179,8 +179,11 @@ export default function DashboardContent() {
   }
 
   // Dashboard redirects for logged-in users
+  if (role === ROLES.SUPERADMIN || (role === ROLES.OWNER && user?.id === 1)) {
+    return <MasterControl user={user} />;
+  }
+
   if (role === ROLES.OWNER) {
-    if (user?.id === 1) return <MasterControl user={user} />;
     return <BusinessOwner user={user} />;
   }
 

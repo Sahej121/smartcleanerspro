@@ -12,7 +12,7 @@ export async function GET(request) {
   }
 
   try {
-    const storeIdFilter = auth.user.role === 'owner' ? '' : `WHERE store_id = ${auth.user.store_id || 1}`;
+    const storeIdFilter = (auth.user.role === 'owner' || auth.user.role === 'superadmin') ? '' : `WHERE store_id = ${auth.user.store_id || 1}`;
 
     const { rows } = await query(`
       SELECT m.*, 
