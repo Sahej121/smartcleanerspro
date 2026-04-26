@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currency-utils';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { AnimatedCounter } from '@/components/common/AnimatedStats';
@@ -40,6 +40,7 @@ export default function MasterControl({ user }) {
   
   // View State
   const router = useRouter();
+  const pathname = usePathname();
   const [activeView, setActiveView] = useState('overview');
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSeverity, setBroadcastSeverity] = useState('info');
@@ -63,7 +64,9 @@ export default function MasterControl({ user }) {
 
       setMasterStats(stats);
       if (user?.id == 1) {
-        setOwners(Array.isArray(storesData) ? storesData : []);
+        const ownerRows = Array.isArray(storesData) ? storesData : [];
+        setOwners(ownerRows);
+        setStores(ownerRows.flatMap(owner => owner.stores || []));
       } else {
         setStores(Array.isArray(storesData) ? storesData : []);
       }
@@ -84,7 +87,7 @@ export default function MasterControl({ user }) {
     }, 15000);
 
     // Sync active view with URL
-    const path = window.location.pathname;
+    const path = pathname || '';
     if (path.includes('/master/nodes')) setActiveView('nodes');
     else if (path.includes('/master/insights')) setActiveView('insights');
     else if (path.includes('/master/logs')) setActiveView('logs');
@@ -92,7 +95,7 @@ export default function MasterControl({ user }) {
     else setActiveView('overview');
 
     return () => clearInterval(interval);
-  }, [window.location.pathname]);
+  }, [pathname]);
 
   const toggleOwnerExpansion = (ownerId) => {
     const next = new Set(expandedOwners);
@@ -276,6 +279,7 @@ export default function MasterControl({ user }) {
       t={t}
       router={router}
       fetchData={fetchData}
+      setProvisionMode={setProvisionMode}
       setShowCreateModal={setShowCreateModal}
       broadcastSeverity={broadcastSeverity}
       setBroadcastSeverity={setBroadcastSeverity}
@@ -321,6 +325,8 @@ export default function MasterControl({ user }) {
   const renderSecurity = () => (
     <MasterSecurity 
       t={t}
+      health={health}
+      logs={logs}
       broadcastMessage={broadcastMessage}
       setBroadcastMessage={setBroadcastMessage}
       handleSendBroadcast={handleSendBroadcast}
