@@ -15,31 +15,31 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Forbidden. Root owner access required.' }, { status: 403 });
     }
 
-    // Aggregate data across ALL stores
-    
-    // 1. Total Stores
-    const storesRes = await query('SELECT COUNT(*) as totalstores FROM stores');
-    const totalStores = parseInt(storesRes.rows[0].totalstores);
-
-    // 2. Active Users (Across all stores)
-    const usersRes = await query('SELECT COUNT(*) as totalusers FROM users');
-    const totalUsers = parseInt(usersRes.rows[0].totalusers);
-
-    // 3. Global Total Revenue (using 'paid' status from schema)
-    const revenueRes = await query("SELECT COALESCE(SUM(total_amount), 0) as globalrevenue FROM orders WHERE payment_status = $1", ['paid']);
-    const globalRevenue = parseFloat(revenueRes.rows[0].globalrevenue);
-
-    // 4. Global Active Orders (processing, received, ready)
-    const activeRes = await query(`
-      SELECT COUNT(*) as globalactiveorders FROM orders 
-      WHERE status IN ('received', 'processing', 'ready')
-    `);
-    const globalActiveOrders = parseInt(activeRes.rows[0].globalactiveorders);
-
-    // 5. Stores list with individual performance
-    const storesData = await query(`
+    const [storesRes, usersRes, revenueRes, activeRes, storesData] = await Promise.all([
+      query(`
+        SELECT
+          COUNT(*)::int as totalstores,
+          COUNT(*) FILTER (WHERE status = 'active')::int as activestores,
+          COUNT(*) FILTER (WHERE status = 'suspended')::int as suspendedstores,
+          COUNT(*) FILTER (WHERE status = 'idle')::int as idlestores
+        FROM stores
+      `),
+      query('SELECT COUNT(*)::int as totalusers FROM users'),
+      query(`
+        SELECT
+          COALESCE(SUM(total_amount), 0)::float as globalrevenue,
+          COUNT(*) FILTER (WHERE payment_status = 'paid')::int as paidorders
+        FROM orders
+        WHERE payment_status = $1
+      `, ['paid']),
+      query(`
+        SELECT COUNT(*)::int as globalactiveorders
+        FROM orders 
+        WHERE status IN ('received', 'processing', 'ready')
+      `),
+      query(`
       SELECT 
-        s.id, s.store_name, s.city, s.status, s.subscription_status, s.created_at,
+        s.id, s.store_name, s.city, s.status, s.subscription_status, s.subscription_tier, s.created_at,
         COUNT(DISTINCT u.id) as staff_count,
         COUNT(DISTINCT o.id) as order_count,
         COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_amount ELSE 0 END), 0) as revenue
@@ -47,21 +47,40 @@ export async function GET(req) {
       LEFT JOIN users u ON u.store_id = s.id
       LEFT JOIN orders o ON o.store_id = s.id
       GROUP BY s.id
-    `);
+      ORDER BY revenue DESC, s.created_at DESC
+      `),
+    ]);
 
-    // 6. SaaS Metrics (Mocked for now based on store counts)
-    const subPrice = 4999; // Base price per store
-    const mrr = totalStores * subPrice;
-    const churn = 0.5; // Mocked 0.5% churn
+    const totalStores = storesRes.rows[0].totalstores;
+    const activeStores = storesRes.rows[0].activestores;
+    const suspendedStores = storesRes.rows[0].suspendedstores;
+    const idleStores = storesRes.rows[0].idlestores;
+    const totalUsers = usersRes.rows[0].totalusers;
+    const globalRevenue = revenueRes.rows[0].globalrevenue;
+    const globalActiveOrders = activeRes.rows[0].globalactiveorders;
+
+    const tierPricing = {
+      software_only: 25,
+      hardware_bundle: 35,
+      enterprise: 99,
+    };
+    const mrr = storesData.rows.reduce((sum, store) => sum + (tierPricing[store.subscription_tier] || tierPricing.software_only), 0);
+    const churn = totalStores === 0 ? 0 : Number(((suspendedStores / totalStores) * 100).toFixed(2));
 
     return NextResponse.json({
       totalStores,
+      activeStores,
+      suspendedStores,
+      idleStores,
       totalUsers,
       globalRevenue,
+      total_revenue: globalRevenue,
       globalActiveOrders,
+      activeOrders: globalActiveOrders,
       stores: storesData.rows,
       mrr,
       churn,
+      paidOrders: revenueRes.rows[0].paidorders,
       systemHealth: '100% Online'
     });
 

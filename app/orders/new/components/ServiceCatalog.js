@@ -17,29 +17,32 @@ export default function ServiceCatalog({
   return (
     <>
       {/* Column 1: Service Categories (Horizontal on mobile) */}
-      <div className="lg:col-span-2 flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto no-scrollbar animate-fade-in-up stagger-1 pb-2 shrink-0">
-        <h3 className="hidden lg:block text-xs font-black uppercase tracking-widest text-theme-text-muted/70 mb-2 px-1">{t('categories')}</h3>
+      <div className="lg:col-span-2 flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto no-scrollbar animate-fade-in-up stagger-1 pb-4 shrink-0">
+        <h3 className="hidden lg:block text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/50 mb-3 px-2">Categories</h3>
         {garmentTypes.map((cat, i) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`flex shrink-0 lg:shrink flex-row lg:flex-col items-center justify-center p-3 lg:p-4 rounded-2xl transition-all duration-300 group gap-2 lg:gap-0 ${
+            className={`flex shrink-0 flex-row lg:flex-col items-center justify-center p-3 lg:p-4 rounded-[1.75rem] transition-all duration-500 group gap-2 lg:gap-3 relative overflow-hidden ${
               activeCategory === cat
-                ? 'bg-theme-surface shadow-sm border border-theme-border ring-2 ring-emerald-500/10'
-                : 'bg-theme-surface shadow-sm border border-theme-border hover:bg-theme-surface-container'
+                ? 'bg-theme-surface shadow-lg shadow-emerald-900/10 border border-emerald-500/20 ring-1 ring-emerald-500/10'
+                : 'bg-theme-surface border border-theme-border/60 hover:border-emerald-500/20 hover:shadow-md'
             }`}
           >
-            <div className={`w-8 h-8 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center lg:mb-3 transition-all ${
+            {activeCategory === cat && (
+              <div className="absolute inset-0 bg-emerald-500/5 animate-pulse"></div>
+            )}
+            <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative z-10 shrink-0 ${
               activeCategory === cat
-                ? 'bg-theme-surface-container text-emerald-600'
-                : 'bg-theme-surface-container text-theme-text-muted/70 group-hover:bg-theme-surface-container group-hover:text-emerald-600'
+                ? 'bg-emerald-600 text-white scale-110'
+                : 'bg-theme-surface-container text-theme-text-muted/60 group-hover:bg-emerald-50 group-hover:text-emerald-600'
             }`}>
-              <span className="material-symbols-outlined text-xl lg:text-3xl">{getCategoryIcon(cat)}</span>
+              <span className="material-symbols-outlined text-2xl">{getCategoryIcon(cat)}</span>
             </div>
-            <span className={`text-xs lg:text-sm whitespace-nowrap transition-colors ${
+            <span className={`text-[10px] lg:text-xs whitespace-nowrap transition-colors relative z-10 uppercase tracking-widest ${
               activeCategory === cat
-                ? 'font-bold text-theme-text'
-                : 'font-semibold text-theme-text-muted'
+                ? 'font-black text-theme-text'
+                : 'font-bold text-theme-text-muted group-hover:text-theme-text'
             }`}>{cat}</span>
           </button>
         ))}
@@ -47,37 +50,65 @@ export default function ServiceCatalog({
 
       {/* Column 2: Garment Grid */}
       <div className="lg:col-span-6 flex flex-col overflow-hidden min-h-[400px] lg:min-h-0">
-        <div className="flex items-center justify-between mb-4 px-1 animate-fade-in-up stagger-2">
-          <h3 className="text-xs font-black uppercase tracking-widest text-theme-text-muted/70">{t('select_garments')}</h3>
-          <div className="flex gap-2">
-            <button onClick={() => setShowAddCategoryModal(true)} className="px-3 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold uppercase hover:bg-amber-600 transition flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">add</span>{t('category_label')}</button>
-            <button onClick={handleAddCustomGarment} className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold uppercase hover:bg-emerald-700 transition">{t('custom_item_btn')}</button>
-            <button className="px-3 py-1 rounded-full bg-emerald-100 text-theme-text text-[10px] font-bold uppercase">{t('popular')}</button>
-            <button className="px-3 py-1 rounded-full bg-theme-surface-container text-theme-text-muted text-[10px] font-bold uppercase">A-Z</button>
+        <div className="flex items-center justify-between mb-5 px-1 animate-fade-in-up stagger-2">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/50">Select Items</h3>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+            <button 
+              onClick={() => setShowAddCategoryModal(true)} 
+              className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider hover:bg-amber-600 transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[14px]">add_circle</span>
+              <span className="hidden sm:inline">Category</span>
+            </button>
+            <button 
+              onClick={handleAddCustomGarment} 
+              className="shrink-0 px-4 py-2 rounded-xl bg-theme-text text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-900 transition-all shadow-md shadow-theme-text/10 active:scale-95"
+            >
+              Custom
+            </button>
+            <div className="h-8 w-[1px] bg-theme-border mx-1 shrink-0"></div>
+            <button className="shrink-0 px-4 py-2 rounded-xl bg-theme-surface-container text-theme-text text-[10px] font-black uppercase tracking-wider hover:bg-emerald-50 transition-all active:scale-95 border border-theme-border/40">
+              Popular
+            </button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto no-scrollbar">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 lg:gap-4">
+        <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:gap-5">
             {pricing
               .filter(p => activeCategory === 'All' || p.garment_type === activeCategory)
               .map((item, idx) => (
                 <div 
                   key={idx}
                   onClick={() => addToCart(item)}
-                  className="bg-theme-surface p-4 rounded-2xl border border-theme-border/50 shadow-sm hover:ring-2 hover:ring-emerald-500/20 transition-all cursor-pointer group relative overflow-hidden animate-fade-in-up"
-                  style={{ animationDelay: `${idx * 50}ms` }}
+                  className="bg-theme-surface p-4 rounded-[2rem] border border-theme-border/60 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 hover:-translate-y-1 hover:border-emerald-500/30 transition-all duration-500 cursor-pointer group relative overflow-hidden animate-fade-in-up flex flex-col"
+                  style={{ animationDelay: `${idx * 40}ms` }}
                 >
-                  {/* Price Badge - Top Right */}
-                  <div className="absolute top-0 right-0 p-2">
-                    <span className="bg-theme-surface-container text-theme-text text-[10px] font-bold px-2 py-0.5 rounded-full">₹{item.price}</span>
+                  <div className="flex justify-between items-start mb-4">
+                    {/* Icon Area */}
+                    <div className="w-12 h-12 lg:w-14 lg:h-14 bg-theme-surface-container/50 rounded-2xl flex items-center justify-center text-theme-text-muted/40 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-all duration-700 group-hover:scale-105 shrink-0">
+                      <span className="material-symbols-outlined text-2xl lg:text-3xl transition-transform duration-700 group-hover:rotate-6">
+                        {getGarmentIcon(item.garment_type)}
+                      </span>
+                    </div>
+
+                    {/* Price Badge */}
+                    <div className="bg-theme-surface-container/30 text-theme-text text-[11px] font-black px-3 py-1.5 rounded-full ring-1 ring-theme-border/40 group-hover:bg-emerald-50 group-hover:text-emerald-700 group-hover:ring-emerald-200 transition-all duration-500 shrink-0">
+                      ₹{item.price}
+                    </div>
                   </div>
-                  {/* Icon Area */}
-                  <div className="w-full aspect-square bg-theme-surface-container rounded-xl mb-3 flex items-center justify-center text-theme-text-muted/70 group-hover:bg-theme-surface-container group-hover:text-emerald-500 transition-colors">
-                    <span className="material-symbols-outlined text-5xl">{getGarmentIcon(item.garment_type)}</span>
-                  </div>
+                  
                   {/* Text */}
-                  <h4 className="font-bold text-theme-text text-center text-sm">{item.garment_type}</h4>
-                  <p className="text-[10px] text-theme-text-muted/70 text-center">{item.service_type}</p>
+                  <div className="space-y-1 mt-auto">
+                    <h4 className="font-black text-theme-text text-sm tracking-tight group-hover:text-emerald-700 transition-colors line-clamp-1">
+                      {item.garment_type}
+                    </h4>
+                    <p className="text-[9px] font-bold text-theme-text-muted/50 uppercase tracking-[0.15em] line-clamp-1">
+                      {item.service_type}
+                    </p>
+                  </div>
+
+                  {/* Add Hint */}
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
                 </div>
               ))}
           </div>

@@ -12,6 +12,7 @@ export default function Header({ setMobileMenuOpen }) {
   const { notifications, unreadCount, markAllAsRead } = useNotifications();
   const router = useRouter();
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [bellShake, setBellShake] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,19 +107,69 @@ export default function Header({ setMobileMenuOpen }) {
         <div className="h-8 w-[1px] bg-theme-border mx-1"></div>
 
         {/* User Profile */}
-        <div className="flex items-center gap-3 pl-2 group cursor-pointer hover:bg-theme-surface-container rounded-2xl px-3 py-1.5 transition-all">
-          <div className="text-right hidden lg:block">
-            <p className="text-xs font-bold text-theme-text leading-none">{user?.name || 'Guest'}</p>
-            <p className="text-[10px] text-primary font-semibold capitalize mt-1 flex items-center justify-end gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
-              {t(role) || role || 'User'}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-full border-2 border-primary/20 p-0.5 group-hover:border-primary/40 transition-colors">
-            <div className="w-full h-full rounded-full premium-gradient flex items-center justify-center text-white font-bold text-sm shadow-inner">
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+        <div className="relative">
+          <div 
+            className="flex items-center gap-3 pl-2 group cursor-pointer hover:bg-theme-surface-container rounded-2xl px-3 py-1.5 transition-all"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+          >
+            <div className="text-right hidden lg:block">
+              <p className="text-xs font-bold text-theme-text leading-none">{user?.name || 'Guest'}</p>
+              <p className="text-[10px] text-primary font-semibold capitalize mt-1 flex items-center justify-end gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                {t(role) || role || 'User'}
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full border-2 border-primary/20 p-0.5 group-hover:border-primary/40 transition-colors">
+              <div className="w-full h-full rounded-full premium-gradient flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
             </div>
           </div>
+
+          {showUserMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)}></div>
+              <div className="absolute top-full right-0 mt-2 w-56 bg-theme-surface rounded-2xl shadow-xl z-50 border border-theme-border py-2 animate-fade-in-down overflow-hidden">
+                <div className="px-4 py-3 border-b border-theme-border mb-1">
+                  <p className="text-xs font-black text-theme-text truncate">{user?.name || 'User Account'}</p>
+                  <p className="text-[10px] text-theme-text-muted truncate font-medium">{user?.email || 'sahej@smartcleaners.pro'}</p>
+                </div>
+                
+                <Link 
+                  href="/profile" 
+                  className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-theme-text hover:bg-theme-surface-container transition-colors"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <span className="material-symbols-outlined text-lg text-primary">person</span>
+                  My Account
+                </Link>
+                
+                {role === 'owner' && (
+                  <Link 
+                    href="/admin/settings" 
+                    className="flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-theme-text hover:bg-theme-surface-container transition-colors"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <span className="material-symbols-outlined text-lg text-primary">storefront</span>
+                    POS Settings
+                  </Link>
+                )}
+
+                <div className="border-t border-theme-border mt-1 pt-1">
+                  <button 
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-error hover:bg-error/10 transition-colors"
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      logout();
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-lg">logout</span>
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>

@@ -7,6 +7,55 @@ export default function MasterInsights({
   masterStats,
   t
 }) {
+  const exportXml = () => {
+    const payload = {
+      generated_at: new Date().toISOString(),
+      total_revenue: masterStats?.total_revenue ?? masterStats?.globalRevenue ?? 0,
+      total_stores: masterStats?.totalStores ?? 0,
+      total_users: masterStats?.totalUsers ?? 0,
+      active_orders: masterStats?.globalActiveOrders ?? 0,
+      mrr: masterStats?.mrr ?? 0,
+      churn: masterStats?.churn ?? 0,
+    };
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<masterInsights>
+  ${Object.entries(payload).map(([key, value]) => `<${key}>${value}</${key}>`).join('\n  ')}
+</masterInsights>`;
+    const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'master-insights.xml';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportPdf = () => {
+    const reportWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
+    if (!reportWindow) return;
+    const revenue = masterStats?.total_revenue ?? masterStats?.globalRevenue ?? 0;
+    reportWindow.document.write(`
+      <html>
+        <head><title>Master Insights Report</title></head>
+        <body style="font-family: Arial, sans-serif; padding: 32px;">
+          <h1>Master Insights Report</h1>
+          <p>Generated at: ${new Date().toLocaleString()}</p>
+          <ul>
+            <li>Total revenue: $${Number(revenue).toLocaleString()}</li>
+            <li>Total stores: ${masterStats?.totalStores ?? 0}</li>
+            <li>Total users: ${masterStats?.totalUsers ?? 0}</li>
+            <li>Active orders: ${masterStats?.globalActiveOrders ?? 0}</li>
+            <li>MRR: $${Number(masterStats?.mrr ?? 0).toLocaleString()}</li>
+            <li>Churn: ${masterStats?.churn ?? 0}%</li>
+          </ul>
+        </body>
+      </html>
+    `);
+    reportWindow.document.close();
+    reportWindow.focus();
+    reportWindow.print();
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -15,8 +64,8 @@ export default function MasterInsights({
              <p className="text-slate-500 italic mt-2">{t('advanced_analytics_desc')}</p>
           </div>
           <div className="flex gap-2">
-             <button className="px-6 py-3 bg-white border border-slate-100 rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:bg-slate-50 transition-all">{t('export_xml')}</button>
-             <button className="px-6 py-3 bg-theme-accent text-white rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:scale-105 transition-all">{t('export_pdf')}</button>
+             <button onClick={exportXml} className="px-6 py-3 bg-white border border-slate-100 rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:bg-slate-50 transition-all">{t('export_xml')}</button>
+             <button onClick={exportPdf} className="px-6 py-3 bg-theme-accent text-white rounded-xl font-black text-[10px] uppercase shadow-sm tracking-widest hover:scale-105 transition-all">{t('export_pdf')}</button>
           </div>
        </div>
 

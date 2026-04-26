@@ -262,7 +262,7 @@ export async function POST(request) {
     for (const p of initialPayments) {
       const pAmount = parseFloat(p.amount || 0);
       if (pAmount > 0) {
-        const isOnline = p.method === 'online';
+        const isOnline = p.method === 'online' || p.method === 'card';
         if (isOnline) {
           hasOnlinePayment = true;
           // Online payments are pending until Razorpay confirms via webhook

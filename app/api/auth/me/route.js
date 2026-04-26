@@ -21,9 +21,10 @@ export async function GET() {
     // For PIN sessions, session comes from the JWT payload + quick DB check.
     // In both cases we have id, name, email, role, store_id, tier, suspended.
 
-    // Map db role to frontend role (preserve specializing roles)
+    // Normalize backend roles for the current client dashboard model.
     let feRole = session.role;
     if (session.role === 'manager') feRole = 'admin';
+    if (session.role === 'superadmin') feRole = 'owner';
 
     return NextResponse.json({ 
       user: {

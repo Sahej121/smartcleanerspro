@@ -7,8 +7,42 @@ import MainLayout from '@/components/MainLayout';
 import { getSession } from '@/lib/auth';
 
 export const metadata = {
-  title: 'DrycleanersFlow – Dry Cleaner POS',
-  description: 'Modern dry cleaner management and POS system',
+  title: {
+    default: 'DrycleanersFlow – The Premium Dry Cleaning POS & Management Platform',
+    template: '%s | DrycleanersFlow'
+  },
+  description: 'Elevate your dry cleaning business with DrycleanersFlow. A modern, all-in-one POS and management system designed for premium ateliers, laundry networks, and garment care specialists.',
+  keywords: ['dry cleaner pos', 'laundry management software', 'dry cleaning software', 'garment care pos', 'laundry business automation'],
+  authors: [{ name: 'DrycleanersFlow Team' }],
+  creator: 'DrycleanersFlow',
+  publisher: 'DrycleanersFlow',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    title: 'DrycleanersFlow – Modern Dry Cleaning POS',
+    description: 'The definitive management platform for modern garment care businesses.',
+    url: 'https://smartcleaners.pro',
+    siteName: 'DrycleanersFlow',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'DrycleanersFlow Dashboard Preview',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DrycleanersFlow – Modern Dry Cleaning POS',
+    description: 'Elevate your garment care business with the ultimate management platform.',
+    images: ['/og-image.png'],
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -33,7 +67,7 @@ export default async function RootLayout({ children }) {
     id: session.id,
     name: session.name,
     email: session.email,
-    role: session.role === 'manager' ? 'admin' : session.role,
+    role: session.role === 'manager' ? 'admin' : session.role === 'superadmin' ? 'owner' : session.role,
     store_id: session.store_id,
     tier: session.tier,
     suspended: session.suspended,

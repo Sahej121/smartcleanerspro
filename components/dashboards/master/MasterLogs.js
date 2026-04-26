@@ -1,11 +1,47 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
 export default function MasterLogs({
   logs,
   t
 }) {
+  const [query, setQuery] = useState('');
+
+  const filteredLogs = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return logs;
+    return logs.filter((log) =>
+      [log.event_type, log.description, log.severity]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term))
+    );
+  }, [logs, query]);
+
+  const handleExport = () => {
+    const rows = filteredLogs.map((log) => ({
+      timestamp: log.created_at,
+      event_type: log.event_type,
+      severity: log.severity,
+      description: log.description,
+      store_id: log.store_id ?? '',
+    }));
+    const header = ['timestamp', 'event_type', 'severity', 'description', 'store_id'];
+    const csv = [
+      header.join(','),
+      ...rows.map((row) =>
+        header.map((key) => `"${String(row[key] ?? '').replace(/"/g, '""')}"`).join(',')
+      ),
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'master-logs.csv';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in flex flex-col h-[75vh]">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -20,9 +56,11 @@ export default function MasterLogs({
                   type="text" 
                   placeholder={t('filter_logs_placeholder')} 
                   className="w-full bg-white border border-slate-100 rounded-2xl py-3.5 pl-12 pr-6 text-xs font-bold focus:ring-4 focus:ring-emerald-500/10 outline-none shadow-sm transition-all"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
                 />
              </div>
-             <button className="px-8 py-3 bg-theme-accent text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all">{t('export_data_hub')}</button>
+             <button onClick={handleExport} className="px-8 py-3 bg-theme-accent text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all">{t('export_data_hub')}</button>
           </div>
        </div>
 
@@ -36,7 +74,7 @@ export default function MasterLogs({
              </div>
           </div>
           <div className="flex-1 overflow-y-auto px-10 py-4 space-y-2 no-scrollbar">
-             {logs.map((log, i) => (
+             {filteredLogs.map((log, i) => (
                 <div key={log.id} className="grid grid-cols-12 items-center py-5 px-4 hover:bg-slate-50 rounded-2xl transition-all group animate-fade-in-up" style={{ animationDelay: `${i * 30}ms` }}>
                    <div className="col-span-2 flex flex-col">
                       <span className="text-[10px] font-black text-slate-900 font-mono tracking-tighter">{new Date(log.created_at).toLocaleTimeString()}</span>
@@ -56,6 +94,9 @@ export default function MasterLogs({
                    </div>
                 </div>
              ))}
+             {filteredLogs.length === 0 && (
+               <div className="py-12 text-center text-sm font-bold text-slate-400 italic">No logs match the current filter.</div>
+             )}
           </div>
        </div>
     </div>

@@ -76,7 +76,7 @@ export async function POST(req) {
       if (loginEmail && password) {
         // Find user by email, including retry tracking columns
         const pinUserRes = await query(`
-          SELECT u.id, u.email, u.name, u.role, u.store_id, u.pin_hash, u.pin_attempts, u.pin_locked_until, s.subscription_tier
+          SELECT u.id, u.email, u.name, u.role, u.store_id, u.password_hash, u.pin_hash, u.pin_attempts, u.pin_locked_until, s.subscription_tier
           FROM users u
           LEFT JOIN stores s ON u.store_id = s.id
           WHERE email = $1
@@ -92,10 +92,15 @@ export async function POST(req) {
             }, { status: 403 });
           }
 
-          if (u.pin_hash) {
-            const isPinValid = await verifyPassword(password, u.pin_hash);
+          if (u.password_hash || u.pin_hash) {
+            const isPasswordValid = u.password_hash
+              ? await verifyPassword(password, u.password_hash)
+              : false;
+            const isPinValid = !isPasswordValid && u.pin_hash
+              ? await verifyPassword(password, u.pin_hash)
+              : false;
             
-            if (isPinValid) {
+            if (isPasswordValid || isPinValid) {
               // Success! Reset attempts
               await query('UPDATE users SET pin_attempts = 0, pin_locked_until = NULL WHERE id = $1', [u.id]);
               

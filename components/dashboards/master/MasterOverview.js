@@ -14,6 +14,7 @@ export default function MasterOverview({
   t, 
   router, 
   fetchData, 
+  setProvisionMode,
   setShowCreateModal,
   broadcastSeverity,
   setBroadcastSeverity,
@@ -23,6 +24,8 @@ export default function MasterOverview({
   isBroadcasting
 }) {
   const totalStores = user?.id == 1 ? owners.reduce((acc, o) => acc + (o.stores?.length || 0), 0) : stores.length;
+  const revenueValue = masterStats?.total_revenue ?? masterStats?.globalRevenue ?? 0;
+  const recentStores = user?.id == 1 ? owners.flatMap((owner) => owner.stores || []).slice(0, 4) : stores.slice(0, 4);
 
   return (
     <div className="space-y-8">
@@ -33,7 +36,10 @@ export default function MasterOverview({
         </div>
         <div className="flex flex-wrap gap-4 mt-4 md:mt-0">
           <button 
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setProvisionMode('new');
+              setShowCreateModal(true);
+            }}
             className="px-6 py-3 premium-gradient text-white rounded-2xl font-bold text-sm shadow-md shadow-emerald-900/10 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-lg">add</span>
@@ -94,7 +100,7 @@ export default function MasterOverview({
               </span>
             </div>
             <h2 className="text-5xl font-black text-on-surface font-headline">
-              <AnimatedCounter value={masterStats?.total_revenue || 142850} prefix="$" duration={2000} />
+              <AnimatedCounter value={revenueValue} prefix="$" duration={2000} />
             </h2>
           </div>
           <div className="mt-8 h-20 flex items-end gap-1.5 relative z-10">
@@ -108,11 +114,11 @@ export default function MasterOverview({
           <span className="material-symbols-outlined text-emerald-700 text-2xl mb-4 group-hover:scale-110 transition-transform">dns</span>
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('active_nodes_count')}</p>
-            <h2 className="text-5xl font-black font-headline">{stores.length}</h2>
+            <h2 className="text-5xl font-black font-headline">{health?.active_nodes ?? totalStores}</h2>
           </div>
         </div>
 
-        <div className={`${health?.status === 'OPERATIONAL' ? 'bg-primary' : 'bg-amber-700'} text-white rounded-3xl p-8 flex flex-col justify-between shadow-xl shadow-emerald-900/10`}>
+        <div className={`${health?.status === 'OPERATIONAL' ? 'bg-primary' : health?.status === 'NOTICE' ? 'bg-amber-600' : 'bg-red-600'} text-white rounded-3xl p-8 flex flex-col justify-between shadow-xl shadow-emerald-900/10`}>
           <span className="material-symbols-outlined text-white text-2xl mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>shield_heart</span>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-100 opacity-70">{t('sla_uptime')}</p>
@@ -135,7 +141,7 @@ export default function MasterOverview({
                   </tr>
                 </thead>
                 <tbody>
-                  {stores.slice(0, 4).map((store) => (
+                  {recentStores.map((store) => (
                     <tr key={store.id} className="border-b border-slate-50/50 hover:bg-slate-50 transition-colors">
                       <td className="py-5 font-black text-sm text-on-surface">{store.store_name}</td>
                       <td className="py-5 capitalize text-xs font-bold text-slate-500">
@@ -146,6 +152,13 @@ export default function MasterOverview({
                       <td className="py-5 text-right font-black text-sm">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
                     </tr>
                   ))}
+                  {recentStores.length === 0 && (
+                    <tr>
+                      <td colSpan="3" className="py-6 text-center text-xs font-bold text-slate-400 italic">
+                        No store activity yet.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

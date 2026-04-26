@@ -18,6 +18,7 @@ function CheckoutForm() {
   const tierKey = searchParams.get('tier') || 'software_only';
   const marketId = searchParams.get('market') || 'us';
   const planNameQuery = searchParams.get('planName');
+  const billingCycle = searchParams.get('billingCycle') || 'monthly';
   
   const tier = TIERS[tierKey] || TIERS.software_only;
   const market = PRICING_MARKETS[marketId] || PRICING_MARKETS.us;
@@ -103,10 +104,11 @@ function CheckoutForm() {
             }
           } else {
             sessionStorage.setItem("payment_verified", "true");
-            sessionStorage.setItem("selected_plan", JSON.stringify({ 
+            sessionStorage.setItem("plan_details", JSON.stringify({
               tier: tierKey, 
               market: marketId, 
               plan: planName, 
+              billingCycle: billingCycle,
               addOns: selectedAddons, 
               total: totalAmount 
             }));
@@ -158,7 +160,7 @@ function CheckoutForm() {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/50 border border-emerald-200/50">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <p className="text-xs font-black text-emerald-800 uppercase tracking-[0.25em]">
-                {market.currency}{baseAmount} / {translate('month', 'month')}
+                {market.currency}{baseAmount} / {billingCycle === 'monthly' ? translate('month', 'month') : translate('year', 'year')}
               </p>
             </div>
           </div>
@@ -185,7 +187,7 @@ function CheckoutForm() {
                 </div>
                 <div className="text-right">
                   <span className="text-xl font-black text-emerald-950">{market.currency}{baseAmount}</span>
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase">/ month</p>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase">/ {billingCycle === 'monthly' ? 'month' : 'year'}</p>
                 </div>
               </div>
               
@@ -223,7 +225,7 @@ function CheckoutForm() {
 
               <div className="mt-8 pt-8 border-t-2 border-dashed border-emerald-200/50 space-y-4">
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">
-                  <span>Monthly subscription total</span>
+                  <span>{billingCycle === 'monthly' ? 'Monthly' : 'Yearly'} subscription total</span>
                   <span>{market.currency}{monthlyTotal}</span>
                 </div>
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">

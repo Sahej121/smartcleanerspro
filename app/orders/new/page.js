@@ -274,26 +274,28 @@ export default function NewOrder() {
             order_id: data.order_id,
             handler: async function (response) {
               // Called after successful payment on Razorpay side
-              await fetch('/api/webhooks/razorpay', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-razorpay-signature': response.razorpay_signature,
-                },
-                body: JSON.stringify({
-                  event: 'payment.captured',
-                  payload: {
-                    payment: {
-                      entity: {
-                        id: response.razorpay_payment_id,
-                        amount: data.amount,
-                        notes: { order_id: orderId },
-                      },
-                    },
-                  },
-                }),
-              });
-              resolve({ success: true });
+              try {
+                const verifyRes = await fetch('/api/verify-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    internal_order_id: orderId, // Pass the internal ID to update DB
+                  }),
+                });
+
+                const verifyData = await verifyRes.json();
+                if (verifyRes.ok && verifyData.success) {
+                  resolve({ success: true });
+                } else {
+                  throw new Error(verifyData.error || 'Payment verification failed');
+                }
+              } catch (vErr) {
+                console.error('Verification failed:', vErr);
+                resolve({ success: false, error: vErr.message });
+              }
             },
             modal: {
               ondismiss: function () {

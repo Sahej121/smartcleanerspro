@@ -122,7 +122,7 @@ function RegisterForm() {
             </div>
             <div className="text-right">
               <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/70 mb-1">Total</p>
-              <p className="text-sm font-black">{currencySymbol}{selectedPlan.total}/mo</p>
+              <p className="text-sm font-black">{currencySymbol}{selectedPlan.total}/{selectedPlan.billingCycle === 'yearly' ? 'yr' : 'mo'}</p>
             </div>
           </div>
         )}

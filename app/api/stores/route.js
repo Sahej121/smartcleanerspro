@@ -38,6 +38,19 @@ const defaultInventory = [
   ['Tags/Labels', 500, 'units', 100],
 ];
 
+async function syncSequence(client, tableName, columnName = 'id') {
+  await client.query(
+    `
+      SELECT setval(
+        pg_get_serial_sequence($1, $2),
+        GREATEST(COALESCE((SELECT MAX(id) FROM ${tableName}), 0), 1),
+        true
+      )
+    `,
+    [tableName, columnName]
+  );
+}
+
 export async function POST(req) {
   try {
     const auth = await requireRole(req, ['owner']);
@@ -49,7 +62,7 @@ export async function POST(req) {
     const body = await req.json();
     const { store_name, city, subscription_tier, admin_name, admin_email, owner_id, manager_name, manager_email } = body;
 
-    const isSuperadmin = payload.id === 1;
+    const isSuperadmin = payload.id == 1;
 
     if (!store_name || !city) {
       return NextResponse.json({ error: 'Missing required configuration fields.' }, { status: 400 });
@@ -59,6 +72,8 @@ export async function POST(req) {
     
     try {
       await client.query('BEGIN');
+      await syncSequence(client, 'users');
+      await syncSequence(client, 'stores');
 
       let targetOwnerId = owner_id;
       let tempPassword = null;
@@ -105,9 +120,9 @@ export async function POST(req) {
             
             await client.query(`
               INSERT INTO auth.identities (
-                id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at, email
+                id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
               ) VALUES (
-                gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW(), $2
+                gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW()
               )
             `, [authId, admin_email]);
           }
@@ -215,9 +230,9 @@ export async function POST(req) {
             
             await client.query(`
               INSERT INTO auth.identities (
-                id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at, email
+                id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
               ) VALUES (
-                gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW(), $2
+                gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW()
               )
             `, [magAuthId, manager_email]);
           }
@@ -309,7 +324,7 @@ export async function GET(request) {
           (SELECT COUNT(*) FROM stores WHERE owner_id = u.id) as store_count,
           (SELECT COALESCE(SUM(total_amount), 0) FROM orders o JOIN stores s ON o.store_id = s.id WHERE s.owner_id = u.id AND o.payment_status = 'paid') as total_revenue
         FROM users u
-        WHERE u.role = 'owner' AND u.id != 1
+        WHERE u.role IN ('owner', 'superadmin')
         ORDER BY u.created_at DESC
       `);
 

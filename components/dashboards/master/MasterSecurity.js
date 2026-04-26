@@ -4,11 +4,24 @@ import React from 'react';
 
 export default function MasterSecurity({
   t,
+  health,
+  logs,
   broadcastMessage,
   setBroadcastMessage,
   handleSendBroadcast,
   isBroadcasting
 }) {
+  const resourceUsage = health?.resource_usage || {
+    db_load: 0,
+    node_cpu: 0,
+    socket_latency: 0,
+  };
+  const incidents = health?.incidents || { errors_24h: 0, warnings_24h: 0 };
+  const services = Array.isArray(health?.services) ? health.services : [];
+  const recentSecurityLogs = Array.isArray(logs)
+    ? logs.filter((log) => ['error', 'warning'].includes(log.severity)).slice(0, 4)
+    : [];
+
   return (
     <div className="space-y-8 animate-fade-in font-sans">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -31,9 +44,9 @@ export default function MasterSecurity({
                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-8 font-headline">{t('resource_usage')}</h4>
                    <div className="space-y-8">
                       {[
-                         { label: 'Multi-tenant DB Load', val: 32, icon: 'database' },
-                         { label: 'Node CPU Aggregation', val: 45, icon: 'memory' },
-                         { label: 'Socket Cluster Latency', val: 12, icon: 'lan' },
+                         { label: 'Multi-tenant DB Load', val: resourceUsage.db_load, icon: 'database' },
+                         { label: 'Node CPU Aggregation', val: resourceUsage.node_cpu, icon: 'memory' },
+                         { label: 'Socket Cluster Latency', val: resourceUsage.socket_latency, icon: 'lan' },
                       ].map((item, idx) => (
                          <div key={idx} className="space-y-3">
                             <div className="flex justify-between items-center">
@@ -54,14 +67,14 @@ export default function MasterSecurity({
                 <div className="bg-theme-surface-container rounded-[2.5rem] p-10 shadow-sm border border-theme-border relative overflow-hidden">
                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-8 font-headline">{t('threat_intelligence')}</h4>
                    <div className="flex items-end gap-3 mb-8">
-                      <span className="text-6xl font-black italic tracking-tighter leading-none">00</span>
+                      <span className="text-6xl font-black italic tracking-tighter leading-none">{String(incidents.errors_24h || 0).padStart(2, '0')}</span>
                       <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 leading-tight">{t('security_incidents')}</p>
                    </div>
                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">{t('lockdown_index')}</p>
                       <div className="flex gap-1 h-8 items-end">
                          {[...Array(12)].map((_, i) => (
-                            <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-[2px]" style={{ height: `${20 + Math.random() * 80}%` }}></div>
+                            <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-[2px]" style={{ height: `${Math.max(12, (incidents.warnings_24h || 0) * 8 + ((i % 4) + 1) * 12)}%` }}></div>
                          ))}
                       </div>
                    </div>
@@ -97,29 +110,45 @@ export default function MasterSecurity({
                 <div>
                    <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-10 font-headline">{t('global_health_index')}</h4>
                    <div className="space-y-12">
-                      {[
-                         { l: 'Auth Gateway', s: t('operational'), h: 99.99, c: 'bg-emerald-500' },
-                         { l: 'Workflow Cluster', s: t('operational'), h: 100, c: 'bg-emerald-400' },
-                         { l: 'Primary Postgres', s: t('operational'), h: 99.98, c: 'bg-emerald-600' },
-                         { l: 'S3 Asset Pool', s: 'Notice', h: 98.4, c: 'bg-amber-500' },
-                      ].map((x, i) => (
+                      {services.map((service, i) => (
                          <div key={i} className="group cursor-default">
                             <div className="flex justify-between items-center mb-3">
-                               <span className="text-[11px] font-black uppercase text-on-surface tracking-tighter group-hover:text-emerald-700 transition-colors">{x.l}</span>
-                               <span className="text-[10px] font-black text-slate-900 italic">{x.h}%</span>
+                               <span className="text-[11px] font-black uppercase text-on-surface tracking-tighter group-hover:text-emerald-700 transition-colors">{service.label}</span>
+                               <span className="text-[10px] font-black text-slate-900 italic">{service.health}%</span>
                             </div>
                             <div className="h-1 w-full bg-slate-50 rounded-full overflow-hidden">
-                               <div className={`h-full ${x.c} shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all duration-1000`} style={{ width: `${x.h}%` }}></div>
+                               <div className={`h-full ${service.status === 'notice' ? 'bg-amber-500' : 'bg-emerald-500'} shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-all duration-1000`} style={{ width: `${service.health}%` }}></div>
                             </div>
                          </div>
                       ))}
-                   </div>
+                      {services.length === 0 && (
+                        <p className="text-xs font-bold text-slate-400 italic">No service telemetry available.</p>
+                      )}
+                    </div>
                 </div>
                 <div className="mt-12 pt-8 border-t border-slate-50">
                    <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.3em] leading-relaxed text-center italic">
                       {t('verified_infrastructure_status')}:<br/>
                       {new Date().toLocaleString()}
                    </p>
+                </div>
+             </div>
+
+             <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-6 font-headline">Recent Alerts</h4>
+                <div className="space-y-4">
+                  {recentSecurityLogs.map((log) => (
+                    <div key={log.id} className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{log.event_type}</span>
+                        <span className={`text-[9px] font-black uppercase ${log.severity === 'error' ? 'text-red-600' : 'text-amber-600'}`}>{log.severity}</span>
+                      </div>
+                      <p className="mt-2 text-xs font-medium text-slate-600">{log.description}</p>
+                    </div>
+                  ))}
+                  {recentSecurityLogs.length === 0 && (
+                    <p className="text-xs font-bold text-slate-400 italic">No recent warning or error events.</p>
+                  )}
                 </div>
              </div>
           </div>
