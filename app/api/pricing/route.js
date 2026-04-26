@@ -1,7 +1,7 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
-
 import { requireRole } from '@/lib/auth';
+import { invalidateCache } from '@/lib/cache';
 
 export async function GET(request) {
   try {
@@ -33,6 +33,9 @@ export async function POST(request) {
       [garment_type, service_type, price, auth.user.store_id]
     );
     
+    // Invalidate bootstrap cache
+    invalidateCache(`bootstrap_${auth.user.store_id}`);
+    
     return NextResponse.json(res.rows[0]);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -48,6 +51,10 @@ export async function PUT(request) {
     const { id, price } = body;
 
     await query('UPDATE pricing SET price = $1 WHERE id = $2 AND store_id = $3', [price, id, auth.user.store_id]);
+    
+    // Invalidate bootstrap cache
+    invalidateCache(`bootstrap_${auth.user.store_id}`);
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@/lib/UserContext';
@@ -82,6 +82,16 @@ export default function NewOrder() {
   const [addCategoryLoading, setAddCategoryLoading] = useState(false);
 
   useEffect(() => {
+    // 1. Initial hydration from cache (SWR pattern)
+    const cachedBootstrap = localStorage.getItem('pos_bootstrap_cache');
+    if (cachedBootstrap) {
+      try {
+        const parsed = JSON.parse(cachedBootstrap);
+        setPricing(parsed.pricing || []);
+        if (parsed.discounts?.length > 0) setVolDiscountInfo(parsed.discounts[0]);
+      } catch (e) { console.error('Cache hydration failed'); }
+    }
+
     const loadData = async () => {
       try {
         const res = await fetch('/api/orders/bootstrap');
@@ -94,6 +104,9 @@ export default function NewOrder() {
         if (data.discounts?.length > 0) {
           setVolDiscountInfo(data.discounts[0]);
         }
+
+        // 2. Update cache for next time
+        localStorage.setItem('pos_bootstrap_cache', JSON.stringify(data));
       } catch (e) {
         console.error('Bootstrap failed:', e);
       }
@@ -121,16 +134,36 @@ export default function NewOrder() {
     }
   }, [editId]);
 
+  // Client-side search cache (LRU pattern)
+  const searchCache = useRef(new Map());
+
   // Debounced Customer Search
   useEffect(() => {
     if (!searchQuery) {
       setCustomers([]);
       return;
     }
+
+    // Check cache first
+    if (searchCache.current.has(searchQuery)) {
+      setCustomers(searchCache.current.get(searchQuery));
+      return;
+    }
+
     const timer = setTimeout(() => {
       fetch(`/api/customers?search=${encodeURIComponent(searchQuery)}`)
         .then(r => r.json())
-        .then(data => setCustomers(Array.isArray(data) ? data : []));
+        .then(data => {
+          const results = Array.isArray(data) ? data : [];
+          setCustomers(results);
+          
+          // Store in cache (Limit to 50 entries)
+          if (searchCache.current.size > 50) {
+            const firstKey = searchCache.current.keys().next().value;
+            searchCache.current.delete(firstKey);
+          }
+          searchCache.current.set(searchQuery, results);
+        });
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -456,6 +489,5 @@ export default function NewOrder() {
       `}} />
     </div>
   );
-} </div>
-  );
 }
+
