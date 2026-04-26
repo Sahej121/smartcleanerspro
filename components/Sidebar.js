@@ -31,6 +31,7 @@ const getNavLinks = (role, userTier, isSaasOwner) => {
       { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route' },
       { href: '/operations/machines', labelKey: 'Machine Ops', icon: 'precision_manufacturing' },
       { href: '/logistics', labelKey: 'Logistics Driver', icon: 'local_shipping' },
+      { href: '/agent/pickup', labelKey: 'Agent Pickup', icon: 'delivery_dining' },
       { href: '/admin/settings', labelKey: 'nav_settings', icon: 'settings' },
     ].filter(link => canAccessRoute(userTier, link.href));
   }
@@ -45,6 +46,7 @@ const getNavLinks = (role, userTier, isSaasOwner) => {
     { href: '/inventory', labelKey: 'nav_inventory', icon: 'inventory_2', allowedRoles: [ROLES.ADMIN] },
     { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route', allowedRoles: [ROLES.ADMIN, ROLES.STAFF, ROLES.FRONTDESK] },
     { href: '/operations/machines', labelKey: 'Machine Ops', icon: 'precision_manufacturing', allowedRoles: [ROLES.ADMIN, ROLES.STAFF] },
+    { href: '/agent/pickup', labelKey: 'Agent Pickup', icon: 'delivery_dining', allowedRoles: [ROLES.ADMIN, ROLES.STAFF, ROLES.FRONTDESK, ROLES.DRIVER] },
     { href: '/logistics', labelKey: 'Logistics Driver', icon: 'local_shipping', allowedRoles: [ROLES.ADMIN, ROLES.DRIVER] },
     { href: '/admin/settings', labelKey: 'nav_settings', icon: 'settings', allowedRoles: [ROLES.ADMIN] },
   ].filter(link => {
