@@ -10,12 +10,16 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
+    const limit = Math.min(parseInt(searchParams.get('limit')) || 50, 200);
+    const page = Math.max(parseInt(searchParams.get('page')) || 1, 1);
+    const offset = (page - 1) * limit;
 
     let sql = `
       SELECT 
         c.*, 
         COUNT(o.id) as order_count,
-        COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_amount ELSE 0 END), 0) as total_spent
+        COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_amount ELSE 0 END), 0) as total_spent,
+        COUNT(*) OVER() as total_count
       FROM customers c
       LEFT JOIN orders o ON c.id = o.customer_id
       WHERE c.store_id = $1
@@ -27,10 +31,19 @@ export async function GET(request) {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    sql += ' GROUP BY c.id ORDER BY c.created_at DESC';
+    sql += ` GROUP BY c.id ORDER BY c.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
 
     const res = await query(sql, params);
-    return NextResponse.json(res.rows);
+    
+    return NextResponse.json({
+      customers: res.rows,
+      pagination: {
+        total: res.rows.length > 0 ? parseInt(res.rows[0].total_count) : 0,
+        page,
+        limit
+      }
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
