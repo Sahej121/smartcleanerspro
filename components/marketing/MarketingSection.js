@@ -1,4 +1,4 @@
-export function Section({ eyebrow, title, description, children, className = "" }) {
+export function Section({ eyebrow, title, description, children, className = "", TitleTag = "h2" }) {
   return (
     <section className={`mx-auto max-w-7xl px-6 py-20 md:py-32 ${className}`}>
       <div className="mb-16 max-w-3xl">
@@ -7,9 +7,9 @@ export function Section({ eyebrow, title, description, children, className = "" 
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-4xl font-black tracking-tight text-slate-900 md:text-5xl lg:text-6xl mb-6">
+        <TitleTag className="text-4xl font-black tracking-tight text-slate-900 md:text-5xl lg:text-6xl mb-6">
           {title}
-        </h2>
+        </TitleTag>
         {description ? (
           <p className="text-lg md:text-xl text-slate-600 leading-relaxed font-medium">
             {description}

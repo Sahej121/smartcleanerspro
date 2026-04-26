@@ -41,7 +41,8 @@ export default function FeaturesContent() {
       <MarketingNavbar />
       <Section
         eyebrow={t('features_label')}
-        title={<h1 className="text-4xl font-black tracking-tight text-slate-900 md:text-5xl lg:text-6xl">{t('features_title')}</h1>}
+        title={t('features_title')}
+        TitleTag="h1"
         description={t('features_desc')}
       >
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
