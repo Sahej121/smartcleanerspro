@@ -10,19 +10,7 @@ export async function GET(request) {
     const storeId = auth.user.store_id;
 
     // Execute independent queries in parallel
-    const [customersRes, pricingRes, discountsRes] = await Promise.all([
-      // Optimized Customers query (from customers/route.js)
-      query(`
-        SELECT c.*, 
-          COUNT(o.id) as order_count,
-          COALESCE(SUM(CASE WHEN o.payment_status = 'paid' THEN o.total_amount ELSE 0 END), 0) as total_spent
-        FROM customers c
-        LEFT JOIN orders o ON c.id = o.customer_id
-        WHERE c.store_id = $1
-        GROUP BY c.id
-        ORDER BY c.created_at DESC
-      `, [storeId]),
-
+    const [pricingRes, discountsRes] = await Promise.all([
       // Pricing Catalog
       query('SELECT * FROM pricing WHERE store_id = $1 ORDER BY garment_type, service_type', [storeId]),
 
@@ -31,7 +19,6 @@ export async function GET(request) {
     ]);
 
     return NextResponse.json({
-      customers: customersRes.rows,
       pricing: pricingRes.rows,
       discounts: discountsRes.rows
     });

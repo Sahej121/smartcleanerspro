@@ -17,13 +17,17 @@ export default async function OrdersPage({ searchParams: searchParamsPromise }) 
 
   const status = searchParams.status;
   const search = searchParams.search;
+  const page = Math.max(parseInt(searchParams.page) || 1, 1);
+  const limit = Math.min(parseInt(searchParams.limit) || 20, 100);
+  const offset = (page - 1) * limit;
 
   let sql = `
     SELECT 
       o.*, 
       c.name as customer_name, 
       c.phone as customer_phone,
-      COUNT(oi.id) as item_count
+      COUNT(oi.id) as item_count,
+      COUNT(*) OVER() as total_count
     FROM orders o
     LEFT JOIN customers c ON o.customer_id = c.id
     LEFT JOIN order_items oi ON o.id = oi.order_id
@@ -48,9 +52,21 @@ export default async function OrdersPage({ searchParams: searchParamsPromise }) 
     sql += ' AND ' + conditions.join(' AND ');
   }
 
-  sql += ' GROUP BY o.id, c.name, c.phone ORDER BY o.created_at DESC';
+  sql += ` GROUP BY o.id, c.name, c.phone ORDER BY o.created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+  params.push(limit, offset);
 
   const res = await query(sql, params);
+  const total = res.rows.length > 0 ? parseInt(res.rows[0].total_count) : 0;
 
-  return <OrdersClient initialOrders={res.rows} />;
+  return (
+    <OrdersClient 
+      initialOrders={res.rows} 
+      pagination={{
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }} 
+    />
+  );
 }

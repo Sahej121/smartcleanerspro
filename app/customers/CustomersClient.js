@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Link from 'next/link';
 
-export default function CustomersClient({ initialCustomers }) {
+export default function CustomersClient({ initialCustomers, pagination }) {
   const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +28,8 @@ export default function CustomersClient({ initialCustomers }) {
     const params = new URLSearchParams(searchParams);
     if (debouncedSearch) params.set('search', debouncedSearch);
     else params.delete('search');
+    // Reset to page 1 on new search
+    params.delete('page');
 
     router.push(`/customers?${params.toString()}`, { scroll: false });
   }, [debouncedSearch]);
@@ -47,6 +49,12 @@ export default function CustomersClient({ initialCustomers }) {
     } else {
       setError(result.error || t('failed_register_customer'));
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', newPage);
+    router.push(`/customers?${params.toString()}`, { scroll: false });
   };
 
   const getTier = (points) => {
@@ -81,7 +89,7 @@ export default function CustomersClient({ initialCustomers }) {
              </div>
              <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">{t('clientele')}</span>
+                   <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">{t('clientele')}</span>
                 </div>
                 <h1 className="text-4xl font-black text-theme-text tracking-tighter">{t('customer_registry')}</h1>
                 <p className="text-theme-text-muted font-medium text-sm mt-1">{t('customer_registry_desc')}</p>
@@ -92,7 +100,7 @@ export default function CustomersClient({ initialCustomers }) {
              <div className="bg-background px-6 py-4 rounded-3xl border border-theme-border text-center flex-1 md:flex-none">
                 <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('total_users')}</p>
                 <p className="text-2xl font-black text-theme-text leading-none">
-                  {initialCustomers.length || '—'}
+                  {pagination.total || initialCustomers.length || '—'}
                 </p>
              </div>
           </div>
@@ -185,6 +193,45 @@ export default function CustomersClient({ initialCustomers }) {
               <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{t('grow_atelier_base')}</p>
             </button>
           </div>
+
+          {/* Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-12 pb-8">
+              <button 
+                disabled={pagination.page <= 1}
+                onClick={() => handlePageChange(pagination.page - 1)}
+                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-surface border border-theme-border text-theme-text disabled:opacity-30 hover:bg-slate-800 transition-colors"
+              >
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <div className="flex items-center gap-2">
+                {[...Array(pagination.totalPages)].map((_, i) => {
+                  const p = i + 1;
+                  // Only show 5 pages around current
+                  if (Math.abs(p - pagination.page) > 2 && p !== 1 && p !== pagination.totalPages) {
+                    if (p === 2 || p === pagination.totalPages - 1) return <span key={p} className="text-slate-600 px-2">...</span>;
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => handlePageChange(p)}
+                      className={`w-10 h-10 rounded-xl font-black text-xs transition-all ${p === pagination.page ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'bg-surface border border-theme-border text-slate-400 hover:text-theme-text hover:bg-slate-800'}`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+              <button 
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => handlePageChange(pagination.page + 1)}
+                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-surface border border-theme-border text-theme-text disabled:opacity-30 hover:bg-slate-800 transition-colors"
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
