@@ -1,7 +1,8 @@
-import { query } from '@/lib/db/db';
+import { query, getClient } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
-
 import { requireRole } from '@/lib/auth';
+
+const sanitizeText = (text) => text?.replace(/[<>]/g, '') || '';
 
 export async function GET(request, { params }) {
   try {
@@ -24,6 +25,7 @@ export async function GET(request, { params }) {
 
     const order = orderRes.rows[0];
 
+    // Optimized items query with workflow pre-aggregation
     const [itemsRes, paymentsRes] = await Promise.all([
       query(
         `SELECT oi.*, 
@@ -50,17 +52,17 @@ export async function PUT(request, { params }) {
   try {
     const body = await request.json();
     const { items, discount, notes, schedule, pickup_status, delivery_status, logistics_notes } = body;
-    const safeNotes = sanitizeText(notes) || '';
+    const safeNotes = sanitizeText(notes);
 
     await client.query('BEGIN');
 
     // 1. Verify order exists and is in editable state
-    const currentOrder = await client.query('SELECT status, total_amount, customer_id, store_id FROM orders WHERE id = $1 AND store_id = $2', [id, auth.user.store_id]);
+    const currentOrder = await client.query('SELECT status, total_amount, customer_id, store_id, order_number FROM orders WHERE id = $1 AND store_id = $2', [id, auth.user.store_id]);
     if (currentOrder.rows.length === 0) throw new Error('Order not found');
     if (currentOrder.rows[0].status !== 'received') throw new Error('Only received orders can be edited');
 
     const oldTotal = parseFloat(currentOrder.rows[0].total_amount);
-    const customer_id = currentOrder.rows[0].customer_id;
+    const { customer_id, order_number } = currentOrder.rows[0];
 
     // 2. Recalculate Totals
     let subtotal = 0;
@@ -85,28 +87,39 @@ export async function PUT(request, { params }) {
       [totalAmount, discountAmount, tax, safeNotes, pickupDate, deliveryDate, pickup_status || 'pending', delivery_status || 'pending', logistics_notes || null, id, auth.user.store_id]
     );
 
-    // 4. Update items: simplest is to delete and re-insert for MVP
+    // 4. Update items: Delete and Batch Re-insert
     await client.query('DELETE FROM garment_workflow WHERE order_item_id IN (SELECT id FROM order_items WHERE order_id = $1)', [id]);
     await client.query('DELETE FROM order_items WHERE order_id = $1', [id]);
 
-    const orderNumberRes = await client.query('SELECT order_number FROM orders WHERE id = $1', [id]);
-    const orderNumber = orderNumberRes.rows[0].order_number;
+    if (items.length > 0) {
+      const itemValues = [];
+      const itemParams = [];
+      let pIdx = 1;
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const tagId = item.tag_id || `${orderNumber}-${i + 1}`;
-      const itemRes = await client.query(
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const tagId = item.tag_id || `${order_number}-${i + 1}`;
+        itemValues.push(`($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, 'received', $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++})`);
+        itemParams.push(id, item.garment_type, item.service_type, item.quantity || 1, item.price, item.notes || null, tagId, item.bag_id || null, item.incident_status || 'none', item.incident_notes || null);
+      }
+
+      const insertedItems = await client.query(
         `INSERT INTO order_items (order_id, garment_type, service_type, quantity, price, status, notes, tag_id, bag_id, incident_status, incident_notes)
-         VALUES ($1, $2, $3, $4, $5, 'received', $6, $7, $8, $9, $10) RETURNING id`,
-        [id, item.garment_type, item.service_type, item.quantity || 1, item.price, item.notes || null, tagId, item.bag_id || null, item.incident_status || 'none', item.incident_notes || null]
+         VALUES ${itemValues.join(', ')} RETURNING id`,
+        itemParams
       );
+
+      // Batch insert workflow records
+      const workflowValues = insertedItems.rows.map((row, idx) => `($${idx * 3 + 1}, $${idx * 3 + 2}, $${idx * 3 + 3})`).join(', ');
+      const workflowParams = insertedItems.rows.flatMap(row => [row.id, 'received', auth.user.id]);
+      
       await client.query(
-        `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ($1, 'received', $2)`,
-        [itemRes.rows[0].id, auth.user.id]
+        `INSERT INTO garment_workflow (order_item_id, stage, updated_by) VALUES ${workflowValues}`,
+        workflowParams
       );
     }
 
-    // 5. Adjust Loyalty Points (subtract old, add new)
+    // 5. Adjust Loyalty Points
     if (customer_id) {
       const oldPoints = Math.floor(oldTotal / 10);
       const newPoints = Math.floor(totalAmount / 10);
@@ -122,3 +135,4 @@ export async function PUT(request, { params }) {
     client.release();
   }
 }
+

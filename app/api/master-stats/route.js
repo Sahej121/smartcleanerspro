@@ -15,27 +15,27 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Forbidden. Root owner access required.' }, { status: 403 });
     }
 
-    const [storesRes, usersRes, revenueRes, activeRes, storesData] = await Promise.all([
+    const [globalStatsRes, storesData] = await Promise.all([
       query(`
-        SELECT
-          COUNT(*)::int as totalstores,
-          COUNT(*) FILTER (WHERE status = 'active')::int as activestores,
-          COUNT(*) FILTER (WHERE status = 'suspended')::int as suspendedstores,
-          COUNT(*) FILTER (WHERE status = 'idle')::int as idlestores
-        FROM stores
-      `),
-      query('SELECT COUNT(*)::int as totalusers FROM users'),
-      query(`
-        SELECT
-          COALESCE(SUM(total_amount), 0)::float as globalrevenue,
-          COUNT(*) FILTER (WHERE payment_status = 'paid')::int as paidorders
-        FROM orders
-        WHERE payment_status = $1
-      `, ['paid']),
-      query(`
-        SELECT COUNT(*)::int as globalactiveorders
-        FROM orders 
-        WHERE status IN ('received', 'processing', 'ready')
+        WITH store_counts AS (
+          SELECT
+            COUNT(*)::int as totalstores,
+            COUNT(*) FILTER (WHERE status = 'active')::int as activestores,
+            COUNT(*) FILTER (WHERE status = 'suspended')::int as suspendedstores,
+            COUNT(*) FILTER (WHERE status = 'idle')::int as idlestores
+          FROM stores
+        ),
+        user_counts AS (
+          SELECT COUNT(*)::int as totalusers FROM users
+        ),
+        order_counts AS (
+          SELECT
+            COALESCE(SUM(total_amount), 0)::float as globalrevenue,
+            COUNT(*) FILTER (WHERE payment_status = 'paid')::int as paidorders,
+            COUNT(*) FILTER (WHERE status IN ('received', 'processing', 'ready'))::int as globalactiveorders
+          FROM orders
+        )
+        SELECT * FROM store_counts, user_counts, order_counts
       `),
       query(`
       SELECT 
@@ -51,13 +51,14 @@ export async function GET(req) {
       `),
     ]);
 
-    const totalStores = storesRes.rows[0].totalstores;
-    const activeStores = storesRes.rows[0].activestores;
-    const suspendedStores = storesRes.rows[0].suspendedstores;
-    const idleStores = storesRes.rows[0].idlestores;
-    const totalUsers = usersRes.rows[0].totalusers;
-    const globalRevenue = revenueRes.rows[0].globalrevenue;
-    const globalActiveOrders = activeRes.rows[0].globalactiveorders;
+    const g = globalStatsRes.rows[0];
+    const totalStores = g.totalstores;
+    const activeStores = g.activestores;
+    const suspendedStores = g.suspendedstores;
+    const idleStores = g.idlestores;
+    const totalUsers = g.totalusers;
+    const globalRevenue = g.globalrevenue;
+    const globalActiveOrders = g.globalactiveorders;
 
     const tierPricing = {
       software_only: 25,
@@ -80,7 +81,7 @@ export async function GET(req) {
       stores: storesData.rows,
       mrr,
       churn,
-      paidOrders: revenueRes.rows[0].paidorders,
+      paidOrders: g.paidorders,
       systemHealth: '100% Online'
     });
 

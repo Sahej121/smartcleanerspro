@@ -11,26 +11,36 @@ export async function GET(request) {
     const storeId = auth.user.store_id;
     const today = new Date().toISOString().split('T')[0];
 
-    const [
-      todayOrdersRes,
-      todayRevenueRes,
-      pendingPickupRes,
-      activeGarmentsRes,
-      totalOrdersRes,
-      totalCustomersRes,
-      totalRevenueRes,
-      recentOrdersRes,
-      inventoryTotalRes,
-      inventoryLowRes,
-      lowStockItemsRes
-    ] = await Promise.all([
-      query(`SELECT COUNT(*) as count FROM orders WHERE created_at::date = $1::date AND store_id = $2`, [today, storeId]),
-      query(`SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE created_at::date = $1::date AND payment_status = 'paid' AND store_id = $2`, [today, storeId]),
-      query(`SELECT COUNT(*) as count FROM orders WHERE status = 'ready' AND store_id = $1`, [storeId]),
-      query(`SELECT COUNT(oi.*) as count FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.status NOT IN ('ready', 'delivered') AND o.store_id = $1`, [storeId]),
-      query('SELECT COUNT(*) as count FROM orders WHERE store_id = $1', [storeId]),
-      query('SELECT COUNT(*) as count FROM customers WHERE store_id = $1', [storeId]),
-      query(`SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE payment_status = 'paid' AND store_id = $1`, [storeId]),
+    const [metricsRes, recentOrdersRes, lowStockRes] = await Promise.all([
+      query(`
+        WITH stats AS (
+          SELECT 
+            COUNT(*) FILTER (WHERE created_at::date = $1::date) as today_orders,
+            COALESCE(SUM(total_amount) FILTER (WHERE created_at::date = $1::date AND payment_status = 'paid'), 0) as today_revenue,
+            COUNT(*) FILTER (WHERE status = 'ready') as pending_pickup,
+            COUNT(*) as total_orders,
+            COALESCE(SUM(total_amount) FILTER (WHERE payment_status = 'paid'), 0) as total_revenue
+          FROM orders 
+          WHERE store_id = $2
+        ),
+        active_items AS (
+          SELECT COUNT(*) as active_garments_count 
+          FROM order_items oi 
+          JOIN orders o ON oi.order_id = o.id 
+          WHERE oi.status NOT IN ('ready', 'delivered') AND o.store_id = $2
+        ),
+        cust_stats AS (
+          SELECT COUNT(*) as total_customers_count FROM customers WHERE store_id = $2
+        ),
+        inv_stats AS (
+          SELECT 
+            COUNT(*) as total_items,
+            COUNT(*) FILTER (WHERE quantity <= reorder_level) as low_items
+          FROM inventory 
+          WHERE store_id = $2
+        )
+        SELECT * FROM stats, active_items, cust_stats, inv_stats
+      `, [today, storeId]),
       query(`
         SELECT o.*, c.name as customer_name, c.phone as customer_phone,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
@@ -40,27 +50,30 @@ export async function GET(request) {
         ORDER BY o.created_at DESC
         LIMIT 10
       `, [storeId]),
-      query('SELECT COUNT(*) as count FROM inventory WHERE store_id = $1', [storeId]),
-      query('SELECT COUNT(*) as count FROM inventory WHERE quantity <= reorder_level AND store_id = $1', [storeId]),
       query(`SELECT item_name FROM inventory WHERE quantity <= reorder_level AND store_id = $1 LIMIT 3`, [storeId])
     ]);
 
-    const totalItems = parseInt(inventoryTotalRes.rows[0].count);
-    const lowItems = parseInt(inventoryLowRes.rows[0].count);
+    const m = metricsRes.rows[0];
+    const totalItems = parseInt(m.total_items);
+    const lowItems = parseInt(m.low_items);
     const stockHealth = totalItems > 0 ? Math.round(((totalItems - lowItems) / totalItems) * 100) : 100;
 
     return NextResponse.json({
-      todayOrders: parseInt(todayOrdersRes.rows[0].count),
-      todayRevenue: parseFloat(todayRevenueRes.rows[0].total),
-      pendingPickup: parseInt(pendingPickupRes.rows[0].count),
-      activeGarments: parseInt(activeGarmentsRes.rows[0].count),
-      totalOrders: parseInt(totalOrdersRes.rows[0].count),
-      totalCustomers: parseInt(totalCustomersRes.rows[0].count),
-      totalRevenue: parseFloat(totalRevenueRes.rows[0].total),
+      todayOrders: parseInt(m.today_orders),
+      todayRevenue: parseFloat(m.today_revenue),
+      pendingPickup: parseInt(m.pending_pickup),
+      activeGarments: parseInt(m.active_garments_count),
+      totalOrders: parseInt(m.total_orders),
+      totalCustomers: parseInt(m.total_customers_count),
+      totalRevenue: parseFloat(m.total_revenue),
       recentOrders: recentOrdersRes.rows,
       inventoryAlerts: lowItems,
       stockHealth,
-      lowStockItems: lowStockItemsRes.rows.map(r => r.item_name).join(' & ') || 'All stocked',
+      lowStockItems: lowStockRes.rows.map(r => r.item_name).join(' & ') || 'All stocked',
+    }, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=15',
+      },
     });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

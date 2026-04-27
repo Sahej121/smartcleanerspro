@@ -30,7 +30,11 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'private, s-maxage=10, stale-while-revalidate=5',
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
