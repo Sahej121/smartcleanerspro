@@ -105,7 +105,7 @@ export async function POST(request) {
           if (item.customer_phone) {
             const message = `Hi ${item.customer_name}! Your order #${item.order_number} is now READY for pickup/delivery at DrycleanersFlow. See you soon!`;
             try {
-              const { sendWhatsAppMessage } = require('@/lib/whatsapp/twilioClient');
+              const { sendWhatsAppMessage } = await import('@/lib/whatsapp/twilioClient');
               await sendWhatsAppMessage(item.customer_phone, message);
             } catch (notifErr) {
               console.error('Notification failed:', notifErr);
