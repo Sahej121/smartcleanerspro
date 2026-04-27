@@ -123,7 +123,7 @@ const ServiceCatalog = React.memo(function ServiceCatalog({
                   key={idx}
                   onClick={() => addToCart(item)}
                   className="bg-theme-surface p-4 rounded-[2rem] border border-theme-border/60 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 hover:-translate-y-1 hover:border-emerald-500/30 transition-all duration-500 cursor-pointer group relative overflow-hidden animate-fade-in-up flex flex-col"
-                  style={{ animationDelay: \`\${idx * 40}ms\` }}
+                  style={{ animationDelay: `${idx * 40}ms` }}
                 >
                   <div className="flex justify-between items-start mb-4">
                     {/* Icon Area */}
