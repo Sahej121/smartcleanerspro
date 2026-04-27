@@ -20,7 +20,7 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: 'Invalid tier. Must be software_only, hardware_bundle, or enterprise.' }, { status: 400 });
     }
 
-    const isSuperadmin = payload.id === 1;
+    const isSuperadmin = payload.role === 'superadmin';
 
     // If regular owner, demand "payment"
     if (!isSuperadmin && !payment_confirmed) {

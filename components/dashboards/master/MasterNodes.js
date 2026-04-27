@@ -18,7 +18,7 @@ export default function MasterNodes({
   toggleStoreStatus,
   setDeleteStoreModal
 }) {
-  const totalStores = user?.id == 1 ? owners.reduce((acc, o) => acc + (o.stores?.length || 0), 0) : stores.length;
+  const totalStores = user?.role === 'superadmin' ? owners.reduce((acc, o) => acc + (o.stores?.length || 0), 0) : stores.length;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -36,7 +36,7 @@ export default function MasterNodes({
        </div>
        
        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm overflow-x-auto">
-          {user?.id == 1 ? (
+          {user?.role === 'superadmin' ? (
              <table className="w-full min-w-[700px]">
                 <thead>
                    <tr className="text-[10px] font-black uppercase text-slate-400 border-b border-slate-100">

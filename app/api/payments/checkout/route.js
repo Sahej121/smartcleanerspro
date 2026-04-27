@@ -68,7 +68,8 @@ export async function POST(request) {
     const providerConfig = await getPaymentProvider(country);
 
     if (providerConfig.provider === 'razorpay') {
-      const razorpayOrder = await providerConfig.createOrder(amount, country === 'India' ? 'INR' : 'USD', {
+      const currency = country === 'India' ? 'INR' : 'USD';
+      const razorpayOrder = await providerConfig.createOrder(amount, currency, {
         order_id: order_id,
         is_saas: is_saas_signup ? 'true' : 'false'
       });

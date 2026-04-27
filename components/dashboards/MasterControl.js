@@ -63,7 +63,7 @@ export default function MasterControl({ user }) {
       const healthData = healthRes.ok ? await healthRes.json() : {};
 
       setMasterStats(stats);
-      if (user?.id == 1) {
+      if (user?.role === 'superadmin') {
         const ownerRows = Array.isArray(storesData) ? storesData : [];
         setOwners(ownerRows);
         setStores(ownerRows.flatMap(owner => owner.stores || []));
@@ -140,7 +140,7 @@ export default function MasterControl({ user }) {
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        if (user?.id == 1) {
+        if (user?.role === 'superadmin') {
           fetchData(); // Refresh hierarchical data
         } else {
           setStores(stores.map(s => s.id === storeId ? { ...s, status: newStatus } : s));

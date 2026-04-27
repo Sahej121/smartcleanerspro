@@ -31,7 +31,7 @@ export default function UpgradeTierPage() {
   }, [currentTier]);
 
   const market = useMemo(() => PRICING_MARKETS[marketId] || PRICING_MARKETS.us, [marketId]);
-  const isSuperadmin = currentUser?.id === 1;
+  const isSuperadmin = currentUser?.role === 'superadmin';
 
   const getStoreLimitLabel = (maxStores) => (maxStores === -1 ? 'Unlimited stores' : `Up to ${maxStores} store${maxStores > 1 ? 's' : ''}`);
 

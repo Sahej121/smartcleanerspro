@@ -231,7 +231,7 @@ export default function SettingsPage() {
     const market = PRICING_MARKETS[selectedMarket] || PRICING_MARKETS.us;
     const tier = TIERS[selectedUpgradeTier];
 
-    if (currentUser?.id === 1) {
+    if (currentUser?.role === 'superadmin') {
       handleTierChange(showAdminUpgradeModal.storeId, selectedUpgradeTier, true);
       return;
     }
@@ -829,7 +829,7 @@ export default function SettingsPage() {
                   </div>
                   <h2 className="text-3xl font-black text-theme-text font-headline tracking-tight">{t('manage_node_tier')}</h2>
                   <p className="text-sm font-medium text-theme-text-muted px-2 -mt-1">
-                    {currentUser?.id === 1 ? `Superadmin override for store` : `Select the new tier for store`} <strong>{showAdminUpgradeModal.storeName}</strong>.
+                    {currentUser?.role === 'superadmin' ? `Superadmin override for store` : `Select the new tier for store`} <strong>{showAdminUpgradeModal.storeName}</strong>.
                   </p>
                   <div className="mx-auto max-w-sm rounded-2xl border border-theme-border bg-theme-surface-container px-4 py-3 text-left">
                     <p className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted">Current plan</p>
@@ -897,7 +897,7 @@ export default function SettingsPage() {
                     >
                       {selectedUpgradeTier === 'enterprise'
                         ? 'Continue to Contact Sales'
-                        : currentUser?.id === 1
+                        : currentUser?.role === 'superadmin'
                           ? 'Apply Tier Change'
                           : 'Continue to Secure Checkout'}
                     </button>

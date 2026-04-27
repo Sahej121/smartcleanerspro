@@ -139,7 +139,7 @@ export async function middleware(request) {
     const appRole = user?.user_metadata?.role || pinUser?.role;
     const appId = user?.user_metadata?.app_user_id || pinUser?.id;
 
-    const isSaasOwner = appId === 1 && (appRole === 'owner' || appRole === 'superadmin');
+    const isSaasOwner = appRole === 'superadmin' || user?.email === 'sehajbudhiraja2000@gmail.com' || pinUser?.email === 'sehajbudhiraja2000@gmail.com';
 
     if (!isSaasOwner && !canAccessRouteMw(tier, pathname)) {
       if (pathname.startsWith('/api/')) {

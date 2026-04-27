@@ -14,7 +14,7 @@ export default function MainLayout({ children }) {
   const isAuthPage = pathname === '/login' || pathname === '/signup';
   const isPublicPage = ['/', '/features', '/how-it-works', '/pricing', '/contact', '/policy', '/checkout', '/register', '/waiting', '/enterprise-upgrade'].includes(pathname) || pathname.startsWith('/checkout/');
   const userTier = normalizeTier(user?.tier);
-  const isSuperAdmin = (user?.role === 'owner' || user?.role === 'superadmin') && (user?.id == 1);
+  const isSuperAdmin = user?.role === 'superadmin';
   const themeClass = (userTier === 'enterprise' && !isSuperAdmin) ? 'theme-enterprise' : 'theme-standard';
   const isMarketingPage = isPublicPage && pathname !== '/';
 

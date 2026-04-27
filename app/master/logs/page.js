@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 export default function MasterLogsPage() {
   const { role, user, loading } = useUser();
   const router = useRouter();
-  const isSaasOwner = user?.id === 1 && (role === ROLES.OWNER || role === ROLES.SUPERADMIN);
+  const isSaasOwner = role === ROLES.SUPERADMIN;
 
   useEffect(() => {
     if (!loading && !isSaasOwner) {

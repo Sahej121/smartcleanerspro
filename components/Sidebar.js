@@ -65,7 +65,7 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
   const { role: roleFromContext, user, logout } = useUser();
   const { systemName } = useBranding();
 
-  const isSaasOwner = (user?.role === 'owner' || user?.role === 'superadmin') && (user?.id == 1);
+  const isSaasOwner = user?.role === 'superadmin' || user?.email === 'sehajbudhiraja2000@gmail.com';
   const userTier = normalizeTier(user?.tier);
   const role = roleFromContext || (isSaasOwner ? ROLES.OWNER : 'guest');
   const filteredLinks = getNavLinks(role, userTier, isSaasOwner) || [];

@@ -51,3 +51,7 @@ check-*.js
 test-*.js
 fix-*.js
 *.resolved
+# dev artifacts
+dev.log
+test-razorpay.html
+test_rzp.js

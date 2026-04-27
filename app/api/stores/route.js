@@ -62,7 +62,7 @@ export async function POST(req) {
     const body = await req.json();
     const { store_name, city, subscription_tier, admin_name, admin_email, owner_id, manager_name, manager_email } = body;
 
-    const isSuperadmin = payload.id == 1;
+    const isSuperadmin = payload.role === 'superadmin';
 
     if (!store_name || !city) {
       return NextResponse.json({ error: 'Missing required configuration fields.' }, { status: 400 });
@@ -307,7 +307,7 @@ export async function GET(request) {
     }
     const payload = auth.user;
 
-    const isSaasOwner = payload.id === 1;
+    const isSaasOwner = payload.role === 'superadmin';
     const { searchParams } = new URL(request.url);
     const isHierarchical = searchParams.get('hierarchical') === 'true';
 

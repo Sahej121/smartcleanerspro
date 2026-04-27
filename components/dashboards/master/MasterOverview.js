@@ -23,9 +23,9 @@ export default function MasterOverview({
   handleSendBroadcast,
   isBroadcasting
 }) {
-  const totalStores = user?.id == 1 ? owners.reduce((acc, o) => acc + (o.stores?.length || 0), 0) : stores.length;
+  const totalStores = user?.role === 'superadmin' ? owners.reduce((acc, o) => acc + (o.stores?.length || 0), 0) : stores.length;
   const revenueValue = masterStats?.total_revenue ?? masterStats?.globalRevenue ?? 0;
-  const recentStores = user?.id == 1 ? owners.flatMap((owner) => owner.stores || []).slice(0, 4) : stores.slice(0, 4);
+  const recentStores = user?.role === 'superadmin' ? owners.flatMap((owner) => owner.stores || []).slice(0, 4) : stores.slice(0, 4);
 
   return (
     <div className="space-y-8">

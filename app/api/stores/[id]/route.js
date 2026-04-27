@@ -12,7 +12,7 @@ export async function PATCH(req, { params }) {
 
     const { id } = await params;
     const body = await req.json();
-    const { store_name, city, address, phone, branding_logo } = body;
+    const { store_name, city, address, phone } = body;
 
     // Check ownership or assignment
     const storeCheck = await query(`SELECT owner_id FROM stores WHERE id = $1`, [id]);
@@ -24,7 +24,7 @@ export async function PATCH(req, { params }) {
         return NextResponse.json({ error: 'Forbidden: You can only edit your own store' }, { status: 403 });
     }
 
-    if (payload.role === 'owner' && payload.id !== 1 && storeCheck.rows[0].owner_id !== payload.id) {
+    if (payload.role === 'owner' && payload.role !== 'superadmin' && storeCheck.rows[0].owner_id !== payload.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -49,10 +49,7 @@ export async function PATCH(req, { params }) {
       updates.push(`phone = $${paramCount++}`);
       values.push(phone);
     }
-    if (branding_logo !== undefined) {
-      updates.push(`branding_logo = $${paramCount++}`);
-      values.push(branding_logo);
-    }
+
 
     if (updates.length === 0) {
       return NextResponse.json({ success: true });
@@ -83,7 +80,7 @@ export async function DELETE(req, { params }) {
     const { id } = await params;
 
     // Strict Superadmin Check
-    if (parseInt(payload.id) !== 1) {
+    if (payload.role !== 'superadmin') {
       return NextResponse.json({ error: 'Forbidden: Only the Superadmin can delete nodes' }, { status: 403 });
     }
 
