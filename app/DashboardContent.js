@@ -70,9 +70,6 @@ export default function DashboardContent() {
                 </p>
                 
                 <div className="flex flex-wrap gap-5">
-                  <Link href="/pricing" className="rounded-[1.25rem] px-10 py-5 text-sm font-black text-white primary-gradient shadow-2xl shadow-emerald-500/40 hover:scale-105 active:scale-95 transition-all duration-300 shimmer-button">
-                    {t('start_trial')}
-                  </Link>
                   <Link href="/features" className="rounded-[1.25rem] border-2 border-slate-200 bg-white/60 backdrop-blur-xl px-10 py-5 text-sm font-black text-slate-700 hover:bg-white hover:border-emerald-200 transition-all duration-300">
                     {t('explore_features')}
                   </Link>
@@ -162,9 +159,6 @@ export default function DashboardContent() {
                 Ready to transform <br className="hidden md:block" /> your atelier?
               </h2>
               <div className="flex flex-wrap justify-center gap-6">
-                <Link href="/pricing" className="rounded-2xl bg-white px-12 py-6 text-sm font-black text-emerald-600 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
-                  Get Started for Free
-                </Link>
                 <Link href="/contact" className="rounded-2xl border-2 border-white/30 bg-white/10 backdrop-blur-xl px-12 py-6 text-sm font-black text-white hover:bg-white/20 transition-all duration-300">
                   Talk to Sales
                 </Link>
