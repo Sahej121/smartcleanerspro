@@ -1,26 +1,20 @@
 'use client';
-import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { DashboardSkeleton } from '@/components/Skeleton';
+import { formatCurrency } from '@/lib/formatters';
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function AdminDashboard() {
   const { t } = useLanguage();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data, error, isLoading } = useSWR('/api/analytics', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
 
-  useEffect(() => {
-    fetch('/api/analytics')
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); });
-  }, []);
-
-  if (loading) return <DashboardSkeleton />;
-
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency', currency: 'INR', maximumFractionDigits: 0
-    }).format(val || 0);
-  };
+  if (isLoading) return <DashboardSkeleton />;
+  if (error) return <div className="p-8 text-red-500 font-bold">Error loading analytics.</div>;
 
   const maxRevenue = Math.max(...(data?.dailyRevenue?.map(d => d.revenue) || [1]), 1);
   const dayLabels = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];

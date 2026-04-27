@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { formatCurrency, formatDate, getStatusColor } from '@/lib/formatters';
 
 const STATUS_TABS = ['all', 'received', 'processing', 'ready', 'delivered', 'cancelled'];
 
@@ -42,17 +43,6 @@ export default function OrdersClient({ initialOrders, pagination }) {
     const params = new URLSearchParams(searchParams);
     params.set('page', newPage);
     router.push(`/orders?${params.toString()}`, { scroll: false });
-  };
-
-  const formatDate = (d) => {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  };
-
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency', currency: 'INR', maximumFractionDigits: 0
-    }).format(val || 0);
   };
 
   return (
