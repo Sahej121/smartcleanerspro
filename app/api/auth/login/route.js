@@ -7,49 +7,12 @@ import { cookies } from 'next/headers';
 
 export async function POST(req) {
   try {
-    // Diagnostics (no secrets): helps confirm deployed commit + env host
-    const vercelSha =
-      process.env.VERCEL_GIT_COMMIT_SHA ||
-      process.env.VERCEL_GIT_COMMIT_SHA1 ||
-      process.env.VERCEL_GITHUB_COMMIT_SHA ||
-      process.env.VERCEL_GIT_COMMIT_REF ||
-      'unknown';
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    let supabaseHost = '';
-    try {
-      supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : '';
-    } catch {
-      supabaseHost = '(invalid url)';
-    }
-
-    const databaseUrl = process.env.DATABASE_URL;
-    let dbHost = '';
-    try {
-      dbHost = databaseUrl ? new URL(databaseUrl).hostname : '';
-    } catch {
-      dbHost = '(invalid url)';
-    }
-    console.log('[LOGIN][DIAG]', {
-      vercelSha,
-      supabaseHost,
-      supabaseUrlPresent: Boolean(supabaseUrl),
-      supabaseAnonKeyPresent: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-      dbHost,
-      databaseUrlPresent: Boolean(databaseUrl),
-      nodeEnv: process.env.NODE_ENV,
-    });
-
-    // Ensure migration has run (idempotent)
-    await query('ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_attempts INTEGER DEFAULT 0, ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP');
-
     const { identifier, password, email } = await req.json();
     const loginUser = identifier || email;
 
     if (!loginUser || !password) {
       return NextResponse.json({ error: 'Email/Phone and password are required' }, { status: 400 });
     }
-
-    console.log('[LOGIN] Attempting login for:', loginUser);
 
     // If the user provided a phone number, look up their email first
     let loginEmail = loginUser;
@@ -167,16 +130,26 @@ export async function POST(req) {
     const user = res.rows[0];
     const tier = normalizeTier(user.subscription_tier);
 
-    // Store app-level metadata in user_metadata for middleware access
-    await supabase.auth.updateUser({
-      data: {
-        app_user_id: user.id,
-        role: user.role,
-        store_id: user.store_id,
-        tier: tier,
-        name: user.name,
-      }
-    });
+    // Optimization: Only update user_metadata if it has changed to save a network round-trip
+    const existingMeta = data.user.user_metadata || {};
+    const needsUpdate = 
+      existingMeta.app_user_id !== user.id ||
+      existingMeta.role !== user.role ||
+      existingMeta.store_id !== user.store_id ||
+      existingMeta.tier !== tier ||
+      existingMeta.name !== user.name;
+
+    if (needsUpdate) {
+      await supabase.auth.updateUser({
+        data: {
+          app_user_id: user.id,
+          role: user.role,
+          store_id: user.store_id,
+          tier: tier,
+          name: user.name,
+        }
+      });
+    }
 
     const userPayload = {
       id: user.id,
