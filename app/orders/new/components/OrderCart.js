@@ -3,7 +3,7 @@
 import React from 'react';
 import { AnimatedTotal } from '@/components/common/AnimatedStats';
 
-export default function OrderCart({
+const OrderCart = React.memo(function OrderCart({
   cart,
   removeFromCart,
   updateQuantity,
@@ -59,7 +59,7 @@ export default function OrderCart({
                   <div
                     key={i}
                     className={`animate-slide-in-right group relative px-3 py-2.5 ${i < cart.length - 1 ? 'border-b-2 border-theme-border/90' : ''}`}
-                    style={{ animationDelay: `${i * 60}ms` }}
+                    style={{ animationDelay: \`\${i * 60}ms\` }}
                   >
                     <div className="flex min-h-[52px] w-full items-center gap-2.5">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-theme-surface-container text-theme-text ring-1 ring-theme-border/50">
@@ -332,4 +332,6 @@ export default function OrderCart({
     )}
     </>
   );
-}
+});
+
+export default OrderCart;

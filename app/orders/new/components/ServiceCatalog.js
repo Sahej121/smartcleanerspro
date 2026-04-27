@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 
-export default function ServiceCatalog({
+const ServiceCatalog = React.memo(function ServiceCatalog({
   garmentTypes,
   activeCategory,
   setActiveCategory,
@@ -14,6 +14,17 @@ export default function ServiceCatalog({
   handleAddCustomGarment,
   t
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredPricing = useMemo(() => {
+    return pricing.filter(p => {
+      const matchesCategory = activeCategory === 'All' || p.garment_type === activeCategory;
+      const matchesSearch = p.garment_type.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            p.service_type.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [pricing, activeCategory, searchQuery]);
+
   return (
     <>
       {/* Column 1: Service Categories (Horizontal on mobile) */}
@@ -51,7 +62,19 @@ export default function ServiceCatalog({
       {/* Column 2: Garment Grid */}
       <div className="lg:col-span-6 flex flex-col overflow-hidden min-h-[400px] lg:min-h-0">
         <div className="flex items-center justify-between mb-5 px-1 animate-fade-in-up stagger-2">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/50">Select Items</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/50 hidden sm:block">Select Items</h3>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-theme-text-muted/50 text-[18px]">search</span>
+              <input 
+                type="text" 
+                placeholder="Search catalog..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-2 rounded-xl bg-theme-surface border border-theme-border/60 text-xs text-theme-text placeholder:text-theme-text-muted/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all w-[140px] sm:w-[200px]"
+              />
+            </div>
+          </div>
           <div className="flex gap-2 overflow-x-auto no-scrollbar shrink-0">
             <button 
               onClick={() => setShowAddCategoryModal(true)} 
@@ -66,22 +89,41 @@ export default function ServiceCatalog({
             >
               Custom
             </button>
-            <div className="h-8 w-[1px] bg-theme-border mx-1 shrink-0"></div>
-            <button className="shrink-0 px-4 py-2 rounded-xl bg-theme-surface-container text-theme-text text-[10px] font-black uppercase tracking-wider hover:bg-emerald-50 transition-all active:scale-95 border border-theme-border/40">
-              Popular
-            </button>
           </div>
         </div>
+
+        {/* Frequently Ordered (Phase 2) */}
+        {!searchQuery && activeCategory === 'All' && (
+          <div className="mb-6 animate-fade-in">
+            <h4 className="text-[9px] font-black uppercase tracking-[0.15em] text-theme-text-muted/40 mb-3 px-1">Quick Add</h4>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+              {pricing.slice(0, 5).map((item, idx) => (
+                <button
+                  key={`quick-${idx}`}
+                  onClick={() => addToCart(item)}
+                  className="shrink-0 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-2 group shadow-sm active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">
+                    {getGarmentIcon(item.garment_type)}
+                  </span>
+                  <div className="flex flex-col items-start">
+                    <span className="text-[10px] font-black leading-tight">{item.garment_type}</span>
+                    <span className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">{item.service_type}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 lg:gap-5">
-            {pricing
-              .filter(p => activeCategory === 'All' || p.garment_type === activeCategory)
-              .map((item, idx) => (
+            {filteredPricing.map((item, idx) => (
                 <div 
                   key={idx}
                   onClick={() => addToCart(item)}
                   className="bg-theme-surface p-4 rounded-[2rem] border border-theme-border/60 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 hover:-translate-y-1 hover:border-emerald-500/30 transition-all duration-500 cursor-pointer group relative overflow-hidden animate-fade-in-up flex flex-col"
-                  style={{ animationDelay: `${idx * 40}ms` }}
+                  style={{ animationDelay: \`\${idx * 40}ms\` }}
                 >
                   <div className="flex justify-between items-start mb-4">
                     {/* Icon Area */}
@@ -116,4 +158,6 @@ export default function ServiceCatalog({
       </div>
     </>
   );
-}
+});
+
+export default ServiceCatalog;

@@ -15,8 +15,8 @@ export async function GET(request) {
       `bootstrap_${storeId}`,
       async () => {
         const [pricingRes, discountsRes] = await Promise.all([
-          query('SELECT * FROM pricing WHERE store_id = $1 ORDER BY garment_type, service_type', [storeId]),
-          query('SELECT * FROM volume_discounts WHERE store_id = $1 AND is_active = TRUE ORDER BY min_quantity DESC', [storeId])
+          query('SELECT id, garment_type, service_type, price FROM pricing WHERE store_id = $1 ORDER BY garment_type, service_type', [storeId]),
+          query('SELECT id, min_quantity, discount_percent FROM volume_discounts WHERE store_id = $1 AND is_active = TRUE ORDER BY min_quantity DESC', [storeId])
         ]);
         return {
           pricing: pricingRes.rows,
