@@ -263,18 +263,23 @@ export default function NewOrder() {
             description: data.order_details.description,
             order_id: data.order_id,
             handler: async function (response) {
-              const verifyRes = await fetch('/api/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  internal_order_id: orderId,
-                }),
-              });
-              const verifyData = await verifyRes.json();
-              resolve({ success: verifyRes.ok && verifyData.success });
+              try {
+                const verifyRes = await fetch('/api/verify-payment', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    internal_order_id: orderId,
+                  }),
+                });
+                const verifyData = await verifyRes.json();
+                resolve({ success: verifyRes.ok && verifyData.success });
+              } catch (err) {
+                console.error('Payment verification failed:', err);
+                resolve({ success: false, error: err.message });
+              }
             },
             modal: { ondismiss: () => resolve({ success: false, dismissed: true }) },
             prefill: { name: selectedCustomer?.name || '', contact: selectedCustomer?.phone || '' },
