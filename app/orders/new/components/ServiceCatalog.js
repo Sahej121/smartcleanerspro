@@ -61,54 +61,55 @@ const ServiceCatalog = React.memo(function ServiceCatalog({
 
       {/* Column 2: Garment Grid */}
       <div className="lg:col-span-6 flex flex-col overflow-hidden min-h-[400px] lg:min-h-0">
-        <div className="flex items-center justify-between mb-5 px-1 animate-fade-in-up stagger-2">
-          <div className="flex items-center gap-3">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/50 hidden sm:block">Select Items</h3>
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-theme-text-muted/50 text-[18px]">search</span>
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 animate-fade-in-up stagger-2">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="relative w-full sm:w-[280px]">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted/40 text-[18px]">search</span>
               <input 
                 type="text" 
-                placeholder="Search catalog..." 
+                placeholder="Search garments..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 rounded-xl bg-theme-surface border border-theme-border/60 text-xs text-theme-text placeholder:text-theme-text-muted/50 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all w-[140px] sm:w-[200px]"
+                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-theme-border/40 text-xs font-bold text-theme-text placeholder:text-theme-text-muted/30 focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 transition-all shadow-sm"
               />
             </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
             <button 
               onClick={() => setShowAddCategoryModal(true)} 
-              className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider hover:bg-amber-600 transition-all flex items-center gap-1.5 shadow-md shadow-amber-900/10 active:scale-95"
+              className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.1em] hover:bg-amber-600 transition-all flex items-center justify-center gap-2 shadow-md shadow-amber-900/10 active:scale-95"
             >
-              <span className="material-symbols-outlined text-[14px]">add_circle</span>
-              <span className="hidden sm:inline">Category</span>
+              <span className="material-symbols-outlined text-[16px]">add_circle</span>
+              <span>Category</span>
             </button>
             <button 
               onClick={handleAddCustomGarment} 
-              className="shrink-0 px-4 py-2 rounded-xl bg-theme-text text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-900 transition-all shadow-md shadow-theme-text/10 active:scale-95"
+              className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-theme-text text-white text-[10px] font-black uppercase tracking-[0.1em] hover:bg-emerald-950 transition-all shadow-md shadow-theme-text/10 active:scale-95"
             >
               Custom
             </button>
           </div>
         </div>
 
-        {/* Frequently Ordered (Phase 2) */}
+        {/* Frequently Ordered */}
         {!searchQuery && activeCategory === 'All' && (
-          <div className="mb-6 animate-fade-in">
-            <h4 className="text-[9px] font-black uppercase tracking-[0.15em] text-theme-text-muted/40 mb-3 px-1">Quick Add</h4>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-              {pricing.slice(0, 5).map((item, idx) => (
+          <div className="mb-8 animate-fade-in">
+            <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted/40 mb-4 px-1">Quick Add</h4>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4 -mx-1 px-1">
+              {pricing.slice(0, 6).map((item, idx) => (
                 <button
                   key={`quick-${idx}`}
                   onClick={() => addToCart(item)}
-                  className="shrink-0 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-2 group shadow-sm active:scale-95"
+                  className="shrink-0 px-5 py-4 rounded-[1.75rem] bg-emerald-50/40 border border-emerald-100/50 text-emerald-900 hover:bg-emerald-50 hover:border-emerald-200 transition-all flex items-center gap-3 group shadow-sm hover:shadow-md active:scale-95"
                 >
-                  <span className="material-symbols-outlined text-lg group-hover:scale-110 transition-transform">
-                    {getGarmentIcon(item.garment_type)}
-                  </span>
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-xl">
+                      {getGarmentIcon(item.garment_type)}
+                    </span>
+                  </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-[10px] font-black leading-tight">{item.garment_type}</span>
-                    <span className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">{item.service_type}</span>
+                    <span className="text-[11px] font-black leading-tight tracking-tight">{item.garment_type}</span>
+                    <span className="text-[8px] font-bold opacity-50 uppercase tracking-widest">{item.service_type}</span>
                   </div>
                 </button>
               ))}
