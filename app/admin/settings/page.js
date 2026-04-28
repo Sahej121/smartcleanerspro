@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useBranding } from '@/lib/BrandingContext';
-import { TIERS, hasFeature, PRICING_MARKETS } from '@/lib/tier-config';
+import { TIERS, hasFeature, PRICING_MARKETS, getMarketForCountry } from '@/lib/tier-config';
 import { formatCurrency, detectCountry } from '@/lib/currency-utils';
 
 export default function SettingsPage() {
@@ -215,15 +215,7 @@ export default function SettingsPage() {
   const tierConfig = TIERS[currentTier] || TIERS.software_only;
   const canAdd = tierConfig.maxStores === -1 || storeCount < tierConfig.maxStores;
 
-  const getMarketForCountry = (country = '') => {
-    const normalized = country.trim().toLowerCase();
-    if (['india', 'in'].includes(normalized)) return 'india';
-    if (['united arab emirates', 'uae', 'ae', 'saudi arabia', 'sa', 'qatar', 'qa', 'kuwait', 'kw', 'oman', 'om', 'bahrain', 'bh'].includes(normalized)) return 'uae';
-    if (['united states', 'usa', 'us'].includes(normalized)) return 'us';
-    if (['mexico', 'mx', 'brazil', 'br', 'argentina', 'ar', 'colombia', 'co', 'chile', 'cl', 'peru', 'pe', 'panama', 'pa', 'uruguay', 'uy'].includes(normalized)) return 'latam';
-    if (['united kingdom', 'uk', 'gb', 'germany', 'de', 'france', 'fr', 'italy', 'it', 'spain', 'es', 'netherlands', 'nl', 'sweden', 'se', 'norway', 'no', 'switzerland', 'ch'].includes(normalized)) return 'europe';
-    return 'us';
-  };
+
 
   const proceedWithUpgrade = () => {
     if (!showAdminUpgradeModal || !selectedUpgradeTier) return;

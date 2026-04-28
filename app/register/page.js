@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useUser, ROLES } from '@/lib/UserContext';
+import { PRICING_MARKETS } from '@/lib/tier-config';
 
 function RegisterForm() {
   const { t } = useLanguage();
@@ -90,14 +91,7 @@ function RegisterForm() {
     );
   }
 
-  const currencyMap = {
-    'us': '$',
-    'europe': '€',
-    'uae': 'AED',
-    'india': '₹',
-    'latam': '$'
-  };
-  const currencySymbol = selectedPlan?.market ? currencyMap[selectedPlan.market] : '';
+  const currencySymbol = selectedPlan?.market ? (PRICING_MARKETS[selectedPlan.market]?.currency || '') : '';
 
   return (
     <div className="w-full max-w-lg relative z-10 animate-in fade-in zoom-in-95 duration-700">

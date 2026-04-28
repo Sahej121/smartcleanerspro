@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { TIERS } from '@/lib/tier-config';
+import { TIERS, getMarketForCountry, getTierPrice } from '@/lib/tier-config';
 
 export default function BillingPage() {
   const router = useRouter();
@@ -27,11 +27,7 @@ export default function BillingPage() {
     fetchStores();
   }, []);
 
-  const getTierDisplayPrice = (tierPrice) => {
-    if (!isYearly) return tierPrice;
-    const base = parseFloat(tierPrice.replace(/[^0-9.]/g, ''));
-    return `₹${Math.round(base * 0.8).toLocaleString('en-IN')}/mo`;
-  };
+  const marketId = getMarketForCountry(stores[0]?.country || 'india');
 
   const TIERS_ARRAY = Object.entries(TIERS).map(([key, config]) => ({ id: key, ...config }));
 
@@ -123,7 +119,14 @@ export default function BillingPage() {
                     {plan.label}
                   </h3>
                   <div className="flex items-baseline gap-1 mb-6">
-                    <span className="text-5xl lg:text-7xl font-black tracking-tighter font-headline text-theme-text drop-shadow-sm">{getTierDisplayPrice(plan.price)}</span>
+                    <span className="text-5xl lg:text-7xl font-black tracking-tighter font-headline text-theme-text drop-shadow-sm">
+                      {getTierPrice(plan.id, marketId, isYearly ? 'yearly' : 'monthly')}
+                    </span>
+                    {!isEnterprise && (
+                      <span className="text-theme-text-muted font-bold uppercase tracking-widest text-xs">
+                        {isYearly ? '/yr' : '/mo'}
+                      </span>
+                    )}
                   </div>
                   
                   <div className="space-y-4">
