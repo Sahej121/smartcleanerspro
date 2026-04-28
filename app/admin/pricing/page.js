@@ -19,28 +19,47 @@ export default function PricingPage() {
     setEditValue(item.price.toString());
   };
 
-  const saveEdit = async (id) => {
-    const price = parseFloat(editValue);
+  const saveEdit = async (id, updatedData = null) => {
+    const price = updatedData ? parseFloat(updatedData.price) : parseFloat(editValue);
     if (isNaN(price) || price < 0) return;
 
     try {
+      const body = updatedData ? { id, ...updatedData, price } : { id, price };
       const res = await fetch('/api/pricing', {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'X-Idempotency-Key': crypto.randomUUID()
         },
-        body: JSON.stringify({ id, price }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) throw new Error('Failed to update price');
 
-      setPricing(pricing.map(p => p.id === id ? { ...p, price } : p));
+      setPricing(pricing.map(p => p.id === id ? { ...p, ...body } : p));
       setEditingId(null);
-      setMessage('Price updated successfully');
+      setMessage('Pricing updated successfully');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      alert('Failed to update price. Please try again.');
+      alert('Failed to update pricing. Please try again.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this pricing entry?')) return;
+    
+    try {
+      const res = await fetch(`/api/pricing?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete');
+
+      setPricing(pricing.filter(p => p.id !== id));
+      setMessage('Pricing entry deleted');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      alert('Failed to delete pricing entry.');
     }
   };
   
@@ -146,33 +165,75 @@ export default function PricingPage() {
                       </div>
 
                       {editingId === item.id ? (
-                        <div className="flex items-center gap-2 animate-scale-in">
-                          <span className="text-amber-500 font-black">₹</span>
-                          <input
-                            className="w-full bg-surface border border-amber-500/50 rounded-xl py-2 px-3 text-sm font-black text-theme-text focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-                            value={editValue}
-                            onChange={e => setEditValue(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && saveEdit(item.id)}
-                            autoFocus
-                          />
-                          <button className="w-8 h-8 rounded-lg bg-emerald-500 text-theme-text flex items-center justify-center shrink-0" onClick={() => saveEdit(item.id)}>
-                            <span className="material-symbols-outlined text-[16px]">check</span>
-                          </button>
-                          <button className="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center shrink-0 hover:text-theme-text" onClick={() => setEditingId(null)}>
-                            <span className="material-symbols-outlined text-[16px]">close</span>
-                          </button>
+                        <div className="space-y-4 animate-scale-in">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-theme-text-muted px-1">Garment Name</label>
+                            <input
+                              className="w-full bg-surface border border-theme-border rounded-xl py-2 px-3 text-sm font-bold text-theme-text focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                              value={item.garment_type}
+                              onChange={e => {
+                                setPricing(pricing.map(p => p.id === item.id ? { ...p, garment_type: e.target.value } : p));
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-theme-text-muted px-1">Service Type</label>
+                            <select
+                              className="w-full bg-surface border border-theme-border rounded-xl py-2 px-3 text-sm font-bold text-theme-text focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                              value={item.service_type}
+                              onChange={e => {
+                                setPricing(pricing.map(p => p.id === item.id ? { ...p, service_type: e.target.value } : p));
+                              }}
+                            >
+                              {['Dry Cleaning', 'Washing', 'Ironing', 'Stain Removal', 'Express Service', 'Polishing'].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase text-theme-text-muted px-1">Price (₹)</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                className="w-full bg-surface border border-theme-border rounded-xl py-2 px-3 text-sm font-black text-theme-text focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                                value={editValue}
+                                onChange={e => setEditValue(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && saveEdit(item.id, item)}
+                                autoFocus
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <button className="flex-1 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-900/10" onClick={() => saveEdit(item.id, item)}>
+                              Save changes
+                            </button>
+                            <button className="px-4 py-2 rounded-xl bg-slate-800 text-slate-400 text-xs font-black uppercase tracking-widest" onClick={() => {
+                              setEditingId(null);
+                              // Refresh pricing to discard unsaved name/service changes
+                              fetch('/api/pricing').then(r => r.json()).then(d => setPricing(d));
+                            }}>
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex justify-between items-center">
                           <div className="text-2xl font-black text-theme-text group-hover/item:text-amber-400 transition-colors tracking-tighter">
                             <span className="text-sm font-bold text-theme-text-muted mr-1">₹</span>{item.price}
                           </div>
-                          <button 
-                            className="bg-surface border border-theme-border text-slate-400 w-8 h-8 rounded-xl flex items-center justify-center hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/20 transition-all opacity-0 group-hover/item:opacity-100" 
-                            onClick={() => startEdit(item)} 
-                          >
-                            <span className="material-symbols-outlined text-[14px]">edit</span>
-                          </button>
+                          <div className="flex gap-2">
+                            <button 
+                              className="bg-surface border border-theme-border text-slate-400 w-8 h-8 rounded-xl flex items-center justify-center hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/20 transition-all opacity-0 group-hover/item:opacity-100" 
+                              onClick={() => startEdit(item)} 
+                            >
+                              <span className="material-symbols-outlined text-[14px]">edit</span>
+                            </button>
+                            <button 
+                              className="bg-surface border border-theme-border text-slate-400 w-8 h-8 rounded-xl flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 transition-all opacity-0 group-hover/item:opacity-100" 
+                              onClick={() => handleDelete(item.id)} 
+                            >
+                              <span className="material-symbols-outlined text-[14px]">delete</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>

@@ -15,6 +15,7 @@ const getNavLinks = (role, userTier, isSaasOwner) => {
       { href: '/master/logs', labelKey: 'nav_global_logs', icon: 'terminal' },
       { href: '/master/security', labelKey: 'nav_security', icon: 'health_and_safety' },
       { href: '/admin/settings', labelKey: 'nav_settings', icon: 'settings' },
+      { href: '/admin/pricing', labelKey: 'Garment Prices', icon: 'currency_rupee' },
     ];
   }
 
@@ -26,6 +27,7 @@ const getNavLinks = (role, userTier, isSaasOwner) => {
       { href: '/orders/new', labelKey: 'nav_new_order', icon: 'add_circle' },
       { href: '/orders', labelKey: 'nav_orders', icon: 'receipt_long' },
       { href: '/customers', labelKey: 'nav_customers', icon: 'group' },
+      { href: '/admin/pricing', labelKey: 'Garment Prices', icon: 'currency_rupee' },
       { href: '/admin/analytics/staff', labelKey: 'nav_staff_analytics', icon: 'analytics' },
       { href: '/inventory', labelKey: 'nav_inventory', icon: 'inventory_2' },
       { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route' },
@@ -42,6 +44,7 @@ const getNavLinks = (role, userTier, isSaasOwner) => {
     { href: '/orders/new', labelKey: 'nav_new_order', icon: 'add_circle', allowedRoles: [ROLES.ADMIN] },
     { href: '/orders', labelKey: 'nav_orders', icon: 'receipt_long', allowedRoles: [ROLES.ADMIN] },
     { href: '/customers', labelKey: 'nav_customers', icon: 'group', allowedRoles: [ROLES.ADMIN] },
+    { href: '/admin/pricing', labelKey: 'Garment Prices', icon: 'currency_rupee', allowedRoles: [ROLES.ADMIN] },
     { href: '/admin/analytics/staff', labelKey: 'nav_staff_analytics', icon: 'analytics', allowedRoles: [ROLES.ADMIN] },
     { href: '/inventory', labelKey: 'nav_inventory', icon: 'inventory_2', allowedRoles: [ROLES.ADMIN] },
     { href: '/operations/assembly', labelKey: 'nav_assembly', icon: 'route', allowedRoles: [ROLES.ADMIN, ROLES.STAFF, ROLES.FRONTDESK] },

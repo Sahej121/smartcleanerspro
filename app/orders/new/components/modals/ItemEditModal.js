@@ -22,10 +22,10 @@ export default function ItemEditModal({
     setStainError('');
     setStainAnalyzing(true);
     try {
-      const response = await fetch('/api/vision/stain-analysis', {
+      const response = await fetch('/api/stain-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageBase64 }),
+        body: JSON.stringify({ image_base64: imageBase64 }),
       });
       const result = await response.json();
       if (response.ok) {
@@ -40,8 +40,8 @@ export default function ItemEditModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/40 backdrop-blur-md animate-fade-in">
-      <div className="bg-theme-surface rounded-[2.5rem] p-8 max-sm:w-full max-w-sm w-full mx-4 shadow-2xl border border-theme-border animate-scale-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/40 backdrop-blur-md animate-fade-in p-4">
+      <div className="bg-theme-surface rounded-[2.5rem] p-8 max-w-xl w-full mx-4 shadow-2xl border border-theme-border animate-scale-in max-h-[90vh] overflow-y-auto no-scrollbar">
         <h3 className="text-xl font-black text-theme-text mb-6">Item Intake Details</h3>
         <div className="space-y-4 mb-8">
           <div>
@@ -103,13 +103,41 @@ export default function ItemEditModal({
               <p className="mt-2 text-[10px] font-bold text-red-600">{stainError}</p>
             )}
             {editData.stain_analysis?.stains?.[0] && (
-              <div className="mt-3 p-2 rounded-lg bg-theme-surface border border-theme-border">
-                <p className="text-[10px] font-black text-theme-text uppercase tracking-widest">
-                  Detected: {editData.stain_analysis.stains[0].label}
-                </p>
-                <p className="text-[10px] text-theme-text-muted">
-                  Confidence: {Math.round((editData.stain_analysis.stains[0].confidence || 0) * 100)}%
-                </p>
+              <div className="mt-3 p-2 rounded-lg bg-theme-surface border border-theme-border flex flex-col gap-2">
+                <div>
+                  <p className="text-[10px] font-black text-theme-text uppercase tracking-widest">
+                    Detected: {editData.stain_analysis.stains[0].label}
+                  </p>
+                  <p className="text-[10px] text-theme-text-muted">
+                    Confidence: {Math.round((editData.stain_analysis.stains[0].confidence || 0) * 100)}%
+                  </p>
+                </div>
+                
+                {editData.stain_analysis.recommendations?.length > 0 && (
+                  <div className="pt-2 border-t border-theme-border">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">
+                      Recommended Treatment
+                    </p>
+                    {editData.stain_analysis.recommendations.map((rec, i) => (
+                      <div key={i} className="mb-2 last:mb-0 bg-theme-surface-container rounded-md p-2">
+                        <div className="flex justify-between items-start">
+                          <span className="text-[10px] font-bold text-theme-text">{rec.method}</span>
+                          <span className="text-[9px] text-emerald-600 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                            {Math.round(rec.estimated_success_rate * 100)}% Success
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-theme-text-muted mt-1">
+                          <span className="font-bold">Chemical:</span> {rec.chemical}
+                        </p>
+                        {rec.safety_notes && (
+                          <p className="text-[9px] text-amber-600 mt-1 italic">
+                            ⚠️ {rec.safety_notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -48,9 +48,37 @@ export async function PUT(request) {
     if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
     const body = await request.json();
-    const { id, price } = body;
+    const { id, price, garment_type, service_type } = body;
 
-    await query('UPDATE pricing SET price = $1 WHERE id = $2 AND store_id = $3', [price, id, auth.user.store_id]);
+    if (garment_type && service_type) {
+      await query(
+        'UPDATE pricing SET price = $1, garment_type = $2, service_type = $3 WHERE id = $4 AND store_id = $5',
+        [price, garment_type, service_type, id, auth.user.store_id]
+      );
+    } else {
+      await query('UPDATE pricing SET price = $1 WHERE id = $2 AND store_id = $3', [price, id, auth.user.store_id]);
+    }
+    
+    // Invalidate bootstrap cache
+    invalidateCache(`bootstrap_${auth.user.store_id}`);
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const auth = await requireRole(request, ['owner', 'manager']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+
+    await query('DELETE FROM pricing WHERE id = $1 AND store_id = $2', [id, auth.user.store_id]);
     
     // Invalidate bootstrap cache
     invalidateCache(`bootstrap_${auth.user.store_id}`);

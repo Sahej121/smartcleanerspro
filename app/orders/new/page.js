@@ -436,7 +436,7 @@ export default function NewOrder() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 px-4 pb-4">
+      <div className="flex-1 min-h-0 px-4 pb-4 max-w-[1600px] mx-auto w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -447,7 +447,7 @@ export default function NewOrder() {
             className="h-full min-h-0"
           >
             {currentStep <= 2 && (
-              <div className="grid lg:grid-cols-12 gap-4 h-full min-h-0">
+              <div className="grid lg:grid-cols-12 gap-6 h-full min-h-0">
                 <ServiceCatalog 
                   garmentTypes={garmentTypes} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
                   getCategoryIcon={getCategoryIcon} getGarmentIcon={getGarmentIcon} pricing={pricing}
