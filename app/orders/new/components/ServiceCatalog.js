@@ -60,7 +60,7 @@ const ServiceCatalog = React.memo(function ServiceCatalog({
       </div>
 
       {/* Column 2: Garment Grid */}
-      <div className="lg:col-span-6 flex flex-col overflow-hidden min-h-[400px] lg:min-h-0">
+      <div className="lg:col-span-6 flex flex-col overflow-hidden min-h-[500px] lg:min-h-0">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4 animate-fade-in-up stagger-2">
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <div className="relative w-full sm:w-[280px]">

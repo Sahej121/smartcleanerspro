@@ -32,12 +32,12 @@ const OrderCart = React.memo(function OrderCart({
   return (
     <>
     <div className="lg:col-span-4 flex flex-col min-h-0 animate-fade-in-up stagger-3">
-      <div className="glass-card-premium flex flex-col min-h-0 flex-1 overflow-hidden">
+      <div className="glass-card-premium flex flex-col h-full overflow-hidden">
         {/* Summary Header */}
         {customerHeader}
 
         {/* Cart Items */}
-        <div className="flex-1 min-h-[180px] overflow-y-auto p-6 no-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-6 no-scrollbar">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center py-10">
                 <div className="w-20 h-20 rounded-full bg-theme-surface-container flex items-center justify-center mb-4 animate-float">
@@ -98,10 +98,14 @@ const OrderCart = React.memo(function OrderCart({
                         </button>
                       </div>
 
-                      <div className="shrink-0 min-w-[52px] text-right">
-                        <p className="text-[12px] font-medium text-theme-text">
-                          ₹{((item.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}
-                        </p>
+                      <div className="shrink-0 flex items-center gap-1 bg-theme-surface-container/50 px-2 py-1 rounded-xl ring-1 ring-theme-border/30 group-hover:ring-emerald-500/30 transition-all">
+                        <span className="text-[10px] font-black text-theme-text-muted">₹</span>
+                        <input
+                          type="number"
+                          className="w-10 border-none bg-transparent p-0 text-right text-[12px] font-bold text-theme-text outline-none focus:ring-0"
+                          value={item.price}
+                          onChange={(e) => updateItemPrice(i, e.target.value)}
+                        />
                       </div>
 
                       <button
@@ -122,7 +126,7 @@ const OrderCart = React.memo(function OrderCart({
         {/* Summary Totals */}
         <div className="shrink-0 p-4 bg-theme-surface-container/40 border-t border-theme-border/60 backdrop-blur-md">
           <div className="space-y-2 mb-3">
-            <div className="flex justify-between items-center text-[11px]">
+            <div className="flex justify-between items-center text-[11px] mb-1">
               <span className="font-bold text-theme-text-muted/70 uppercase tracking-widest">Subtotal</span>
               <span className="font-black text-theme-text">₹{subtotal.toLocaleString('en-IN')}</span>
             </div>

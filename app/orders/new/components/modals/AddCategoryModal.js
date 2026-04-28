@@ -12,8 +12,8 @@ export default function AddCategoryModal({ isOpen, onClose, onAdd, loading, t })
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/40 backdrop-blur-md animate-fade-in">
-      <div className="bg-theme-surface rounded-[2.5rem] p-8 max-w-sm w-full mx-4 shadow-2xl border border-theme-border animate-scale-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-surface/40 backdrop-blur-md animate-fade-in p-4">
+      <div className="bg-theme-surface rounded-[2.5rem] p-8 max-w-md w-full mx-4 shadow-2xl border border-theme-border animate-scale-in max-h-[90vh] overflow-y-auto no-scrollbar">
         <h3 className="text-xl font-black text-theme-text mb-6">New Category</h3>
         <div className="space-y-4 mb-8">
           <div>
