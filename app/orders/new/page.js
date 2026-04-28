@@ -397,82 +397,98 @@ export default function NewOrder() {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:overflow-y-auto">
+    <div className="flex flex-col h-screen overflow-hidden bg-theme-surface-container/10">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       
-      <div className="flex items-center justify-center animate-fade-in-up py-2 shrink-0" style={{height: '80px'}}>
-        <div className="flex items-center w-full max-w-2xl bg-theme-surface/50 backdrop-blur-sm p-4 rounded-[2rem] border border-theme-border/40 shadow-sm relative">
+      {/* Top Header / Progress Tracker */}
+      <div className="flex items-center justify-center animate-fade-in-up pt-8 pb-4 shrink-0">
+        <div className="flex items-center w-full max-w-3xl bg-theme-surface/50 backdrop-blur-md p-4 rounded-[2rem] border border-theme-border/40 shadow-sm relative">
           {offlineCount > 0 && (
             <div 
-              className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all border ${
+              className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.12em] flex items-center gap-2 shadow-lg transition-all border ${
                 syncing ? 'bg-amber-500 text-white border-amber-400 animate-pulse' : 'bg-emerald-500 text-white border-emerald-400'
               }`}
               onClick={syncOrders}
             >
-              <span className="material-symbols-outlined text-[12px]">{syncing ? 'sync' : 'cloud_upload'}</span>
+              <span className="material-symbols-outlined text-[13px]">{syncing ? 'sync' : 'cloud_upload'}</span>
               {syncing ? 'Syncing...' : `${offlineCount} Offline Order${offlineCount > 1 ? 's' : ''}`}
             </div>
           )}
           {steps.map((s, i) => (
             <div key={s.step} className="contents">
               <div 
-                className="flex flex-col items-center gap-2 group relative cursor-pointer"
+                className="flex flex-col items-center gap-2 group relative cursor-pointer px-2"
                 onClick={() => setCurrentStep(s.step)}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative z-10 ${s.step <= currentStep ? 'primary-gradient text-white shadow-lg scale-110' : 'bg-theme-surface-container text-theme-text-muted/30'}`}>
+                <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative z-10 ${s.step <= currentStep ? 'primary-gradient text-white shadow-lg scale-110' : 'bg-theme-surface-container/60 text-theme-text-muted/20'}`}>
                   <span className="material-symbols-outlined text-xl">{s.icon}</span>
                 </div>
-                <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${s.step <= currentStep ? 'text-theme-text' : 'text-theme-text-muted/40'}`}>{s.label}</span>
+                <span className={`text-[8px] lg:text-[9px] font-black uppercase tracking-[0.15em] whitespace-nowrap transition-colors ${s.step <= currentStep ? 'text-theme-text' : 'text-theme-text-muted/30'}`}>{s.label}</span>
               </div>
-              {i < steps.length - 1 && <div className="flex-1 px-4 mb-6"><div className={`h-[2px] w-full rounded-full ${s.step < currentStep ? 'bg-emerald-500' : 'bg-theme-surface-container'}`}></div></div>}
+              {i < steps.length - 1 && (
+                <div className="flex-1 px-3 mb-5">
+                  <div className={`h-[2px] w-full rounded-full transition-colors duration-700 ${s.step < currentStep ? 'bg-emerald-500' : 'bg-theme-surface-container/40'}`}></div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
-          className="flex-1 overflow-y-auto"
-        >
-          {currentStep <= 2 && (
-            <div className="grid lg:grid-cols-12 gap-4 h-full">
-              <ServiceCatalog 
-                garmentTypes={garmentTypes} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
-                getCategoryIcon={getCategoryIcon} getGarmentIcon={getGarmentIcon} pricing={pricing}
-                addToCart={addToCart} setShowAddCategoryModal={setShowAddCategoryModal}
-                handleAddCustomGarment={() => setIsCustomModalOpen(true)} t={t}
-              />
-              <OrderCart 
-                cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} updateItemPrice={updateItemPrice}
-                getGarmentIcon={getGarmentIcon} subtotal={subtotal} applicableVolDiscount={applicableVolDiscount}
-                volDiscountInfo={volDiscountInfo} tax={tax} couponData={couponData} couponDiscount={couponDiscount}
-                redeemedPoints={redeemedPoints} total={total} couponCode={couponCode} setCouponCode={setCouponCode}
-                handleApplyCoupon={handleApplyCoupon} setCurrentStep={setCurrentStep} setItemEditIndex={setItemEditIndex}
-                setShowItemEditModal={setShowItemEditModal} selectedCustomer={selectedCustomer} t={t}
-                customerHeader={
-                  <CustomerSection 
-                    selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
-                    isCustomerSearchOpen={isCustomerSearchOpen} setIsCustomerSearchOpen={setIsCustomerSearchOpen}
-                    searchQuery={searchQuery} setSearchQuery={setSearchQuery} filteredCustomers={customers}
-                    isInlineCreating={isInlineCreating} setIsInlineCreating={setIsInlineCreating}
-                    inlineError={inlineError} setInlineError={setInlineError} newCustomer={newCustomer}
-                    setNewCustomer={setNewCustomer} handleCreateCustomer={handleCreateCustomer}
-                    setCurrentStep={setCurrentStep} t={t}
-                  />
-                }
-              />
-            </div>
-          )}
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-0 px-4 pb-4">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="h-full min-h-0"
+          >
+            {currentStep <= 2 && (
+              <div className="grid lg:grid-cols-12 gap-4 h-full min-h-0">
+                <ServiceCatalog 
+                  garmentTypes={garmentTypes} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
+                  getCategoryIcon={getCategoryIcon} getGarmentIcon={getGarmentIcon} pricing={pricing}
+                  addToCart={addToCart} setShowAddCategoryModal={setShowAddCategoryModal}
+                  handleAddCustomGarment={() => setIsCustomModalOpen(true)} t={t}
+                />
+                <OrderCart 
+                  cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} updateItemPrice={updateItemPrice}
+                  getGarmentIcon={getGarmentIcon} subtotal={subtotal} applicableVolDiscount={applicableVolDiscount}
+                  volDiscountInfo={volDiscountInfo} tax={tax} couponData={couponData} couponDiscount={couponDiscount}
+                  redeemedPoints={redeemedPoints} total={total} couponCode={couponCode} setCouponCode={setCouponCode}
+                  handleApplyCoupon={handleApplyCoupon} setCurrentStep={setCurrentStep} setItemEditIndex={setItemEditIndex}
+                  setShowItemEditModal={setShowItemEditModal} selectedCustomer={selectedCustomer} t={t}
+                  customerHeader={
+                    <CustomerSection 
+                      selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
+                      isCustomerSearchOpen={isCustomerSearchOpen} setIsCustomerSearchOpen={setIsCustomerSearchOpen}
+                      searchQuery={searchQuery} setSearchQuery={setSearchQuery} filteredCustomers={customers}
+                      isInlineCreating={isInlineCreating} setIsInlineCreating={setIsInlineCreating}
+                      inlineError={inlineError} setInlineError={setInlineError} newCustomer={newCustomer}
+                      setNewCustomer={setNewCustomer} handleCreateCustomer={handleCreateCustomer}
+                      setCurrentStep={setCurrentStep} t={t}
+                    />
+                  }
+                />
+              </div>
+            )}
 
-          {currentStep === 3 && <ScheduleSection schedule={schedule} setSchedule={setSchedule} setCurrentStep={setCurrentStep} t={t} />}
-          {currentStep === 4 && <PaymentSection total={total} payments={payments} setPayments={setPayments} payAtPickup={payAtPickup} setPayAtPickup={setPayAtPickup} selectedCustomer={selectedCustomer} redeemedPoints={redeemedPoints} setRedeemedPoints={setRedeemedPoints} submitting={submitting} handleSubmitOrder={handleSubmitOrder} setCurrentStep={setCurrentStep} t={t} />}
-        </motion.div>
-      </AnimatePresence>
+            {currentStep === 3 && (
+              <div className="h-full overflow-y-auto no-scrollbar">
+                <ScheduleSection schedule={schedule} setSchedule={setSchedule} setCurrentStep={setCurrentStep} t={t} />
+              </div>
+            )}
+            {currentStep === 4 && (
+              <div className="h-full overflow-y-auto no-scrollbar">
+                <PaymentSection total={total} payments={payments} setPayments={setPayments} payAtPickup={payAtPickup} setPayAtPickup={setPayAtPickup} selectedCustomer={selectedCustomer} redeemedPoints={redeemedPoints} setRedeemedPoints={setRedeemedPoints} submitting={submitting} handleSubmitOrder={handleSubmitOrder} setCurrentStep={setCurrentStep} t={t} />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       <CustomItemModal isOpen={isCustomModalOpen} onClose={() => setIsCustomModalOpen(false)} onAdd={addToCart} t={t} />
       <ItemEditModal 

@@ -22,8 +22,6 @@ const OrderCart = React.memo(function OrderCart({
   handleApplyCoupon,
   setCurrentStep,
   setItemEditIndex,
-  setItemEditData,
-  setStainError,
   setShowItemEditModal,
   selectedCustomer,
   t,
@@ -33,23 +31,23 @@ const OrderCart = React.memo(function OrderCart({
 
   return (
     <>
-    <div className="lg:col-span-4 flex flex-col overflow-hidden animate-fade-in-up stagger-3" style={{ height: 'calc(100vh - 160px)' }}>
-      <div className="glass-card-premium flex flex-col overflow-hidden" style={{height: 'calc(100vh - 176px)'}}>
+    <div className="lg:col-span-4 flex flex-col min-h-0 animate-fade-in-up stagger-3">
+      <div className="glass-card-premium flex flex-col min-h-0 flex-1 overflow-hidden">
         {/* Summary Header */}
         {customerHeader}
 
         {/* Cart Items */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 no-scrollbar">
+        <div className="flex-1 min-h-[180px] overflow-y-auto p-6 no-scrollbar">
             {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center py-20">
-                <div className="w-24 h-24 rounded-full bg-theme-surface-container flex items-center justify-center mb-6 animate-float">
-                  <span className="material-symbols-outlined text-5xl text-theme-text-muted/30">shopping_bag</span>
+              <div className="h-full flex flex-col items-center justify-center py-10">
+                <div className="w-20 h-20 rounded-full bg-theme-surface-container flex items-center justify-center mb-4 animate-float">
+                  <span className="material-symbols-outlined text-4xl text-theme-text-muted/30">shopping_bag</span>
                 </div>
-                <h4 className="text-sm font-black uppercase tracking-[0.2em] text-theme-text-muted/40 text-center">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/40 text-center">
                   No items added yet
                 </h4>
-                <p className="text-[10px] font-bold text-theme-text-muted/30 mt-2 tracking-widest uppercase">
-                  Add services from the catalog
+                <p className="text-[9px] font-bold text-theme-text-muted/30 mt-2 tracking-widest uppercase text-center">
+                  Add services from catalog
                 </p>
               </div>
             ) : (
@@ -72,9 +70,11 @@ const OrderCart = React.memo(function OrderCart({
                         <h5 className="truncate text-[12px] font-semibold text-theme-text whitespace-nowrap overflow-hidden text-ellipsis">
                           {item.garment_type}
                         </h5>
-                        <span className="mt-1 inline-block max-w-full truncate text-[9px] font-black text-emerald-700 uppercase tracking-[0.08em] bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200/70">
-                          {item.service_type}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="inline-block truncate text-[8px] font-black text-emerald-700 uppercase tracking-[0.08em] bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200/70">
+                            {item.service_type}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="shrink-0 flex items-center gap-1.5 bg-theme-surface px-1.5 py-1 rounded-xl ring-1 ring-theme-border/50">
@@ -120,15 +120,15 @@ const OrderCart = React.memo(function OrderCart({
         </div>
 
         {/* Summary Totals */}
-        <div className="shrink-0 flex-shrink-0 relative z-10 p-4 bg-theme-surface-container/40 border-t border-theme-border/60 backdrop-blur-md">
-          <div className="space-y-2 mb-4">
+        <div className="shrink-0 p-4 bg-theme-surface-container/40 border-t border-theme-border/60 backdrop-blur-md">
+          <div className="space-y-2 mb-3">
             <div className="flex justify-between items-center text-[11px]">
               <span className="font-bold text-theme-text-muted/70 uppercase tracking-widest">Subtotal</span>
               <span className="font-black text-theme-text">₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
             
             {applicableVolDiscount > 0 && (
-              <div className="flex justify-between items-center text-xs animate-fade-in bg-blue-50/50 p-2 rounded-lg border border-blue-100/30">
+              <div className="flex justify-between items-center text-[10px] animate-fade-in bg-blue-50/50 p-2 rounded-lg border border-blue-100/30">
                 <span className="font-bold text-blue-600 uppercase tracking-widest">Volume Savings</span>
                 <span className="font-black text-blue-700">-₹{applicableVolDiscount.toLocaleString('en-IN')}</span>
               </div>
@@ -140,7 +140,7 @@ const OrderCart = React.memo(function OrderCart({
             </div>
 
             {couponData && (
-              <div className="flex justify-between items-center text-xs animate-fade-in bg-purple-50/50 p-2 rounded-lg border border-purple-100/30">
+              <div className="flex justify-between items-center text-[10px] animate-fade-in bg-purple-50/50 p-2 rounded-lg border border-purple-100/30">
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[14px] text-purple-600">confirmation_number</span>
                   <span className="font-bold text-purple-600 uppercase tracking-widest">{couponData.code}</span>
@@ -156,38 +156,32 @@ const OrderCart = React.memo(function OrderCart({
               </div>
             )}
 
-            <div className="mt-4 border-t border-theme-border/60 pt-3 border-b border-theme-border/60 pb-3">
+            <div className="mt-3 border-t border-theme-border/40 pt-3 border-b border-theme-border/40 pb-3">
               <div className="flex gap-2">
                 <div className="relative flex-1 group">
                   <input 
                     type="text" 
                     placeholder="PROMO CODE" 
-                    className="w-full bg-theme-surface border border-theme-border/80 rounded-xl px-4 py-2.5 text-[11px] font-black tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-theme-text-muted/30"
+                    className="w-full bg-theme-surface border border-theme-border/80 rounded-xl px-4 py-2 text-[10px] font-black tracking-widest outline-none focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500/30 transition-all placeholder:text-theme-text-muted/30"
                     value={couponCode}
                     onChange={e => setCouponCode(e.target.value.toUpperCase())}
                   />
                 </div>
                 <button 
                   onClick={handleApplyCoupon}
-                  className="px-6 py-2.5 bg-theme-text text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 active:scale-95 transition-all shadow-md shadow-theme-text/5"
+                  className="px-6 py-2 bg-theme-text text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 active:scale-95 transition-all shadow-md shadow-theme-text/5"
                 >
                   Apply
                 </button>
               </div>
-              {couponData && (
-                <p className="mt-2 text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
-                  {couponData.code} applied - -₹{couponDiscount.toLocaleString('en-IN')}
-                </p>
-              )}
             </div>
 
-            <div className="pt-3 mt-1 flex justify-between items-center">
+            <div className="pt-2 flex justify-between items-center">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted/60">Grand Total</span>
-                <div className="flex items-center gap-1 text-emerald-600">
-                  <span className="text-xs font-black">₹</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-theme-text-muted/60">Grand Total</span>
+                <div className="flex items-center gap-1">
                   <span className="text-[28px] font-black tracking-tight text-theme-text leading-none">
-                    <AnimatedTotal value={total} />
+                    <AnimatedTotal value={total} prefix="₹" />
                   </span>
                 </div>
               </div>
@@ -197,7 +191,7 @@ const OrderCart = React.memo(function OrderCart({
           <button 
             disabled={cart.length === 0}
             onClick={() => setShowProceedConfirm(true)}
-            className="w-full primary-gradient text-white py-4 rounded-[1.5rem] font-black text-base shadow-xl shadow-emerald-900/15 active:scale-[0.98] transition-all disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center gap-3 group"
+            className="w-full primary-gradient text-white py-4 rounded-[1.5rem] font-black text-sm shadow-xl shadow-emerald-900/15 active:scale-[0.98] transition-all disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center gap-3 group"
           >
             <span className="uppercase tracking-widest">{t('proceed_to_schedule')}</span>
             <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -245,14 +239,6 @@ const OrderCart = React.memo(function OrderCart({
                     <button
                       onClick={() => {
                         setItemEditIndex(i);
-                        setItemEditData({
-                          tag_id: item.tag_id || '',
-                          bag_id: item.bag_id || '',
-                          notes: item.notes || '',
-                          fabric_hint: item.fabric_hint || '',
-                          stain_analysis: item.stain_analysis || null
-                        });
-                        setStainError('');
                         setShowProceedConfirm(false);
                         setShowItemEditModal(true);
                       }}
