@@ -447,9 +447,9 @@ export default function MasterControl({ user }) {
                             onChange={(e) => setNewStore({...newStore, subscription_tier: e.target.value})}
                             disabled={provisionMode === 'existing'} 
                           >
-                            <option value="software_only">{`${t('software_only')} (₹1,299/mo)`}</option>
-                            <option value="hardware_bundle">{`${t('hardware_bundle')} (₹3,299/mo)`}</option>
-                            <option value="enterprise">{`${t('enterprise')} (₹9,999/mo)`}</option>
+                            <option value="software_only">{t('software_only')}</option>
+                            <option value="hardware_bundle">{t('hardware_bundle')}</option>
+                            <option value="enterprise">{t('enterprise')}</option>
                           </select>
                        </div>
                     </div>
