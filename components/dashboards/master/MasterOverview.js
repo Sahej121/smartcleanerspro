@@ -100,7 +100,7 @@ export default function MasterOverview({
               </span>
             </div>
             <h2 className="text-5xl font-black text-on-surface font-headline">
-              <AnimatedCounter value={revenueValue} prefix="$" duration={2000} />
+              <AnimatedCounter value={revenueValue} prefix="₹" duration={2000} />
             </h2>
           </div>
           <div className="mt-8 h-20 flex items-end gap-1.5 relative z-10">
@@ -149,7 +149,7 @@ export default function MasterOverview({
                            {store.status}
                         </span>
                       </td>
-                      <td className="py-5 text-right font-black text-sm">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
+                      <td className="py-5 text-right font-black text-sm">{formatCurrency(store.total_revenue, store.country || 'India')}</td>
                     </tr>
                   ))}
                   {recentStores.length === 0 && (
