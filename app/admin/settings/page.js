@@ -38,7 +38,7 @@ export default function SettingsPage() {
     storePhone: '+91-9876543210',
     storeAddress: '123 Main Street',
     storeCity: 'New Delhi',
-    currency: '£',
+    currency: '₹',
     taxRate: '18',
   });
 

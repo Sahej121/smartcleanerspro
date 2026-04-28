@@ -82,7 +82,7 @@ export default function MasterNodes({
                               </span>
                            </td>
                            <td className="py-8 text-right font-black text-sm text-on-surface">
-                              {formatCurrency(owner.total_revenue, 'United Kingdom')}
+                              {formatCurrency(owner.total_revenue, 'India')}
                            </td>
                            <td className="py-8 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex items-center justify-end gap-3">
@@ -127,7 +127,7 @@ export default function MasterNodes({
                                                       {store.status}
                                                    </span>
                                                 </td>
-                                                <td className="py-4 px-6 text-right font-black text-xs text-on-surface">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
+                                                <td className="py-4 px-6 text-right font-black text-xs text-on-surface">{formatCurrency(store.total_revenue, store.country || 'India')}</td>
                                                 <td className="py-4 px-6 text-right">
                                                    <div className="flex items-center justify-end gap-2">
                                                       <button 
@@ -191,7 +191,7 @@ export default function MasterNodes({
                                {store.status === 'active' ? t('operational') : t('suspended')}
                             </span>
                          </td>
-                         <td className="py-6 text-right font-black text-sm text-on-surface">{formatCurrency(store.total_revenue, store.country || 'United Kingdom')}</td>
+                         <td className="py-6 text-right font-black text-sm text-on-surface">{formatCurrency(store.total_revenue, store.country || 'India')}</td>
                          <td className="py-6 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button 

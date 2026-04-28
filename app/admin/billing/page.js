@@ -30,7 +30,7 @@ export default function BillingPage() {
   const getTierDisplayPrice = (tierPrice) => {
     if (!isYearly) return tierPrice;
     const base = parseFloat(tierPrice.replace(/[^0-9.]/g, ''));
-    return `£${(base * 0.8).toFixed(2)}/mo`;
+    return `₹${Math.round(base * 0.8).toLocaleString('en-IN')}/mo`;
   };
 
   const TIERS_ARRAY = Object.entries(TIERS).map(([key, config]) => ({ id: key, ...config }));

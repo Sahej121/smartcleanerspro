@@ -41,11 +41,11 @@ export default function MasterInsights({
           <h1>Master Insights Report</h1>
           <p>Generated at: ${new Date().toLocaleString()}</p>
           <ul>
-            <li>Total revenue: $${Number(revenue).toLocaleString()}</li>
+            <li>Total revenue: ₹${Number(revenue).toLocaleString()}</li>
             <li>Total stores: ${masterStats?.totalStores ?? 0}</li>
             <li>Total users: ${masterStats?.totalUsers ?? 0}</li>
             <li>Active orders: ${masterStats?.globalActiveOrders ?? 0}</li>
-            <li>MRR: $${Number(masterStats?.mrr ?? 0).toLocaleString()}</li>
+            <li>MRR: ₹${Number(masterStats?.mrr ?? 0).toLocaleString()}</li>
             <li>Churn: ${masterStats?.churn ?? 0}%</li>
           </ul>
         </body>
@@ -74,7 +74,7 @@ export default function MasterInsights({
              <div className="relative z-10">
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">{t('revenue_velocity')}</p>
                 <h2 className="text-5xl font-black font-headline mb-8 text-on-surface">
-                   <AnimatedCounter value={masterStats?.total_revenue || 0} prefix="$" />
+                   <AnimatedCounter value={masterStats?.total_revenue || 0} prefix="₹" />
                 </h2>
                 <div className="h-48 flex items-end gap-2">
                    {[0.2, 0.4, 0.35, 0.5, 0.45, 0.7, 0.65, 0.9, 0.8, 0.85, 0.95, 1.0].map((h, i) => (
