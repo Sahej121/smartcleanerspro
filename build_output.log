@@ -1,0 +1,124 @@
+
+> cleanflow_init@0.1.0 build
+> next build
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 1917ms
+  Running TypeScript ...
+  Finished TypeScript in 53ms ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/81) ...
+  Generating static pages using 9 workers (20/81) 
+  Generating static pages using 9 workers (40/81) 
+  Generating static pages using 9 workers (60/81) 
+✓ Generating static pages using 9 workers (81/81) in 149ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /admin/analytics/staff
+├ ○ /admin/billing
+├ ○ /admin/pricing
+├ ○ /admin/settings
+├ ○ /admin/staff
+├ ƒ /api/analytics
+├ ƒ /api/analytics/staff
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/me
+├ ƒ /api/auth/reset-password
+├ ƒ /api/auth/signup
+├ ƒ /api/contact
+├ ƒ /api/coupons/validate
+├ ƒ /api/customers
+├ ƒ /api/customers/[id]
+├ ƒ /api/customers/merge
+├ ƒ /api/induction
+├ ƒ /api/inventory
+├ ƒ /api/logistics
+├ ƒ /api/machines
+├ ƒ /api/machines/[id]/loads
+├ ƒ /api/master-stats
+├ ƒ /api/operations/scan-to-advance
+├ ƒ /api/orders
+├ ƒ /api/orders/[id]
+├ ƒ /api/orders/[id]/invoice
+├ ƒ /api/orders/[id]/items/[itemId]
+├ ƒ /api/orders/[id]/logistics
+├ ƒ /api/orders/[id]/refund
+├ ƒ /api/orders/[id]/reschedule
+├ ƒ /api/orders/[id]/status
+├ ƒ /api/owner/stats
+├ ƒ /api/payments
+├ ƒ /api/payments/checkout
+├ ƒ /api/payments/verify-session
+├ ƒ /api/pricing
+├ ƒ /api/pricing/volume-discounts
+├ ƒ /api/reports/revenue
+├ ƒ /api/reports/staff
+├ ƒ /api/reports/status
+├ ƒ /api/seed-admin
+├ ƒ /api/staff
+├ ƒ /api/stain-analysis
+├ ƒ /api/stats
+├ ƒ /api/stores
+├ ƒ /api/stores/[id]
+├ ƒ /api/stores/[id]/impersonate
+├ ƒ /api/stores/[id]/reset-pin
+├ ƒ /api/stores/[id]/status
+├ ƒ /api/stores/[id]/tier
+├ ƒ /api/support
+├ ƒ /api/system/broadcast
+├ ƒ /api/system/broadcast/active
+├ ƒ /api/system/health
+├ ƒ /api/system/logs
+├ ƒ /api/tasks
+├ ƒ /api/webhooks/razorpay
+├ ƒ /api/webhooks/whatsapp
+├ ƒ /api/workflow
+├ ƒ /api/workflow/[id]
+├ ƒ /api/workflow/assembly
+├ ○ /checkout
+├ ○ /checkout/success
+├ ○ /contact
+├ ○ /customers
+├ ƒ /customers/[id]
+├ ○ /enterprise-upgrade
+├ ○ /features
+├ ○ /how-it-works
+├ ○ /inventory
+├ ○ /login
+├ ○ /logistics
+├ ○ /master/insights
+├ ○ /master/logs
+├ ○ /master/nodes
+├ ○ /master/security
+├ ○ /operations
+├ ○ /operations/assembly
+├ ○ /operations/induction
+├ ○ /operations/machines
+├ ○ /operations/quality
+├ ○ /operations/scanner
+├ ○ /orders
+├ ƒ /orders/[id]
+├ ○ /orders/new
+├ ○ /policy
+├ ○ /pricing
+├ ○ /register
+├ ○ /reports
+├ ○ /support
+├ ○ /suspended
+└ ○ /waiting
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
