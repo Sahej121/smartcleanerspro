@@ -5,6 +5,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useUser } from '@/lib/UserContext';
 import { useNotifications } from '@/lib/NotificationContext';
 import Link from 'next/link';
+import PWAInstallButton from './common/PWAInstallButton';
 
 export default function Header({ setMobileMenuOpen }) {
   const { t } = useLanguage();
@@ -124,6 +125,11 @@ export default function Header({ setMobileMenuOpen }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* PWA Install */}
+        <div className="hidden md:block">
+          <PWAInstallButton />
         </div>
 
         {/* Help */}
