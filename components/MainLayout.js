@@ -18,11 +18,12 @@ export default function MainLayout({ children }) {
   const isSuperAdmin = user?.role === 'superadmin';
   const themeClass = (userTier === 'enterprise' && !isSuperAdmin) ? 'theme-enterprise' : 'theme-standard';
   const isMarketingPage = isPublicPage && pathname !== '/';
+  const isSuspendedPage = pathname === '/suspended';
 
   // POS new order page manages its own layout — don't add bottom padding
   const isPOSPage = pathname === '/orders/new';
 
-  if (isAuthPage || isMarketingPage || (!user && isPublicPage)) {
+  if (isAuthPage || isMarketingPage || (!user && isPublicPage) || (user?.suspended && isSuspendedPage)) {
     return (
       <ScrollObserver>
         <main className={`min-h-screen bg-background text-theme-text ${themeClass}`}>{children}</main>
