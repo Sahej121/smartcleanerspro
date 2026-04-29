@@ -25,16 +25,16 @@ const OrderCart = React.memo(function OrderCart({
   setShowItemEditModal,
   selectedCustomer,
   t,
-  customerHeader
+  customerHeader,
+  isMobileSheet = false
 }) {
   const [showProceedConfirm, setShowProceedConfirm] = React.useState(false);
 
   return (
     <>
-    <div className="lg:col-span-4 flex flex-col min-h-0 animate-fade-in-up stagger-3">
-      <div className="glass-card-premium flex flex-col h-full overflow-hidden">
-        {/* Summary Header */}
-        {customerHeader}
+    <div className={`flex flex-col h-full overflow-hidden ${!isMobileSheet ? 'glass-card-premium' : ''}`}>
+      {/* Summary Header */}
+      {customerHeader}
 
         {/* Cart Items */}
         <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-6 no-scrollbar">
@@ -59,65 +59,70 @@ const OrderCart = React.memo(function OrderCart({
                     className={`animate-slide-in-right group relative px-3 py-2.5 ${i < cart.length - 1 ? 'border-b-2 border-theme-border/90' : ''}`}
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
-                    <div className="flex min-h-[52px] w-full items-center gap-2.5">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-theme-surface-container text-theme-text ring-1 ring-theme-border/50">
-                        <span className="material-symbols-outlined text-xl">
-                          {getGarmentIcon(item.garment_type)}
-                        </span>
-                      </div>
-
-                      <div className="min-w-0 flex-1 flex flex-col justify-center">
-                        <h5 className="truncate text-[12px] font-semibold text-theme-text whitespace-nowrap overflow-hidden text-ellipsis">
-                          {item.garment_type}
-                        </h5>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className="inline-block truncate text-[8px] font-black text-emerald-700 uppercase tracking-[0.08em] bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200/70">
-                            {item.service_type}
+                      <div className="flex min-h-[52px] w-full items-center gap-2 lg:gap-2.5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-theme-surface-container text-theme-text ring-1 ring-theme-border/50">
+                          <span className="material-symbols-outlined text-xl">
+                            {getGarmentIcon(item.garment_type)}
                           </span>
                         </div>
-                      </div>
 
-                      <div className="shrink-0 flex items-center gap-1.5 bg-theme-surface px-1.5 py-1 rounded-xl ring-1 ring-theme-border/50">
-                        <button
-                          onClick={() => updateQuantity(i, (item.quantity || 1) - 1)}
-                          disabled={(item.quantity || 1) <= 1}
-                          className="w-6 h-6 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                          aria-label={`Decrease quantity for ${item.garment_type}`}
-                        >
-                          <span className="material-symbols-outlined text-[14px]">remove</span>
-                        </button>
-                        <span className="min-w-5 text-center text-[12px] font-black text-theme-text">
-                          {item.quantity || 1}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(i, (item.quantity || 1) + 1)}
-                          className="w-6 h-6 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all"
-                          aria-label={`Increase quantity for ${item.garment_type}`}
-                        >
-                          <span className="material-symbols-outlined text-[14px]">add</span>
-                        </button>
-                      </div>
+                        <div className="min-w-0 flex-1 flex flex-col justify-center">
+                          <h5 className="truncate text-[12px] font-semibold text-theme-text">
+                            {item.garment_type}
+                          </h5>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="inline-block truncate text-[8px] font-black text-emerald-700 uppercase tracking-[0.08em] bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200/70">
+                              {item.service_type}
+                            </span>
+                          </div>
+                        </div>
 
-                      <div className="shrink-0 flex items-center gap-1 bg-theme-surface-container/50 px-2 py-1 rounded-xl ring-1 ring-theme-border/30 group-hover:ring-emerald-500/30 transition-all">
-                        <span className="text-[10px] font-black text-theme-text-muted">₹</span>
-                        <input
-                          type="number"
-                          className="w-10 border-none bg-transparent p-0 text-right text-[12px] font-bold text-theme-text outline-none focus:ring-0"
-                          value={item.price}
-                          onChange={(e) => updateItemPrice(i, e.target.value)}
-                        />
-                      </div>
+                        <div className="flex items-center gap-2 ml-auto lg:ml-0">
+                          {/* Qty Controls */}
+                          <div className="shrink-0 flex items-center gap-1 bg-theme-surface px-1 py-1 rounded-xl ring-1 ring-theme-border/50">
+                            <button
+                              onClick={() => updateQuantity(i, (item.quantity || 1) - 1)}
+                              disabled={(item.quantity || 1) <= 1}
+                              className="w-7 h-7 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all disabled:opacity-20 active:scale-90"
+                              aria-label={`Decrease quantity for ${item.garment_type}`}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">remove</span>
+                            </button>
+                            <span className="min-w-5 text-center text-[12px] font-black text-theme-text">
+                              {item.quantity || 1}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(i, (item.quantity || 1) + 1)}
+                              className="w-7 h-7 rounded-lg bg-theme-surface-container text-theme-text flex items-center justify-center transition-all active:scale-90"
+                              aria-label={`Increase quantity for ${item.garment_type}`}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">add</span>
+                            </button>
+                          </div>
 
-                      <button
-                        onClick={() => removeFromCart(i)}
-                        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-theme-text-muted/40 transition-all hover:bg-red-50 hover:text-red-500 active:scale-90"
-                        aria-label={`Remove ${item.garment_type}`}
-                      >
-                        <span className="material-symbols-outlined text-[16px]">delete</span>
-                      </button>
+                          {/* Price Input */}
+                          <div className="shrink-0 flex items-center gap-1 bg-theme-surface-container/50 px-2 py-1.5 rounded-xl ring-1 ring-theme-border/30 group-hover:ring-emerald-500/30 transition-all">
+                            <span className="text-[10px] font-black text-theme-text-muted">₹</span>
+                            <input
+                              type="number"
+                              className="w-10 border-none bg-transparent p-0 text-right text-[12px] font-bold text-theme-text outline-none focus:ring-0"
+                              value={item.price}
+                              onChange={(e) => updateItemPrice(i, e.target.value)}
+                            />
+                          </div>
+
+                          {/* Delete */}
+                          <button
+                            onClick={() => removeFromCart(i)}
+                            className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-theme-text-muted/40 transition-all hover:bg-red-50 hover:text-red-500 active:scale-90"
+                            aria-label={`Remove ${item.garment_type}`}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
               </div>
             )}
@@ -202,7 +207,6 @@ const OrderCart = React.memo(function OrderCart({
           </button>
         </div>
       </div>
-    </div>
 
     {showProceedConfirm && (
       <div className="fixed inset-0 z-[120] flex items-center justify-center bg-on-surface/40 backdrop-blur-md animate-fade-in p-4">

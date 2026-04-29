@@ -216,63 +216,101 @@ export default function StoreAdmin({ user }) {
             </Link>
           </div>
           <div className="glass-panel rounded-[2.5rem] overflow-hidden">
-            <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="bg-theme-surface-container/30 border-b border-theme-border">
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('order_id')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('entity')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('allocation')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('vector')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted text-right">{t('valuation')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-theme-border">
-                {(!stats?.recentOrders || stats.recentOrders.length === 0) ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="opacity-20">
-                      <td className="px-8 py-6"><div className="h-4 w-24 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6"><div className="h-4 w-32 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6"><div className="h-4 w-20 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6 text-right"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse ml-auto"></div></td>
-                    </tr>
-                  ))
-                ) : (
-                  stats.recentOrders.map((order, idx) => (
-                    <tr key={order.id} className="hover:bg-white/[0.02] transition-all group cursor-pointer row-enter" style={{ animationDelay: `${idx * 50}ms` }}>
-                      <td className="px-8 py-6">
-                        <Link href={`/orders/${order.id}`} className="text-[11px] font-black text-theme-text tracking-widest group-hover:text-primary transition-colors">
-                          {order.order_number}
-                        </Link>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-[10px] font-black text-theme-text-muted uppercase shadow-inner group-hover:border-primary/30 group-hover:text-primary transition-all">
-                            {order.customer_name?.charAt(0) || 'W'}
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                  <tr className="bg-theme-surface-container/30 border-b border-theme-border">
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('order_id')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('entity')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('allocation')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('vector')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted text-right">{t('valuation')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-theme-border">
+                  {(!stats?.recentOrders || stats.recentOrders.length === 0) ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="opacity-20">
+                        <td className="px-8 py-6"><div className="h-4 w-24 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6"><div className="h-4 w-32 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6"><div className="h-4 w-20 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6 text-right"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse ml-auto"></div></td>
+                      </tr>
+                    ))
+                  ) : (
+                    stats.recentOrders.map((order, idx) => (
+                      <tr key={order.id} className="hover:bg-white/[0.02] transition-all group cursor-pointer row-enter" style={{ animationDelay: `${idx * 50}ms` }}>
+                        <td className="px-8 py-6">
+                          <Link href={`/orders/${order.id}`} className="text-[11px] font-black text-theme-text tracking-widest group-hover:text-primary transition-colors">
+                            {order.order_number}
+                          </Link>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-[10px] font-black text-theme-text-muted uppercase shadow-inner group-hover:border-primary/30 group-hover:text-primary transition-all">
+                              {order.customer_name?.charAt(0) || 'W'}
+                            </div>
+                            <span className="text-[11px] font-bold text-theme-text-muted group-hover:text-theme-text transition-colors">{order.customer_name || t('walkin')}</span>
                           </div>
-                          <span className="text-[11px] font-bold text-theme-text-muted group-hover:text-theme-text transition-colors">{order.customer_name || t('walkin')}</span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 text-[10px] font-black text-theme-text-muted uppercase tracking-widest">
-                        {order.item_count || 1} {t('items')}
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${
-                          order.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
-                          order.status === 'processing' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
-                          'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right font-black text-[11px] text-theme-text tracking-tight">
-                        {formatCurrency(order.total_amount, user?.country)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="px-8 py-6 text-[10px] font-black text-theme-text-muted uppercase tracking-widest">
+                          {order.item_count || 1} {t('items')}
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${
+                            order.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                            order.status === 'processing' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                            'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-right font-black text-[11px] text-theme-text tracking-tight">
+                          {formatCurrency(order.total_amount, user?.country)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="lg:hidden flex flex-col divide-y divide-theme-border">
+              {(!stats?.recentOrders || stats.recentOrders.length === 0) ? (
+                <div className="p-8 text-center text-theme-text-muted text-[10px] uppercase font-black tracking-widest opacity-30">{t('no_logs_found')}</div>
+              ) : (
+                stats.recentOrders.map((order, idx) => (
+                  <Link 
+                    key={order.id} 
+                    href={`/orders/${order.id}`}
+                    className="p-5 active:bg-white/5 transition-all flex justify-between items-center group"
+                  >
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-primary font-black text-xs">
+                         {order.customer_name?.charAt(0) || 'W'}
+                       </div>
+                       <div>
+                         <p className="text-[11px] font-black text-theme-text">{order.order_number}</p>
+                         <p className="text-[10px] text-theme-text-muted font-bold truncate max-w-[120px]">{order.customer_name || t('walkin')}</p>
+                       </div>
+                    </div>
+                    <div className="text-right">
+                       <p className="text-[11px] font-black text-theme-text">{formatCurrency(order.total_amount, user?.country)}</p>
+                       <span className={`inline-block mt-1 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider border ${
+                        order.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                        order.status === 'processing' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                        'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
