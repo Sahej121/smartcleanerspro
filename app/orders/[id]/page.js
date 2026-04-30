@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Script from 'next/script';
 import { QRCodeSVG } from 'qrcode.react';
 import { useUser, ROLES } from '@/lib/UserContext';
+import { offlineStore } from '../new/utils/offlineStore';
 
 
 // Stage Icons
@@ -109,6 +110,18 @@ export default function OrderDetail({ params }) {
   };
 
   const processPayment = async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      await offlineStore.saveSyncTask({
+        url: '/api/payments',
+        method: 'POST',
+        payload: { ...paymentData, order_id: id }
+      });
+      alert(`System Offline. Payment saved locally and will sync automatically when back online.`);
+      // Optimistically update order
+      setOrder({ ...order, payment_status: 'paid' });
+      setShowPaymentModal(false);
+      return;
+    }
     const res = await fetch(`/api/payments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

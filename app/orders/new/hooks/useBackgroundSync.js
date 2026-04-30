@@ -7,17 +7,20 @@ export function useBackgroundSync() {
 
   const checkOfflineOrders = useCallback(async () => {
     const orders = await offlineStore.getOfflineOrders();
-    setOfflineCount(orders.length);
-    return orders;
+    const tasks = await offlineStore.getSyncTasks();
+    setOfflineCount(orders.length + tasks.length);
+    return { orders, tasks };
   }, []);
 
   const syncOrders = useCallback(async () => {
     if (typeof window === 'undefined' || !navigator.onLine) return;
     
-    const orders = await checkOfflineOrders();
-    if (orders.length === 0) return;
+    const { orders, tasks } = await checkOfflineOrders();
+    if (orders.length === 0 && tasks.length === 0) return;
 
     setSyncing(true);
+    
+    // Sync Orders
     for (const order of orders) {
       try {
         const res = await fetch('/api/orders', {
@@ -30,11 +33,29 @@ export function useBackgroundSync() {
           await offlineStore.removeOfflineOrder(order.offlineId);
         }
       } catch (err) {
-        console.error('[Sync Error]:', err);
-        // Stop syncing if we're still having network issues
+        console.error('[Sync Error Orders]:', err);
         break;
       }
     }
+
+    // Sync Tasks
+    for (const task of tasks) {
+      try {
+        const res = await fetch(task.url, {
+          method: task.method || 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...task.payload, offlineSync: true })
+        });
+
+        if (res.ok) {
+          await offlineStore.removeSyncTask(task.offlineId);
+        }
+      } catch (err) {
+        console.error('[Sync Error Tasks]:', err);
+        break;
+      }
+    }
+
     await checkOfflineOrders();
     setSyncing(false);
   }, [checkOfflineOrders]);

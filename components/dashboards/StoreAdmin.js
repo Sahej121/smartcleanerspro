@@ -41,6 +41,36 @@ export default function StoreAdmin({ user }) {
   const [staffCredentials, setStaffCredentials] = useState(null);
   const [activeBroadcast, setActiveBroadcast] = useState(null);
 
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleChatSubmit = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    const msg = chatInput.trim();
+    setChatMessages(prev => [...prev, { text: msg, isUser: true }]);
+    setChatInput('');
+    setChatLoading(true);
+    try {
+      const res = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setChatMessages(prev => [...prev, { text: data.reply, isUser: false }]);
+      } else {
+        setChatMessages(prev => [...prev, { text: "Sorry, I couldn't process that request.", isUser: false }]);
+      }
+    } catch (err) {
+      setChatMessages(prev => [...prev, { text: "Connection error.", isUser: false }]);
+    }
+    setChatLoading(false);
+  };
+
   const fetchData = async () => {
     try {
       const [statsRes, broadcastRes] = await Promise.all([
@@ -395,6 +425,24 @@ export default function StoreAdmin({ user }) {
               </p>
             </div>
           </section>
+
+          {/* Predictive Insights */}
+          <section className="animate-fade-in-up stagger-8">
+            <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+              <div className="flex justify-between items-start mb-6">
+                 <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Predictive Insights</p>
+                    <h3 className="text-2xl font-black text-theme-text font-headline italic">Peak: {stats?.predictiveInsight || 'Pending'}</h3>
+                 </div>
+                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 border border-purple-500/20 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-xl">insights</span>
+                 </div>
+              </div>
+              <p className="text-[11px] font-bold tracking-tight text-theme-text-muted">
+                 Historical data predicts high volume on <span className="text-purple-500 font-black">{stats?.predictiveInsight || '...'}</span>. Optimize staff scheduling to prevent bottlenecks.
+              </p>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -642,6 +690,59 @@ export default function StoreAdmin({ user }) {
           </div>
         </div>
       )}
+
+      {/* Floating Chatbot */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {!showChatbot ? (
+          <button 
+            onClick={() => setShowChatbot(true)}
+            className="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-emerald-500 transition-all"
+          >
+            <span className="material-symbols-outlined text-2xl">smart_toy</span>
+          </button>
+        ) : (
+          <div className="w-80 bg-theme-surface border border-theme-border rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-96 animate-scale-in">
+            <div className="p-4 bg-emerald-600 flex justify-between items-center text-white">
+              <div className="flex items-center gap-2">
+                 <span className="material-symbols-outlined">smart_toy</span>
+                 <span className="font-black text-sm tracking-widest uppercase">AI Assistant</span>
+              </div>
+              <button onClick={() => setShowChatbot(false)} className="hover:text-emerald-200"><span className="material-symbols-outlined text-sm">close</span></button>
+            </div>
+            <div className="flex-1 p-4 overflow-y-auto no-scrollbar flex flex-col gap-3 bg-theme-surface-container/30">
+              {chatMessages.length === 0 && (
+                <div className="text-[10px] font-bold text-theme-text-muted text-center mt-4 uppercase tracking-widest">
+                  Ask me about historical orders or policies!
+                </div>
+              )}
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`p-3 rounded-2xl max-w-[85%] text-xs font-medium ${msg.isUser ? 'bg-emerald-600 text-white self-end rounded-tr-sm' : 'bg-theme-surface border border-theme-border text-theme-text self-start rounded-tl-sm'}`}>
+                  {msg.text}
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="p-3 rounded-2xl max-w-[85%] bg-theme-surface border border-theme-border text-theme-text-muted self-start rounded-tl-sm text-xs flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse delay-75"></div>
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse delay-150"></div>
+                </div>
+              )}
+            </div>
+            <form onSubmit={handleChatSubmit} className="p-3 bg-theme-surface border-t border-theme-border flex gap-2">
+               <input 
+                 type="text" 
+                 value={chatInput} 
+                 onChange={e => setChatInput(e.target.value)}
+                 placeholder="Ask AI..." 
+                 className="flex-1 bg-theme-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text outline-none focus:border-emerald-500"
+               />
+               <button type="submit" disabled={!chatInput.trim() || chatLoading} className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50">
+                 <span className="material-symbols-outlined text-[16px]">send</span>
+               </button>
+            </form>
+          </div>
+        )}
+      </div>
 
     </div>
   );

@@ -29,7 +29,26 @@ export default function ItemEditModal({
       });
       const result = await response.json();
       if (response.ok) {
-        setEditData({ ...editData, stain_analysis: result });
+        let premiumFee = 0;
+        let isComplexFabric = false;
+        if (editData.fabric_hint) {
+          isComplexFabric = ['silk', 'leather', 'velvet', 'suede'].some(f => editData.fabric_hint.toLowerCase().includes(f));
+        }
+        let isSevereStain = false;
+        if (result.stains && result.stains.length > 0) {
+          isSevereStain = ['blood', 'wine', 'ink', 'oil_grease', 'oil / grease', 'ink / pen'].some(t => result.stains.some(s => (s.type && s.type.toLowerCase() === t) || (s.label && s.label.toLowerCase() === t)));
+        }
+
+        if (isComplexFabric || isSevereStain) {
+           premiumFee = 50; // Add 50 for premium cleaning
+        }
+
+        setEditData({ 
+          ...editData, 
+          stain_analysis: result,
+          price: (parseFloat(editData.price) || parseFloat(data?.price) || 0) + premiumFee,
+          premium_fee_applied: premiumFee > 0
+        });
       } else {
         setStainError(result.error || 'Analysis failed');
       }
@@ -136,6 +155,15 @@ export default function ItemEditModal({
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+                
+                {editData.premium_fee_applied && (
+                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md flex items-center gap-2 animate-fade-in">
+                    <span className="material-symbols-outlined text-amber-600 text-[14px]">monetization_on</span>
+                    <p className="text-[10px] text-amber-800 font-bold">
+                      Premium care fee (₹50) added for complex stain/fabric.
+                    </p>
                   </div>
                 )}
               </div>
