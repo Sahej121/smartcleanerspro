@@ -104,8 +104,9 @@ export default function OrdersClient({ initialOrders, pagination }) {
         </div>
 
         {/* Main Registry Table */}
-        <div className="bg-surface rounded-[2.5rem] border border-theme-border overflow-hidden flex flex-col group hover:border-emerald-500/20 transition-colors shadow-sm">
-          <div className="overflow-x-auto overflow-y-auto no-scrollbar flex-1 p-2">
+        <div className="bg-surface rounded-[2rem] lg:rounded-[2.5rem] border border-theme-border overflow-hidden flex flex-col group hover:border-emerald-500/20 transition-colors shadow-sm">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto overflow-y-auto no-scrollbar flex-1 p-2">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="text-[9px] uppercase tracking-[0.2em] font-black text-theme-text-muted border-b border-theme-border bg-theme-bg/50">
@@ -193,6 +194,63 @@ export default function OrdersClient({ initialOrders, pagination }) {
                 )})}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card List View */}
+          <div className="lg:hidden flex flex-col divide-y divide-theme-border/50">
+            {initialOrders.length === 0 ? (
+              <div className="px-8 py-16 text-center">
+                 <p className="text-[10px] font-black uppercase tracking-widest text-theme-text-muted opacity-60">{t('no_logs_found')}</p>
+              </div>
+            ) : initialOrders.map((order) => {
+               const statusColorMap = {
+                'ready': 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                'processing': 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                'received': 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+                'delivered': 'bg-slate-100 text-slate-500 border-slate-200',
+                'cancelled': 'bg-red-500/10 text-red-600 border-red-500/20'
+              };
+              return (
+                <div 
+                  key={order.id} 
+                  onClick={() => router.push(`/orders/${order.id}`)}
+                  className="p-5 active:bg-theme-bg/50 transition-colors flex flex-col gap-4"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-theme-bg border border-theme-border flex items-center justify-center text-[11px] font-black text-theme-text-muted uppercase">
+                        {order.customer_name?.charAt(0) || 'W'}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-theme-text leading-tight">{order.customer_name || t('walkin_profile')}</h4>
+                        <p className="text-[10px] font-bold text-emerald-600 mt-0.5">{order.order_number}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-theme-text">{formatCurrency(order.total_amount)}</p>
+                      <p className="text-[9px] text-theme-text-muted font-bold uppercase tracking-widest">{formatDate(order.created_at).split(',')[0]}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-2">
+                       <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-wider border ${statusColorMap[order.status] || 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                        {t(order.status)}
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border ${
+                        order.payment_status === 'paid' ? 'border-emerald-500/20 text-emerald-600 bg-emerald-500/10' : 'border-amber-500/20 text-amber-600 bg-amber-500/10'
+                      }`}>
+                        {t(order.payment_status)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-[9px] font-bold text-theme-text-muted/60 uppercase">
+                      <span>{order.item_count} items</span>
+                      <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           
           {/* Pagination Controls */}

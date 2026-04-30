@@ -41,6 +41,36 @@ export default function StoreAdmin({ user }) {
   const [staffCredentials, setStaffCredentials] = useState(null);
   const [activeBroadcast, setActiveBroadcast] = useState(null);
 
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleChatSubmit = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    const msg = chatInput.trim();
+    setChatMessages(prev => [...prev, { text: msg, isUser: true }]);
+    setChatInput('');
+    setChatLoading(true);
+    try {
+      const res = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setChatMessages(prev => [...prev, { text: data.reply, isUser: false }]);
+      } else {
+        setChatMessages(prev => [...prev, { text: "Sorry, I couldn't process that request.", isUser: false }]);
+      }
+    } catch (err) {
+      setChatMessages(prev => [...prev, { text: "Connection error.", isUser: false }]);
+    }
+    setChatLoading(false);
+  };
+
   const fetchData = async () => {
     try {
       const [statsRes, broadcastRes] = await Promise.all([
@@ -216,63 +246,101 @@ export default function StoreAdmin({ user }) {
             </Link>
           </div>
           <div className="glass-panel rounded-[2.5rem] overflow-hidden">
-            <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="bg-theme-surface-container/30 border-b border-theme-border">
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('order_id')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('entity')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('allocation')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('vector')}</th>
-                  <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted text-right">{t('valuation')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-theme-border">
-                {(!stats?.recentOrders || stats.recentOrders.length === 0) ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="opacity-20">
-                      <td className="px-8 py-6"><div className="h-4 w-24 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6"><div className="h-4 w-32 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6"><div className="h-4 w-20 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse"></div></td>
-                      <td className="px-8 py-6 text-right"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse ml-auto"></div></td>
-                    </tr>
-                  ))
-                ) : (
-                  stats.recentOrders.map((order, idx) => (
-                    <tr key={order.id} className="hover:bg-white/[0.02] transition-all group cursor-pointer row-enter" style={{ animationDelay: `${idx * 50}ms` }}>
-                      <td className="px-8 py-6">
-                        <Link href={`/orders/${order.id}`} className="text-[11px] font-black text-theme-text tracking-widest group-hover:text-primary transition-colors">
-                          {order.order_number}
-                        </Link>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-[10px] font-black text-theme-text-muted uppercase shadow-inner group-hover:border-primary/30 group-hover:text-primary transition-all">
-                            {order.customer_name?.charAt(0) || 'W'}
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[600px]">
+                <thead>
+                  <tr className="bg-theme-surface-container/30 border-b border-theme-border">
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('order_id')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('entity')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('allocation')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted">{t('vector')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-theme-text-muted text-right">{t('valuation')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-theme-border">
+                  {(!stats?.recentOrders || stats.recentOrders.length === 0) ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="opacity-20">
+                        <td className="px-8 py-6"><div className="h-4 w-24 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6"><div className="h-4 w-32 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6"><div className="h-4 w-20 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse"></div></td>
+                        <td className="px-8 py-6 text-right"><div className="h-4 w-16 bg-theme-surface-container rounded animate-pulse ml-auto"></div></td>
+                      </tr>
+                    ))
+                  ) : (
+                    stats.recentOrders.map((order, idx) => (
+                      <tr key={order.id} className="hover:bg-white/[0.02] transition-all group cursor-pointer row-enter" style={{ animationDelay: `${idx * 50}ms` }}>
+                        <td className="px-8 py-6">
+                          <Link href={`/orders/${order.id}`} className="text-[11px] font-black text-theme-text tracking-widest group-hover:text-primary transition-colors">
+                            {order.order_number}
+                          </Link>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-[10px] font-black text-theme-text-muted uppercase shadow-inner group-hover:border-primary/30 group-hover:text-primary transition-all">
+                              {order.customer_name?.charAt(0) || 'W'}
+                            </div>
+                            <span className="text-[11px] font-bold text-theme-text-muted group-hover:text-theme-text transition-colors">{order.customer_name || t('walkin')}</span>
                           </div>
-                          <span className="text-[11px] font-bold text-theme-text-muted group-hover:text-theme-text transition-colors">{order.customer_name || t('walkin')}</span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 text-[10px] font-black text-theme-text-muted uppercase tracking-widest">
-                        {order.item_count || 1} {t('items')}
-                      </td>
-                      <td className="px-8 py-6">
-                        <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${
-                          order.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
-                          order.status === 'processing' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
-                          'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right font-black text-[11px] text-theme-text tracking-tight">
-                        {formatCurrency(order.total_amount, user?.country)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="px-8 py-6 text-[10px] font-black text-theme-text-muted uppercase tracking-widest">
+                          {order.item_count || 1} {t('items')}
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${
+                            order.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                            order.status === 'processing' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                            'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-right font-black text-[11px] text-theme-text tracking-tight">
+                          {formatCurrency(order.total_amount, user?.country)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className="lg:hidden flex flex-col divide-y divide-theme-border">
+              {(!stats?.recentOrders || stats.recentOrders.length === 0) ? (
+                <div className="p-8 text-center text-theme-text-muted text-[10px] uppercase font-black tracking-widest opacity-30">{t('no_logs_found')}</div>
+              ) : (
+                stats.recentOrders.map((order, idx) => (
+                  <Link 
+                    key={order.id} 
+                    href={`/orders/${order.id}`}
+                    className="p-5 active:bg-white/5 transition-all flex justify-between items-center group"
+                  >
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-xl bg-theme-surface-container border border-theme-border flex items-center justify-center text-primary font-black text-xs">
+                         {order.customer_name?.charAt(0) || 'W'}
+                       </div>
+                       <div>
+                         <p className="text-[11px] font-black text-theme-text">{order.order_number}</p>
+                         <p className="text-[10px] text-theme-text-muted font-bold truncate max-w-[120px]">{order.customer_name || t('walkin')}</p>
+                       </div>
+                    </div>
+                    <div className="text-right">
+                       <p className="text-[11px] font-black text-theme-text">{formatCurrency(order.total_amount, user?.country)}</p>
+                       <span className={`inline-block mt-1 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider border ${
+                        order.status === 'ready' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                        order.status === 'processing' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                        'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
@@ -354,6 +422,24 @@ export default function StoreAdmin({ user }) {
               </div>
               <p className={`text-[11px] font-bold tracking-tight ${(stats?.inventoryAlerts || 0) > 0 ? 'text-amber-500' : 'text-theme-text-muted'}`}>
                 {(stats?.inventoryAlerts || 0) > 0 ? `${stats.lowStockItems} ${t('sectors_replenishment')}` : t('stock_stable')}
+              </p>
+            </div>
+          </section>
+
+          {/* Predictive Insights */}
+          <section className="animate-fade-in-up stagger-8">
+            <div className="p-8 rounded-[2.5rem] glass-card-matte relative overflow-hidden group">
+              <div className="flex justify-between items-start mb-6">
+                 <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-theme-text-muted mb-1">Predictive Insights</p>
+                    <h3 className="text-2xl font-black text-theme-text font-headline italic">Peak: {stats?.predictiveInsight || 'Pending'}</h3>
+                 </div>
+                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 border border-purple-500/20 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-xl">insights</span>
+                 </div>
+              </div>
+              <p className="text-[11px] font-bold tracking-tight text-theme-text-muted">
+                 Historical data predicts high volume on <span className="text-purple-500 font-black">{stats?.predictiveInsight || '...'}</span>. Optimize staff scheduling to prevent bottlenecks.
               </p>
             </div>
           </section>
@@ -604,6 +690,59 @@ export default function StoreAdmin({ user }) {
           </div>
         </div>
       )}
+
+      {/* Floating Chatbot */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {!showChatbot ? (
+          <button 
+            onClick={() => setShowChatbot(true)}
+            className="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-emerald-500 transition-all"
+          >
+            <span className="material-symbols-outlined text-2xl">smart_toy</span>
+          </button>
+        ) : (
+          <div className="w-80 bg-theme-surface border border-theme-border rounded-[2rem] shadow-2xl overflow-hidden flex flex-col h-96 animate-scale-in">
+            <div className="p-4 bg-emerald-600 flex justify-between items-center text-white">
+              <div className="flex items-center gap-2">
+                 <span className="material-symbols-outlined">smart_toy</span>
+                 <span className="font-black text-sm tracking-widest uppercase">AI Assistant</span>
+              </div>
+              <button onClick={() => setShowChatbot(false)} className="hover:text-emerald-200"><span className="material-symbols-outlined text-sm">close</span></button>
+            </div>
+            <div className="flex-1 p-4 overflow-y-auto no-scrollbar flex flex-col gap-3 bg-theme-surface-container/30">
+              {chatMessages.length === 0 && (
+                <div className="text-[10px] font-bold text-theme-text-muted text-center mt-4 uppercase tracking-widest">
+                  Ask me about historical orders or policies!
+                </div>
+              )}
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`p-3 rounded-2xl max-w-[85%] text-xs font-medium ${msg.isUser ? 'bg-emerald-600 text-white self-end rounded-tr-sm' : 'bg-theme-surface border border-theme-border text-theme-text self-start rounded-tl-sm'}`}>
+                  {msg.text}
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="p-3 rounded-2xl max-w-[85%] bg-theme-surface border border-theme-border text-theme-text-muted self-start rounded-tl-sm text-xs flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse delay-75"></div>
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse delay-150"></div>
+                </div>
+              )}
+            </div>
+            <form onSubmit={handleChatSubmit} className="p-3 bg-theme-surface border-t border-theme-border flex gap-2">
+               <input 
+                 type="text" 
+                 value={chatInput} 
+                 onChange={e => setChatInput(e.target.value)}
+                 placeholder="Ask AI..." 
+                 className="flex-1 bg-theme-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text outline-none focus:border-emerald-500"
+               />
+               <button type="submit" disabled={!chatInput.trim() || chatLoading} className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center disabled:opacity-50">
+                 <span className="material-symbols-outlined text-[16px]">send</span>
+               </button>
+            </form>
+          </div>
+        )}
+      </div>
 
     </div>
   );

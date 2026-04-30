@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Script from 'next/script';
 import { QRCodeSVG } from 'qrcode.react';
 import { useUser, ROLES } from '@/lib/UserContext';
+import { offlineStore } from '../new/utils/offlineStore';
 
 
 // Stage Icons
@@ -109,6 +110,18 @@ export default function OrderDetail({ params }) {
   };
 
   const processPayment = async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      await offlineStore.saveSyncTask({
+        url: '/api/payments',
+        method: 'POST',
+        payload: { ...paymentData, order_id: id }
+      });
+      alert(`System Offline. Payment saved locally and will sync automatically when back online.`);
+      // Optimistically update order
+      setOrder({ ...order, payment_status: 'paid' });
+      setShowPaymentModal(false);
+      return;
+    }
     const res = await fetch(`/api/payments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -482,13 +495,13 @@ export default function OrderDetail({ params }) {
         <div className="lg:col-span-8 space-y-8 animate-fade-in-up stagger-1">
 
           {/* Logistics & Delivery Card */}
-          <div className="glass-card-premium p-8 flex flex-col md:flex-row gap-8">
+          <div className="glass-card-premium p-6 lg:p-8 flex flex-col md:flex-row gap-6 lg:gap-8">
             <div className="flex-1 space-y-4">
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[16px]">local_shipping</span>
                 Logistics Snapshot
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-theme-container border border-theme">
                   <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Pickup</p>
                   <p className="text-sm font-bold text-on-surface mb-2">{formatDate(order.pickup_date)}</p>
@@ -555,14 +568,15 @@ export default function OrderDetail({ params }) {
             </div>
           </div>
 
-          {/* Items Table */}
-          <div className="glass-card-premium p-8">
+          {/* Items Section */}
+          <div className="glass-card-premium p-6 lg:p-8">
             <h3 className="text-lg font-black font-headline text-on-surface mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-emerald-600">checkroom</span>
               Order Items
             </h3>
 
-            <div className="overflow-x-auto no-scrollbar">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto no-scrollbar">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="border-b border-theme text-[10px] uppercase tracking-widest font-black text-theme-muted">
@@ -638,7 +652,6 @@ export default function OrderDetail({ params }) {
                                         <p style="font-size: 10px; color: #666; font-weight: normal;">ID: ${item.tag_id || item.id}</p>
                                       </div>
                                       <script>
-                                        // Wait a tiny bit for the image to load on the parent side before printing
                                         setTimeout(() => { window.print(); }, 500);
                                       </script>
                                    </body>
@@ -653,15 +666,7 @@ export default function OrderDetail({ params }) {
                           >
                             <span className="material-symbols-outlined text-lg">print</span>
                             <div className="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden">
-                              <QRCodeSVG
-                                id={"qr-" + item.id}
-                                value={item.tag_id || item.id.toString()}
-                                size={120}
-                                level={"H"}
-                              />
-                            </div>
-                            <div className="absolute bottom-full mb-2 bg-surface text-theme-text text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/qr:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                              Print Tag Label
+                              <QRCodeSVG id={"qr-" + item.id} value={item.tag_id || item.id.toString()} size={120} level={"H"} />
                             </div>
                           </button>
                           <button
@@ -686,6 +691,61 @@ export default function OrderDetail({ params }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {order.items?.map((item) => (
+                <div key={item.id} className="p-4 rounded-2xl bg-theme-container border border-theme-border flex flex-col gap-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-theme-surface flex items-center justify-center text-emerald-500 border border-theme-border">
+                        <span className="material-symbols-outlined">{getStageIcon(item.status)}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-on-surface">{item.garment_type}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.service_type}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                       <p className="text-sm font-bold text-on-surface">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
+                       <p className="text-[10px] text-slate-400 font-bold">{item.quantity} x ₹{item.price}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {item.tag_id && <span className="px-2 py-0.5 bg-theme-surface text-theme-muted rounded text-[8px] font-black uppercase border border-theme-border">Tag: {item.tag_id}</span>}
+                    {item.bag_id && <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase border border-blue-100">Bag: {item.bag_id}</span>}
+                    {item.incident_status !== 'none' && <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${item.incident_status === 'damaged' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-surface text-theme-text'}`}>{item.incident_status}</span>}
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t border-theme-border">
+                     <button
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setTrackingData({
+                            tag_id: item.tag_id || '',
+                            bag_id: item.bag_id || '',
+                            incident_status: item.incident_status || 'none',
+                            incident_notes: item.incident_notes || '',
+                            status: item.status || ''
+                          });
+                          setShowTrackingModal(true);
+                        }}
+                        className="flex-1 py-2.5 bg-theme-surface text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-theme-border flex items-center justify-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-sm">barcode_scanner</span>
+                        Update Status
+                      </button>
+                      <button
+                        onClick={() => {/* Trigger print flow */}}
+                        className="w-12 py-2.5 bg-theme-surface text-slate-400 rounded-xl border border-theme-border flex items-center justify-center"
+                      >
+                        <span className="material-symbols-outlined text-sm">print</span>
+                      </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

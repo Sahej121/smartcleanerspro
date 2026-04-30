@@ -16,6 +16,8 @@ import CustomItemModal from './components/modals/CustomItemModal';
 import ItemEditModal from './components/modals/ItemEditModal';
 import DuplicateWarningModal from './components/modals/DuplicateWarningModal';
 import AddCategoryModal from './components/modals/AddCategoryModal';
+import BottomSheet from '@/components/common/BottomSheet';
+import FloatingCartPill from './components/FloatingCartPill';
 import { useOrderLogic } from './hooks/useOrderLogic';
 import { useBackgroundSync } from './hooks/useBackgroundSync';
 import { offlineStore } from './utils/offlineStore';
@@ -106,6 +108,7 @@ export default function NewOrder() {
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [addCategoryLoading, setAddCategoryLoading] = useState(false);
+  const [isCartSheetOpen, setIsCartSheetOpen] = useState(false);
 
   // Keyboard Shortcuts (Phase 2)
   useEffect(() => {
@@ -401,8 +404,8 @@ export default function NewOrder() {
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       
       {/* Top Header / Progress Tracker */}
-      <div className="flex items-center justify-center animate-fade-in-up pt-8 pb-4 shrink-0">
-        <div className="flex items-center w-full max-w-3xl bg-theme-surface/50 backdrop-blur-md p-4 rounded-[2rem] border border-theme-border/40 shadow-sm relative">
+      <div className="flex items-center justify-center animate-fade-in-up pt-4 lg:pt-8 pb-4 shrink-0 px-2">
+        <div className="flex items-center w-full max-w-3xl bg-theme-surface/50 backdrop-blur-md p-2 lg:p-4 rounded-[2rem] border border-theme-border/40 shadow-sm relative">
           {offlineCount > 0 && (
             <div 
               className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.12em] flex items-center gap-2 shadow-lg transition-all border ${
@@ -417,16 +420,16 @@ export default function NewOrder() {
           {steps.map((s, i) => (
             <div key={s.step} className="contents">
               <div 
-                className="flex flex-col items-center gap-2 group relative cursor-pointer px-2"
+                className="flex flex-col items-center gap-1.5 lg:gap-2 group relative cursor-pointer px-2 flex-1"
                 onClick={() => setCurrentStep(s.step)}
               >
-                <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative z-10 ${s.step <= currentStep ? 'primary-gradient text-white shadow-lg scale-110' : 'bg-theme-surface-container/60 text-theme-text-muted/20'}`}>
-                  <span className="material-symbols-outlined text-xl">{s.icon}</span>
+                <div className={`w-9 h-9 lg:w-12 lg:h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative z-10 ${s.step <= currentStep ? 'primary-gradient text-white shadow-lg scale-110' : 'bg-theme-surface-container/60 text-theme-text-muted/20'}`}>
+                  <span className="material-symbols-outlined text-lg lg:text-xl">{s.icon}</span>
                 </div>
-                <span className={`text-[8px] lg:text-[9px] font-black uppercase tracking-[0.15em] whitespace-nowrap transition-colors ${s.step <= currentStep ? 'text-theme-text' : 'text-theme-text-muted/30'}`}>{s.label}</span>
+                <span className={`text-[7px] lg:text-[9px] font-black uppercase tracking-[0.1em] lg:tracking-[0.15em] whitespace-nowrap transition-colors ${s.step <= currentStep ? 'text-theme-text' : 'text-theme-text-muted/30'}`}>{s.label}</span>
               </div>
               {i < steps.length - 1 && (
-                <div className="flex-1 px-3 mb-5">
+                <div className="flex-1 px-1 lg:px-3 mb-4 lg:mb-5">
                   <div className={`h-[2px] w-full rounded-full transition-colors duration-700 ${s.step < currentStep ? 'bg-emerald-500' : 'bg-theme-surface-container/40'}`}></div>
                 </div>
               )}
@@ -446,32 +449,69 @@ export default function NewOrder() {
             transition={{ duration: 0.2 }}
             className="h-full min-h-0"
           >
+            {currentStep === 1 && (
+              <div className="lg:hidden h-full">
+                <CustomerSection 
+                  selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
+                  isCustomerSearchOpen={isCustomerSearchOpen} setIsCustomerSearchOpen={setIsCustomerSearchOpen}
+                  searchQuery={searchQuery} setSearchQuery={setSearchQuery} filteredCustomers={customers}
+                  isInlineCreating={isInlineCreating} setIsInlineCreating={setIsInlineCreating}
+                  inlineError={inlineError} setInlineError={setInlineError} newCustomer={newCustomer}
+                  setNewCustomer={setNewCustomer} handleCreateCustomer={handleCreateCustomer}
+                  setCurrentStep={setCurrentStep} t={t}
+                />
+                {selectedCustomer && (
+                  <div className="mt-8 flex justify-center animate-fade-in">
+                    <button 
+                      onClick={() => setCurrentStep(2)}
+                      className="px-12 py-4 primary-gradient text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 flex items-center gap-2 uppercase tracking-widest"
+                    >
+                      Continue to Items <span className="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {currentStep <= 2 && (
-              <div className="grid lg:grid-cols-12 gap-6 h-full min-h-0">
+              <div className="hidden lg:grid lg:grid-cols-12 gap-6 h-full min-h-0">
                 <ServiceCatalog 
                   garmentTypes={garmentTypes} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
                   getCategoryIcon={getCategoryIcon} getGarmentIcon={getGarmentIcon} pricing={pricing}
                   addToCart={addToCart} setShowAddCategoryModal={setShowAddCategoryModal}
                   handleAddCustomGarment={() => setIsCustomModalOpen(true)} t={t}
                 />
-                <OrderCart 
-                  cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} updateItemPrice={updateItemPrice}
-                  getGarmentIcon={getGarmentIcon} subtotal={subtotal} applicableVolDiscount={applicableVolDiscount}
-                  volDiscountInfo={volDiscountInfo} tax={tax} couponData={couponData} couponDiscount={couponDiscount}
-                  redeemedPoints={redeemedPoints} total={total} couponCode={couponCode} setCouponCode={setCouponCode}
-                  handleApplyCoupon={handleApplyCoupon} setCurrentStep={setCurrentStep} setItemEditIndex={setItemEditIndex}
-                  setShowItemEditModal={setShowItemEditModal} selectedCustomer={selectedCustomer} t={t}
-                  customerHeader={
-                    <CustomerSection 
-                      selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
-                      isCustomerSearchOpen={isCustomerSearchOpen} setIsCustomerSearchOpen={setIsCustomerSearchOpen}
-                      searchQuery={searchQuery} setSearchQuery={setSearchQuery} filteredCustomers={customers}
-                      isInlineCreating={isInlineCreating} setIsInlineCreating={setIsInlineCreating}
-                      inlineError={inlineError} setInlineError={setInlineError} newCustomer={newCustomer}
-                      setNewCustomer={setNewCustomer} handleCreateCustomer={handleCreateCustomer}
-                      setCurrentStep={setCurrentStep} t={t}
-                    />
-                  }
+                <div className="lg:col-span-4 flex flex-col min-h-0 animate-fade-in-up stagger-3">
+                  <OrderCart 
+                    cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} updateItemPrice={updateItemPrice}
+                    getGarmentIcon={getGarmentIcon} subtotal={subtotal} applicableVolDiscount={applicableVolDiscount}
+                    volDiscountInfo={volDiscountInfo} tax={tax} couponData={couponData} couponDiscount={couponDiscount}
+                    redeemedPoints={redeemedPoints} total={total} couponCode={couponCode} setCouponCode={setCouponCode}
+                    handleApplyCoupon={handleApplyCoupon} setCurrentStep={setCurrentStep} setItemEditIndex={setItemEditIndex}
+                    setShowItemEditModal={setShowItemEditModal} selectedCustomer={selectedCustomer} t={t}
+                    customerHeader={
+                      <CustomerSection 
+                        selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
+                        isCustomerSearchOpen={isCustomerSearchOpen} setIsCustomerSearchOpen={setIsCustomerSearchOpen}
+                        searchQuery={searchQuery} setSearchQuery={setSearchQuery} filteredCustomers={customers}
+                        isInlineCreating={isInlineCreating} setIsInlineCreating={setIsInlineCreating}
+                        inlineError={inlineError} setInlineError={setInlineError} newCustomer={newCustomer}
+                        setNewCustomer={setNewCustomer} handleCreateCustomer={handleCreateCustomer}
+                        setCurrentStep={setCurrentStep} t={t}
+                      />
+                    }
+                  />
+                </div>
+              </div>
+            )}
+
+            {currentStep === 2 && (
+              <div className="lg:hidden h-full flex flex-col min-h-0">
+                <ServiceCatalog 
+                  garmentTypes={garmentTypes} activeCategory={activeCategory} setActiveCategory={setActiveCategory}
+                  getCategoryIcon={getCategoryIcon} getGarmentIcon={getGarmentIcon} pricing={pricing}
+                  addToCart={addToCart} setShowAddCategoryModal={setShowAddCategoryModal}
+                  handleAddCustomGarment={() => setIsCustomModalOpen(true)} t={t}
                 />
               </div>
             )}
@@ -504,8 +544,44 @@ export default function NewOrder() {
       <DuplicateWarningModal isOpen={!!duplicateWarning} onConfirm={handleSubmitOrder} onCancel={() => setDuplicateWarning(null)} data={duplicateWarning} t={t} />
       <AddCategoryModal isOpen={showAddCategoryModal} onClose={() => setShowAddCategoryModal(false)} onAdd={handleAddCategory} loading={addCategoryLoading} t={t} />
 
+      <FloatingCartPill 
+        itemCount={cart.length} 
+        total={total} 
+        onTap={() => setIsCartSheetOpen(true)} 
+      />
+
+      <BottomSheet 
+        isOpen={isCartSheetOpen} 
+        onClose={() => setIsCartSheetOpen(false)}
+        title="Your Cart"
+        snapPoint="full"
+      >
+        <div className="p-2 h-full pb-20">
+          <OrderCart 
+            cart={cart} removeFromCart={removeFromCart} updateQuantity={updateQuantity} updateItemPrice={updateItemPrice}
+            getGarmentIcon={getGarmentIcon} subtotal={subtotal} applicableVolDiscount={applicableVolDiscount}
+            volDiscountInfo={volDiscountInfo} tax={tax} couponData={couponData} couponDiscount={couponDiscount}
+            redeemedPoints={redeemedPoints} total={total} couponCode={couponCode} setCouponCode={setCouponCode}
+            handleApplyCoupon={handleApplyCoupon} setCurrentStep={(step) => { setCurrentStep(step); setIsCartSheetOpen(false); }} 
+            setItemEditIndex={setItemEditIndex} setShowItemEditModal={setShowItemEditModal} 
+            selectedCustomer={selectedCustomer} t={t} isMobileSheet={true}
+            customerHeader={
+              <CustomerSection 
+                selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
+                isCustomerSearchOpen={isCustomerSearchOpen} setIsCustomerSearchOpen={setIsCustomerSearchOpen}
+                searchQuery={searchQuery} setSearchQuery={setSearchQuery} filteredCustomers={customers}
+                isInlineCreating={isInlineCreating} setIsInlineCreating={setIsInlineCreating}
+                inlineError={inlineError} setInlineError={setInlineError} newCustomer={newCustomer}
+                setNewCustomer={setNewCustomer} handleCreateCustomer={handleCreateCustomer}
+                setCurrentStep={setCurrentStep} t={t}
+              />
+            }
+          />
+        </div>
+      </BottomSheet>
+
       {submitting && !duplicateWarning && (
-        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-theme-surface/80 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-theme-surface/80 backdrop-blur-md animate-fade-in">
           <div className="relative mb-8">
             <div className="w-20 h-20 rounded-full border-4 border-theme-border border-t-emerald-500 animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center"><span className="material-symbols-outlined text-emerald-500 animate-pulse">lock</span></div>
@@ -513,15 +589,6 @@ export default function NewOrder() {
           <p className="text-sm font-black text-theme-text uppercase tracking-widest animate-pulse">Processing Transaction</p>
         </div>
       )}
-
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[50] bg-theme-surface/90 backdrop-blur-xl border-t border-theme-border p-4 shadow-2xl">
-        <div className="flex items-center justify-between gap-4 max-w-md mx-auto">
-          <div className="flex flex-col"><span className="text-[10px] font-black text-theme-text-muted uppercase tracking-widest">Total Amount</span><span className="text-xl font-black text-theme-text font-headline">₹{total}</span></div>
-          {currentStep === 2 && <button disabled={cart.length === 0} onClick={() => setCurrentStep(3)} className="flex-1 max-w-[200px] py-4 primary-gradient text-white rounded-2xl font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2">Next Step <span className="material-symbols-outlined text-sm">arrow_forward</span></button>}
-          {currentStep === 3 && <button onClick={() => setCurrentStep(4)} className="flex-1 max-w-[200px] py-4 primary-gradient text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2">Payment <span className="material-symbols-outlined text-sm">payments</span></button>}
-          {currentStep === 4 && <button disabled={submitting} onClick={() => handleSubmitOrder()} className="flex-1 max-w-[200px] py-4 primary-gradient text-white rounded-2xl font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2">{submitting ? 'Processing...' : 'Complete'} <span className="material-symbols-outlined text-sm">check_circle</span></button>}
-        </div>
-      </div>
     </div>
   );
 }

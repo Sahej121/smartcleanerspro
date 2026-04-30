@@ -44,5 +44,22 @@ export const offlineStore = {
     const orders = (await get(OFFLINE_ORDERS_KEY)) || [];
     const filtered = orders.filter(o => o.offlineId !== offlineId);
     await set(OFFLINE_ORDERS_KEY, filtered);
+  },
+
+  // Generic Sync Tasks
+  saveSyncTask: async (task) => {
+    const tasks = (await get('offline_sync_tasks')) || [];
+    const id = Date.now().toString();
+    tasks.push({ ...task, offlineId: id, createdAt: new Date().toISOString() });
+    await set('offline_sync_tasks', tasks);
+    return id;
+  },
+  getSyncTasks: async () => {
+    return (await get('offline_sync_tasks')) || [];
+  },
+  removeSyncTask: async (offlineId) => {
+    const tasks = (await get('offline_sync_tasks')) || [];
+    const filtered = tasks.filter(t => t.offlineId !== offlineId);
+    await set('offline_sync_tasks', filtered);
   }
 };

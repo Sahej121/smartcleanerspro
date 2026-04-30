@@ -5,6 +5,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useUser } from '@/lib/UserContext';
 import { useNotifications } from '@/lib/NotificationContext';
 import Link from 'next/link';
+import PWAInstallButton from './common/PWAInstallButton';
 
 export default function Header({ setMobileMenuOpen }) {
   const { t } = useLanguage();
@@ -34,29 +35,56 @@ export default function Header({ setMobileMenuOpen }) {
   }, [unreadCount]);
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between px-4 lg:px-8 h-16 w-full bg-theme-surface/80 backdrop-blur-xl border-b border-theme-border transition-colors">
-      <div className="flex items-center gap-3 lg:gap-4 flex-1">
+    <header className="sticky top-0 z-40 flex items-center justify-between px-3 lg:px-8 h-14 lg:h-16 w-full bg-theme-surface/80 backdrop-blur-xl border-b border-theme-border transition-colors">
+      <div className="flex items-center gap-2 lg:gap-4 flex-1">
         <button 
           className="lg:hidden p-2 text-theme-text-muted hover:bg-theme-surface-container rounded-xl transition-colors shrink-0"
           onClick={() => setMobileMenuOpen?.(true)}
         >
-          <span className="material-symbols-outlined">menu_open</span>
+          <span className="material-symbols-outlined text-[22px]">menu_open</span>
         </button>
-        <form onSubmit={handleSearch} className={`relative w-full max-w-md transition-all duration-500 ${searchFocused ? 'max-w-lg' : ''}`}>
-          <span className={`material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-sm transition-colors duration-300 ${searchFocused ? 'text-primary' : 'text-theme-text-muted'}`}>search</span>
-          <input 
-            className={`w-full bg-theme-surface-container border rounded-full py-2.5 pl-10 pr-4 text-sm placeholder:text-theme-text-muted/70 outline-none transition-all duration-300 text-theme-text ${
-              searchFocused 
-                ? 'border-primary/30 ring-4 ring-primary/10 shadow-lg shadow-primary/5 bg-theme-surface' 
-                : 'border-theme-border focus:ring-2 focus:ring-primary/20'
-            }`}
-            placeholder={t('search_orders') || "Search orders, customers, or items..."} 
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-          />
+        
+        {/* Mobile: icon-only search that expands | Desktop: always visible */}
+        {!searchFocused && (
+          <button 
+            className="lg:hidden p-2 text-theme-text-muted hover:bg-theme-surface-container rounded-xl transition-colors"
+            onClick={() => setSearchFocused(true)}
+          >
+            <span className="material-symbols-outlined text-[22px]">search</span>
+          </button>
+        )}
+        <form onSubmit={handleSearch} className={`relative transition-all duration-500 ${
+          searchFocused 
+            ? 'fixed inset-x-0 top-0 z-50 px-3 py-2 bg-theme-surface/95 backdrop-blur-xl lg:relative lg:inset-auto lg:px-0 lg:py-0 lg:bg-transparent lg:backdrop-blur-none'
+            : 'hidden lg:block w-full max-w-md'
+        } ${searchFocused ? 'max-w-lg' : ''}`}>
+          <div className="relative w-full">
+            <span className={`material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-sm transition-colors duration-300 ${searchFocused ? 'text-primary' : 'text-theme-text-muted'}`}>search</span>
+            <input 
+              className={`w-full bg-theme-surface-container border rounded-full py-2.5 lg:py-2.5 pl-10 pr-12 lg:pr-4 text-sm placeholder:text-theme-text-muted/70 outline-none transition-all duration-300 text-theme-text ${
+                searchFocused 
+                  ? 'border-primary/30 ring-4 ring-primary/10 shadow-lg shadow-primary/5 bg-theme-surface' 
+                  : 'border-theme-border focus:ring-2 focus:ring-primary/20'
+              }`}
+              placeholder={t('search_orders') || "Search orders, customers, or items..."} 
+              type="text"
+              autoFocus={searchFocused}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => { if (!searchQuery) setSearchFocused(false); }}
+            />
+            {/* Mobile close button */}
+            {searchFocused && (
+              <button 
+                type="button"
+                onClick={() => { setSearchFocused(false); setSearchQuery(''); }}
+                className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 p-1 text-theme-text-muted"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -97,6 +125,11 @@ export default function Header({ setMobileMenuOpen }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* PWA Install */}
+        <div className="hidden md:block">
+          <PWAInstallButton />
         </div>
 
         {/* Help */}

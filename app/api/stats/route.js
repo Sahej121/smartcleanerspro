@@ -11,7 +11,7 @@ export async function GET(request) {
     const storeId = auth.user.store_id;
     const today = new Date().toISOString().split('T')[0];
 
-    const [metricsRes, recentOrdersRes, lowStockRes] = await Promise.all([
+    const [metricsRes, recentOrdersRes, lowStockRes, busiestDayRes] = await Promise.all([
       query(`
         WITH stats AS (
           SELECT 
@@ -50,7 +50,15 @@ export async function GET(request) {
         ORDER BY o.created_at DESC
         LIMIT 10
       `, [storeId]),
-      query(`SELECT item_name FROM inventory WHERE quantity <= reorder_level AND store_id = $1 LIMIT 3`, [storeId])
+      query(`SELECT item_name FROM inventory WHERE quantity <= reorder_level AND store_id = $1 LIMIT 3`, [storeId]),
+      query(`
+        SELECT EXTRACT(DOW FROM created_at) as dow, COUNT(*) as cnt 
+        FROM orders 
+        WHERE store_id = $1 
+        GROUP BY dow 
+        ORDER BY cnt DESC 
+        LIMIT 1
+      `, [storeId])
     ]);
 
     const m = metricsRes.rows[0];
@@ -70,6 +78,9 @@ export async function GET(request) {
       inventoryAlerts: lowItems,
       stockHealth,
       lowStockItems: lowStockRes.rows.map(r => r.item_name).join(' & ') || 'All stocked',
+      predictiveInsight: busiestDayRes.rows.length > 0 
+        ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][busiestDayRes.rows[0].dow] 
+        : 'Saturday', // fallback
     }, {
       headers: {
         'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=15',

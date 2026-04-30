@@ -17,12 +17,12 @@ export default function SuspendedPage() {
           </div>
           
           <h1 className="text-3xl font-black text-slate-900 font-headline mb-4 tracking-tight">
-            Account Suspended
+            Account Inactive
           </h1>
           
           <p className="text-slate-500 font-medium leading-relaxed mb-10 text-sm">
-            Your store access has been temporarily suspended by the root administrator. 
-            This could be due to pending payments, maintenance requirements, or policy updates.
+            Your store access has been temporarily suspended. This is typically due to an **unpaid invoice**, 
+            an expired subscription, or a required security update from the root administrator.
           </p>
           
           <div className="flex flex-col gap-4">

@@ -28,9 +28,14 @@ export async function POST(request) {
     const remoteUrl = process.env.STAIN_ANALYSIS_URL;
 
     if (provider === 'remote' && remoteUrl) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (process.env.HF_TOKEN) {
+        headers['Authorization'] = `Bearer ${process.env.HF_TOKEN}`;
+      }
+
       const remoteRes = await fetch(remoteUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(payload),
       });
       const remoteData = await remoteRes.json();
