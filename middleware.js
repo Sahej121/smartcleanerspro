@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { createMiddlewareSupabase } from '@/lib/supabase-middleware';
 import { verifyPinTokenEdge } from '@/lib/auth-edge';
 
-// Simple in-memory rate limiting map
-const rateLimitMap = new Map();
 
 // --- Inlined tier helpers for Edge middleware ---
 const TIER_LEGACY_MAP = {
@@ -70,10 +68,9 @@ export async function middleware(request) {
   const country = request.geo?.country || 'unknown';
   const city = request.geo?.city || 'unknown';
 
-  // --- 1. Rate Limiting ---
-  const now = Date.now();
-  const windowMs = 60 * 1000;
+  // --- 1. Rate Limiting (Persistent via Supabase RPC) ---
   const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1');
+  const { supabase } = createMiddlewareSupabase(request);
   
   let limit = isLocal ? 1000 : 100;
   if (pathname.startsWith('/api/auth/login')) {
@@ -82,18 +79,21 @@ export async function middleware(request) {
     limit = isLocal ? 1000 : 50;
   }
 
-  const userRequests = rateLimitMap.get(ip) || [];
-  const recentRequests = userRequests.filter(timestamp => now - timestamp < windowMs);
-  
-  if (recentRequests.length >= limit) {
+  // Atomic check via Database RPC
+  const { data: isAllowed, error: limitError } = await supabase.rpc('check_rate_limit', { 
+    client_ip: ip, 
+    max_hits: limit 
+  });
+
+  if (limitError) {
+    console.error('[RateLimit Error]:', limitError);
+    // Fallback: allow request but log error (don't block legitimate users if DB is slow)
+  } else if (isAllowed === false) {
     return new NextResponse('Too Many Requests. Rate limit exceeded.', { 
       status: 429,
       headers: { 'Retry-After': '60' }
     });
   }
-  
-  recentRequests.push(now);
-  rateLimitMap.set(ip, recentRequests);
 
   // --- 2. Lightweight Session Check ---
   const allCookies = request.cookies.getAll();
@@ -140,7 +140,7 @@ export async function middleware(request) {
     const appRole = user?.user_metadata?.role || pinUser?.role;
     const appId = user?.user_metadata?.app_user_id || pinUser?.id;
 
-    const isSaasOwner = appRole === 'superadmin' || user?.email === 'sehajbudhiraja2000@gmail.com' || pinUser?.email === 'sehajbudhiraja2000@gmail.com';
+    const isSaasOwner = appRole === 'superadmin';
 
     if (!isSaasOwner && !canAccessRouteMw(tier, pathname)) {
       if (pathname.startsWith('/api/')) {
