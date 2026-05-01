@@ -19,7 +19,13 @@ export async function POST(request) {
     }
 
     // Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
-    const secret = process.env.RAZORPAY_KEY_SECRET;
+    const secret = process.env.RAZORPAY_KEY_SECRET?.trim();
+    
+    if (!secret) {
+      console.error('[Razorpay Verify] Missing RAZORPAY_KEY_SECRET');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const generated_signature = crypto
       .createHmac('sha256', secret)
       .update(razorpay_order_id + '|' + razorpay_payment_id)
