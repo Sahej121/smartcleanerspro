@@ -17,20 +17,21 @@ const TIER_ROUTES = {
   software_only: [
     '/', '/orders', '/customers', '/inventory', '/logistics',
     '/admin/settings', '/support', '/reports', '/admin/billing',
-    '/admin/pricing', '/suspended',
+    '/admin/pricing', '/suspended', '/profile',
     '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/pricing', '/api/coupons', '/api/payments', '/api/stain-analysis',
-    '/api/analytics', '/api/reports', '/api/staff', '/api/tasks'
+    '/api/analytics', '/api/reports', '/api/staff', '/api/tasks', '/api/user/profile'
   ],
   hardware_bundle: [
     '/', '/orders', '/customers', '/inventory', '/logistics',
     '/admin/settings', '/admin/analytics', '/operations/assembly',
     '/support', '/reports', '/admin/billing',
-    '/admin/pricing', '/suspended',
+    '/admin/pricing', '/suspended', '/profile',
     '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/analytics', '/api/pricing', '/api/coupons', '/api/payments', '/api/stain-analysis',
-    '/api/reports', '/api/staff', '/api/tasks', '/api/workflow', '/api/operations'
+    '/api/reports', '/api/staff', '/api/tasks', '/api/workflow', '/api/operations', '/api/user/profile'
   ],
   enterprise: ['*'],
 };
+
 
 function normalizeTierMw(tier) {
   return TIER_LEGACY_MAP[tier] || tier || 'software_only';

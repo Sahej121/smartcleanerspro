@@ -174,7 +174,7 @@ export default function Header({ setMobileMenuOpen }) {
                   onClick={() => setShowUserMenu(false)}
                 >
                   <span className="material-symbols-outlined text-lg text-primary">person</span>
-                  My Account
+                  Account Settings
                 </Link>
                 
                 {(role === 'owner' || role === 'superadmin') && (
@@ -184,9 +184,11 @@ export default function Header({ setMobileMenuOpen }) {
                     onClick={() => setShowUserMenu(false)}
                   >
                     <span className="material-symbols-outlined text-lg text-primary">storefront</span>
-                    POS Settings
+                    Store Settings
                   </Link>
                 )}
+
+
 
                 <div className="border-t border-theme-border mt-1 pt-1">
                   <button 
