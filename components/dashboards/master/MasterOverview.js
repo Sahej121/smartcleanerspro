@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { AnimatedCounter } from '@/components/common/AnimatedStats';
 import { formatCurrency } from '@/lib/currency-utils';
 
@@ -162,9 +163,9 @@ export default function MasterOverview({
                 </tbody>
               </table>
             </div>
-            <button onClick={() => router.push('/master/nodes')} className="w-full mt-6 py-4 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all font-headline">
+            <Link href="/master/nodes" className="block w-full mt-6 py-4 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-all font-headline text-center">
               {t('enter_cluster_mgmt')}
-            </button>
+            </Link>
           </div>
           
           <div className="bg-theme-surface-container rounded-[2.5rem] p-8 relative overflow-hidden group">
@@ -202,9 +203,9 @@ export default function MasterOverview({
             ))}
           </div>
           <div className="mt-8 border-t border-slate-50 pt-8">
-            <button onClick={() => router.push('/master/logs')} className="w-full py-4 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-emerald-200 hover:text-emerald-700 transition-all">
+            <Link href="/master/logs" className="block w-full py-4 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:border-emerald-200 hover:text-emerald-700 transition-all text-center">
               Comprehensive Log Stream
-            </button>
+            </Link>
           </div>
         </div>
       </div>

@@ -445,41 +445,73 @@ export default function SettingsPage() {
                 <p className="text-sm font-medium text-theme-text-muted">{t('appearance_desc')}</p>
               </div>
 
-              <div className="space-y-6 max-w-2xl">
-                <div className="bg-surface-container-low p-6 rounded-3xl border border-slate-50 flex flex-col md:flex-row gap-6 items-center">
-                  <div className="w-20 h-20 bg-emerald-600 rounded-2xl text-white flex items-center justify-center shadow-lg shadow-emerald-900/20 text-4xl font-black shrink-0">
-                    {systemLogo || '🏢'}
+              <div className="space-y-8 max-w-2xl">
+                <div className="bg-surface-container-low p-8 rounded-[2.5rem] border border-theme-border flex flex-col md:flex-row gap-8 items-center shadow-sm">
+                  <div 
+                    className="w-24 h-24 rounded-3xl text-white flex items-center justify-center shadow-xl text-5xl font-black shrink-0 transition-all duration-500"
+                    style={{ backgroundColor: useBranding().primaryColor }}
+                  >
+                    {systemLogo || '🍃'}
                   </div>
                   <div className="flex-1 space-y-2">
-                    <h3 className="font-bold text-theme-text text-lg">{systemName || 'DrycleanersFlow Atelier'}</h3>
-                    <p className="text-xs font-medium text-theme-text-muted">{t('active_branding_desc')}</p>
+                    <h3 className="font-black text-theme-text text-2xl tracking-tight">{systemName || "DrycleanersFlow"}</h3>
+                    <p className="text-xs font-bold text-theme-text-muted uppercase tracking-widest">{t('active_branding_desc')}</p>
+                    <div className="flex items-center gap-2 pt-2">
+                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                       <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Live Preview Active</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1 font-label">{t('system_title')}</label>
-                    <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg">text_fields</span>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg group-focus-within:text-primary transition-colors">text_fields</span>
                       <input 
-                        className="w-full bg-theme-surface-container border border-transparent rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/50 transition-all outline-none text-theme-text" 
+                        className="w-full bg-theme-surface-container border border-theme-border rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary/50 placeholder:text-theme-text-muted/50 transition-all outline-none text-theme-text" 
                         value={systemName} 
-                        onChange={e => updateBranding(e.target.value, systemLogo)} 
+                        onChange={e => updateBranding(e.target.value, systemLogo, useBranding().primaryColor)} 
                         placeholder="e.g. DrycleanersFlow Pristine"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  
+                  <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1 font-label">{t('system_icon')}</label>
-                    <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg">emoji_emotions</span>
+                    <div className="relative group">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-theme-text-muted text-lg group-focus-within:text-primary transition-colors">emoji_emotions</span>
                       <input 
-                        className="w-full bg-theme-surface-container border border-transparent rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:bg-theme-surface placeholder:text-theme-text-muted/50 transition-all outline-none text-theme-text" 
+                        className="w-full bg-theme-surface-container border border-theme-border rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary/50 placeholder:text-theme-text-muted/50 transition-all outline-none text-theme-text" 
                         value={systemLogo} 
-                        onChange={e => updateBranding(systemName, e.target.value)} 
+                        onChange={e => updateBranding(systemName, e.target.value, useBranding().primaryColor)} 
                         placeholder="e.g. 🍃"
                         maxLength={2}
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 md:col-span-2">
+                    <label className="text-[10px] font-black uppercase text-theme-text-muted tracking-widest pl-1 font-label">{t('primary_brand_color') || 'Primary Brand Color'}</label>
+                    <div className="flex flex-wrap gap-4">
+                      {['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'].map(color => (
+                        <button
+                          key={color}
+                          onClick={() => updateBranding(systemName, systemLogo, color)}
+                          className={`w-12 h-12 rounded-2xl border-4 transition-all duration-300 ${
+                            useBranding().primaryColor === color ? 'border-theme-text scale-110 shadow-lg' : 'border-transparent hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                      <div className="relative group">
+                        <input 
+                          type="color" 
+                          className="w-12 h-12 rounded-2xl border-none cursor-pointer p-0 overflow-hidden"
+                          value={useBranding().primaryColor}
+                          onChange={e => updateBranding(systemName, systemLogo, e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

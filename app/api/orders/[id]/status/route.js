@@ -1,5 +1,6 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
+import { triggerStatusNotification } from '@/lib/notifications';
 
 export async function PUT(request, { params }) {
   try {
@@ -12,6 +13,12 @@ export async function PUT(request, { params }) {
     if (status === 'delivered' || status === 'ready') {
       await query('UPDATE order_items SET status = $1 WHERE order_id = $2', [status, id]);
     }
+
+    // Trigger automated notifications
+    // Note: We don't await this to avoid blocking the API response
+    triggerStatusNotification(id, status).catch(err => {
+      console.error('[Notification Trigger] Failed to send status update:', err);
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

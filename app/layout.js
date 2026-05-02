@@ -6,6 +6,8 @@ import { NotificationProvider } from '@/lib/NotificationContext';
 import MainLayout from '@/components/MainLayout';
 import { getSession } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: {
     default: 'DrycleanersFlow – The Premium Dry Cleaning POS & Management Platform',

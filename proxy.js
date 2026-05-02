@@ -46,7 +46,6 @@ function canAccessRouteMw(tier, route) {
 }
 
 export const config = {
-  runtime: 'experimental-edge',
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
@@ -60,7 +59,7 @@ export const config = {
   ],
 };
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const ip = request.ip || request.headers.get('x-forwarded-for') || 'anonymous';
   
@@ -70,7 +69,7 @@ export async function middleware(request) {
 
   // --- 1. Rate Limiting (Persistent via Supabase RPC) ---
   const isLocal = request.url.includes('localhost') || request.url.includes('127.0.0.1');
-  const { supabase } = createMiddlewareSupabase(request);
+  let { supabase, response } = createMiddlewareSupabase(request);
   
   let limit = isLocal ? 1000 : 100;
   if (pathname.startsWith('/api/auth/login')) {
@@ -107,7 +106,6 @@ export async function middleware(request) {
   ].includes(pathname) || pathname.startsWith('/api/webhooks/') || pathname.startsWith('/checkout/success');
 
   if (isPublicRoute) {
-    const { response } = createMiddlewareSupabase(request);
     response.headers.set('x-user-country', country);
     response.headers.set('x-user-city', city);
     return addSecurityHeaders(response);
@@ -118,7 +116,8 @@ export async function middleware(request) {
   }
 
   // --- 3. Full Session Verification ---
-  const { supabase, response } = createMiddlewareSupabase(request);
+  // Re-syncing the client with request (if cookies changed)
+  ({ supabase, response } = createMiddlewareSupabase(request));
   response.headers.set('x-user-country', country);
   response.headers.set('x-user-city', city);
   

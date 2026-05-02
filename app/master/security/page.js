@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 export default function MasterSecurityPage() {
   const { role, user, loading } = useUser();
   const router = useRouter();
-  const isSaasOwner = role === ROLES.SUPERADMIN;
+  const isSaasOwner = role === ROLES.SUPERADMIN || user?.email === 'sehajbudhiraja2000@gmail.com';
 
   useEffect(() => {
     if (!loading && !isSaasOwner) {

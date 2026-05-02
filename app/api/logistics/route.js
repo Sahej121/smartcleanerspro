@@ -30,7 +30,9 @@ export async function GET(request) {
         o.proof_photo_url,
         c.name as customer_name,
         c.phone as customer_phone,
-        c.address as customer_address
+        c.address as customer_address,
+        c.lat,
+        c.lng
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
       WHERE (o.pickup_status IN ('pending', 'scheduled', 'in_transit')

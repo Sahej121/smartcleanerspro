@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { fetchWithRetry } from '@/lib/fetchWithRetry';
+import ForecastingDashboard from '@/components/inventory/ForecastingDashboard';
 
 export default function InventoryPage() {
   const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState('list');
   const [inventory, setInventory] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -219,18 +221,46 @@ export default function InventoryPage() {
         ))}
       </div>
 
-      {/* Action Bar */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between animate-fade-in-up mb-6 relative z-10">
-        <div className="relative w-full max-w-md group/search">
-          <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-theme-text-muted transition-colors group-focus-within/search:text-primary">search</span>
-          <input
-            className="w-full bg-surface border border-theme-border rounded-full py-4 pl-14 pr-6 text-sm font-bold placeholder:text-theme-text-muted text-theme-text focus:ring-4 focus:ring-primary/10 focus:border-primary/50 transition-all outline-none shadow-xl shadow-theme-border/5"
-            placeholder={t('search_inventory_placeholder')}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
+      {/* Tab Switcher */}
+      <div className="flex gap-2 mb-8 relative z-10 p-1.5 bg-theme-surface-container rounded-[1.8rem] w-fit border border-theme-border shadow-inner">
+        <button
+          onClick={() => setActiveTab('list')}
+          className={`px-8 py-3.5 rounded-[1.3rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${
+            activeTab === 'list' 
+              ? 'bg-theme-surface text-primary shadow-lg shadow-black/20 ring-1 ring-white/5' 
+              : 'text-theme-text-muted hover:text-theme-text'
+          }`}
+        >
+          <span className="material-symbols-outlined text-lg">list_alt</span>
+          Resource List
+        </button>
+        <button
+          onClick={() => setActiveTab('forecasting')}
+          className={`px-8 py-3.5 rounded-[1.3rem] text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${
+            activeTab === 'forecasting' 
+              ? 'bg-theme-surface text-primary shadow-lg shadow-black/20 ring-1 ring-white/5' 
+              : 'text-theme-text-muted hover:text-theme-text'
+          }`}
+        >
+          <span className="material-symbols-outlined text-lg">online_prediction</span>
+          Predictive Insights
+        </button>
       </div>
+
+      {activeTab === 'list' ? (
+        <>
+          {/* Action Bar */}
+          <div className="flex flex-col md:flex-row gap-4 justify-between animate-fade-in-up mb-6 relative z-10">
+            <div className="relative w-full max-w-md group/search">
+              <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-theme-text-muted transition-colors group-focus-within/search:text-primary">search</span>
+              <input
+                className="w-full bg-surface border border-theme-border rounded-full py-4 pl-14 pr-6 text-sm font-bold placeholder:text-theme-text-muted text-theme-text focus:ring-4 focus:ring-primary/10 focus:border-primary/50 transition-all outline-none shadow-xl shadow-theme-border/5"
+                placeholder={t('search_inventory_placeholder')}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
 
       {/* Modern Flex List (Table Replacement) */}
       <div className="space-y-4 relative z-10 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
@@ -378,6 +408,10 @@ export default function InventoryPage() {
           </div>
         )}
       </div>
+        </>
+      ) : (
+        <ForecastingDashboard inventory={inventory} />
+      )}
 
       {/* Advanced Modals (Audit/Receive) */}
       {[

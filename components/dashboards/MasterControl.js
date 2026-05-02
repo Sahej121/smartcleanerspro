@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useMasterData } from './master/hooks/useMasterData';
@@ -29,7 +30,17 @@ export default function MasterControl({ user }) {
   } = useMasterData(user);
 
   // Local UI State
-  const [activeView, setActiveView] = useState('overview');
+  // Derive active view from URL
+  const getViewFromPath = (path) => {
+    if (!path) return 'overview';
+    if (path.includes('/master/nodes')) return 'nodes';
+    if (path.includes('/master/insights')) return 'insights';
+    if (path.includes('/master/logs')) return 'logs';
+    if (path.includes('/master/security')) return 'security';
+    return 'overview';
+  };
+
+  const activeView = getViewFromPath(pathname);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [provisionMode, setProvisionMode] = useState('new');
   const [newStore, setNewStore] = useState({ 
@@ -45,6 +56,8 @@ export default function MasterControl({ user }) {
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastSeverity, setBroadcastSeverity] = useState('info');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Handlers
   const toggleOwnerExpansion = (ownerId) => {
@@ -135,6 +148,52 @@ export default function MasterControl({ user }) {
     }
   };
 
+  const handleUpdateTier = async (ownerId, newTier) => {
+    try {
+      // Find a store ID for this owner to use the tier update endpoint
+      const owner = owners.find(o => o.owner_id === ownerId);
+      if (!owner || !owner.stores || owner.stores.length === 0) {
+        return setErrorMessage('Cannot update tier: No nodes found for this owner.');
+      }
+      
+      const storeId = owner.stores[0].id;
+      const res = await fetch(`/api/stores/${storeId}/tier`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: newTier, payment_confirmed: true })
+      });
+
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Failed to update subscription tier');
+      }
+    } catch (err) {
+      setErrorMessage('Connection error during tier migration');
+    }
+  };
+
+  const toggleStoreStatus = async (storeId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    try {
+      const res = await fetch(`/api/stores/${storeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json();
+        setErrorMessage(data.error || 'Failed to toggle node status');
+      }
+    } catch (err) {
+      setErrorMessage('Connection error during status toggle');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
@@ -148,12 +207,23 @@ export default function MasterControl({ user }) {
     <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6 lg:space-y-8 min-h-screen">
       {/* Header / Global Command Bar */}
       <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-6 animate-fade-in-up">
-        <div className="relative w-full max-w-2xl group cursor-pointer" onClick={() => router.push('/')}>
+        <div className="relative w-full max-w-2xl group">
            <span className="material-symbols-outlined absolute left-6 top-1/2 -translate-y-1/2 text-emerald-600 z-10 font-bold scale-125">terminal</span>
-           <div className="w-full bg-white/40 backdrop-blur-md border border-emerald-100/30 rounded-[2.5rem] py-5 pl-16 pr-8 text-sm font-black text-slate-300 shadow-xl shadow-slate-200/50 relative z-10 select-none flex items-center gap-1.5 overflow-hidden">
-              <span className="animate-pulse">_</span>
-              Execute global command cluster search...
-           </div>
+           <input 
+             type="text"
+             value={searchTerm}
+             onChange={(e) => setSearchTerm(e.target.value)}
+             placeholder="Execute global command cluster search..."
+             className="w-full bg-white/40 backdrop-blur-md border border-emerald-100/30 rounded-[2.5rem] py-5 pl-16 pr-8 text-sm font-black text-slate-900 shadow-xl shadow-slate-200/50 relative z-10 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-300"
+           />
+           {searchTerm && (
+             <button 
+               onClick={() => setSearchTerm('')}
+               className="absolute right-6 top-1/2 -translate-y-1/2 z-20 text-slate-400 hover:text-emerald-600 transition-colors"
+             >
+               <span className="material-symbols-outlined text-sm">close</span>
+             </button>
+           )}
         </div>
         
         <div className="flex items-center gap-6">
@@ -161,9 +231,9 @@ export default function MasterControl({ user }) {
               <p className="text-[10px] font-black text-theme-text-muted uppercase tracking-[0.2em] mb-0.5">{t('identity_protocol')}</p>
               <p className="text-sm font-black text-on-surface tracking-tight">{t('root_admin')}</p>
            </div>
-           <button onClick={() => router.push('/')} className="w-12 h-12 rounded-[1.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center text-slate-400 hover:text-emerald-700 hover:scale-110 transition-all">
+           <Link href="/" className="w-12 h-12 rounded-[1.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center text-slate-400 hover:text-emerald-700 hover:scale-110 transition-all">
               <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>grid_view</span>
-           </button>
+           </Link>
         </div>
       </div>
       
@@ -171,16 +241,30 @@ export default function MasterControl({ user }) {
       <div className="relative pt-4 overflow-hidden min-h-[80vh]">
          {activeView === 'overview' && (
            <MasterOverview 
-             user={user} owners={owners} stores={stores} masterStats={masterStats} health={health} logs={logs} t={t} router={router} fetchData={fetchData}
+             user={user} 
+             owners={owners.filter(o => 
+               o.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+               o.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               o.stores?.some(s => s.store_name.toLowerCase().includes(searchTerm.toLowerCase()))
+             )} 
+             stores={stores.filter(s => s.store_name.toLowerCase().includes(searchTerm.toLowerCase()) || s.city.toLowerCase().includes(searchTerm.toLowerCase()))} 
+             masterStats={masterStats} health={health} logs={logs} t={t} router={router} fetchData={fetchData}
              setProvisionMode={setProvisionMode} setShowCreateModal={setShowCreateModal} broadcastSeverity={broadcastSeverity} setBroadcastSeverity={setBroadcastSeverity}
              broadcastMessage={broadcastMessage} setBroadcastMessage={setBroadcastMessage} handleSendBroadcast={handleSendBroadcast} isBroadcasting={isBroadcasting}
            />
          )}
          {activeView === 'nodes' && (
            <MasterNodes 
-             user={user} owners={owners} stores={stores} t={t} expandedOwners={expandedOwners} toggleOwnerExpansion={toggleOwnerExpansion}
+             user={user} 
+             owners={owners.filter(o => 
+               o.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+               o.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               o.stores?.some(s => s.store_name.toLowerCase().includes(searchTerm.toLowerCase()))
+             )} 
+             stores={stores.filter(s => s.store_name.toLowerCase().includes(searchTerm.toLowerCase()) || s.city.toLowerCase().includes(searchTerm.toLowerCase()))} 
+             t={t} expandedOwners={expandedOwners} toggleOwnerExpansion={toggleOwnerExpansion}
              setProvisionMode={setProvisionMode} setShowCreateModal={setShowCreateModal} setNewStore={setNewStore} newStore={newStore}
-             setDeleteStoreModal={setDeleteStoreModal}
+             setDeleteStoreModal={setDeleteStoreModal} handleUpdateTier={handleUpdateTier} toggleStoreStatus={toggleStoreStatus}
            />
          )}
          {activeView === 'insights' && <MasterInsights masterStats={masterStats} t={t} />}

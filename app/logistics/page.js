@@ -5,6 +5,7 @@ import { useUser } from '@/lib/UserContext';
 import { useRouter } from 'next/navigation';
 import SignaturePad from '@/components/logistics/SignaturePad';
 import PhotoCapture from '@/components/logistics/PhotoCapture';
+import LogisticsMap from '@/components/logistics/LogisticsMap';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function LogisticsDashboard() {
@@ -114,6 +115,9 @@ export default function LogisticsDashboard() {
              </div>
           </div>
         </div>
+
+        {/* Live Logistics Map */}
+        <LogisticsMap tasks={tasks} />
 
         {/* Dashboard Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
