@@ -135,7 +135,15 @@ export async function PUT(request) {
            pin_hash = COALESCE($5, pin_hash)
        WHERE id = $6 AND store_id = $7 AND role != 'owner'
        RETURNING id, name, email, phone, role, created_at`,
-      [name, email, phone, role, pinHash, id, session.store_id]
+      [
+        name ?? null, 
+        email ?? null, 
+        phone ?? null, 
+        role ?? null, 
+        pinHash ?? null, 
+        id, 
+        session.store_id
+      ]
     );
 
     if (res.rows.length === 0) {

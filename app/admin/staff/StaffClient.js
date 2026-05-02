@@ -80,6 +80,9 @@ export default function StaffClient({ initialStaff }) {
     if (res.ok) {
       const updated = await res.json();
       setCredentialsModal({ email: updated.email, pin: updated.pin, name: updated.name, type: 'reset' });
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Failed to reset PIN');
     }
   };
 
