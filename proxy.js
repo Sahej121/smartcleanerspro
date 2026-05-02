@@ -15,14 +15,14 @@ const TIER_ROUTES = {
   software_only: [
     '/', '/orders', '/customers', '/inventory', '/logistics',
     '/admin/settings', '/support', '/reports', '/admin/billing',
-    '/admin/pricing', '/suspended', '/profile',
+    '/admin/pricing', '/admin/staff', '/suspended', '/profile',
     '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/pricing', '/api/coupons', '/api/payments', '/api/stain-analysis',
     '/api/analytics', '/api/reports', '/api/staff', '/api/tasks', '/api/user/profile'
   ],
   hardware_bundle: [
     '/', '/orders', '/customers', '/inventory', '/logistics',
     '/admin/settings', '/admin/analytics', '/operations/assembly',
-    '/support', '/reports', '/admin/billing',
+    '/support', '/reports', '/admin/billing', '/admin/staff',
     '/admin/pricing', '/suspended', '/profile',
     '/api/stores', '/api/stats', '/api/system', '/api/customers', '/api/orders', '/api/inventory', '/api/logistics', '/api/analytics', '/api/pricing', '/api/coupons', '/api/payments', '/api/stain-analysis',
     '/api/reports', '/api/staff', '/api/tasks', '/api/workflow', '/api/operations', '/api/user/profile'
