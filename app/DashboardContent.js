@@ -181,16 +181,17 @@ export default function DashboardContent() {
     );
   }
 
-  // Dashboard redirects for logged-in users
-  if (role === ROLES.SUPERADMIN || user?.email === 'sehajbudhiraja2000@gmail.com') {
+  const userRole = role?.toLowerCase();
+
+  if (userRole === ROLES.SUPERADMIN) {
     return <MasterControl user={user} />;
   }
 
-  if (role === ROLES.OWNER) {
+  if (userRole === ROLES.OWNER) {
     return <BusinessOwner user={user} />;
   }
 
-  if ([ROLES.STAFF, ROLES.FRONTDESK, ROLES.DRIVER].includes(role)) {
+  if ([ROLES.STAFF, ROLES.FRONTDESK, ROLES.DRIVER].includes(userRole)) {
     return <StaffOperations user={user} />;
   }
 

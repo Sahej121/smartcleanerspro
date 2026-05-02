@@ -15,7 +15,9 @@ export default async function StaffPage() {
   }
 
   const allowedRoles = ['owner', 'manager', 'superadmin'];
-  if (!allowedRoles.includes(session.role)) {
+  const userRole = session.role?.toLowerCase();
+  
+  if (!allowedRoles.includes(userRole)) {
     redirect('/');
   }
 
