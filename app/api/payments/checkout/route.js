@@ -39,7 +39,9 @@ export async function POST(request) {
       }
 
       const order = orderRes.rows[0];
-      amount = customAmount || parseFloat(order.total_amount);
+      // SECURITY: Always use the database-stored amount for POS orders. 
+      // Do NOT allow the client to override the payment amount.
+      amount = parseFloat(order.total_amount);
       country = order.country || 'India';
       storeName = order.store_name || "DrycleanersFlow";
       description = `Payment for Order #${order.order_number}`;

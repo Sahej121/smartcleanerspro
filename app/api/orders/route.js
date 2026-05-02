@@ -2,6 +2,7 @@ import { query, getClient } from '@/lib/db/db';
 import { NextResponse, after } from 'next/server';
 import { requireRole } from '@/lib/auth';
 import { sanitizeText } from '@/lib/sanitize';
+import { inngest } from '@/lib/inngest';
 
 export async function GET(request) {
   try {
@@ -322,6 +323,22 @@ export async function POST(request) {
     }
 
     await client.query('COMMIT');
+
+    // Dispatch background tasks via Inngest
+    after(async () => {
+      try {
+        await inngest.send({
+          name: 'order/created',
+          data: {
+            orderId: orderId,
+            orderNumber: orderNumber,
+            customerEmail: body.customer_email || null, // Assuming customer_email is available in body
+          },
+        });
+      } catch (err) {
+        console.error('[Inngest] Failed to send order/created event:', err.message);
+      }
+    });
 
     const orderResult = await query(
       `SELECT o.*, c.name as customer_name 

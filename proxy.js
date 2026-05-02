@@ -55,7 +55,7 @@ export const config = {
      * - public (public assets)
      * - api/auth (auth endpoints handle their own auth)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public|icons|images|manifest.json|sw.js|api/auth).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public|icons|images|manifest.json|sw.js|api/auth|api/inngest).*)',
   ],
 };
 
@@ -144,7 +144,27 @@ export async function proxy(request) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // --- 4. Tier-Based Feature Gating ---
+  // --- 4. Per-Tenant Rate Limiting ---
+  const storeId = user?.user_metadata?.store_id || pinUser?.store_id;
+  if (storeId && !isLocal) {
+    // Stricter limit per store to prevent one tenant from starving others
+    const tenantLimit = 500; // Total concurrent requests allowed per store
+    const { data: tenantAllowed, error: tenantLimitError } = await supabase.rpc('check_rate_limit', { 
+      client_ip: `tenant_${storeId}`, 
+      max_hits: tenantLimit 
+    });
+    
+    if (tenantLimitError) {
+      console.error('[TenantRateLimit Error]:', tenantLimitError);
+    } else if (tenantAllowed === false) {
+      return new NextResponse('Store rate limit exceeded. Please wait a moment.', { 
+        status: 429,
+        headers: { 'Retry-After': '30' }
+      });
+    }
+  }
+
+  // --- 5. Tier-Based Feature Gating ---
   if (user || pinUser) {
     const tier = normalizeTierMw(user?.user_metadata?.tier || pinUser?.tier);
     const appRole = user?.user_metadata?.role || pinUser?.role;
@@ -167,6 +187,21 @@ export async function proxy(request) {
 }
 
 function addSecurityHeaders(response) {
+  const securityEndpoint = process.env.GLITCHTIP_SECURITY_ENDPOINT;
+  
+  // Content Security Policy
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.glitchtip.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: https://*.supabase.co https://*.glitchtip.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "connect-src 'self' https://*.supabase.co https://*.glitchtip.com https://api.razorpay.com",
+    "frame-src 'self' https://api.razorpay.com",
+    `report-uri ${securityEndpoint || ''}`
+  ].filter(Boolean).join('; ');
+
+  response.headers.set('Content-Security-Policy', csp);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

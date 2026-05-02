@@ -1,6 +1,6 @@
 import { query } from '@/lib/db/db';
 import { NextResponse } from 'next/server';
-
+import { redis } from '@/lib/redis';
 import { requireRole } from '@/lib/auth';
 
 export async function GET(request) {
@@ -8,6 +8,22 @@ export async function GET(request) {
     const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
     if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
+    const storeId = auth.user.store_id;
+    const cacheKey = `store:${storeId}:inventory`;
+
+    // 1. Try to get from cache
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: { 'X-Cache': 'HIT' }
+        });
+      }
+    } catch (cacheErr) {
+      console.error('[Redis Cache GET Error]:', cacheErr.message);
+    }
+
+    // 2. Fallback to DB
     const res = await query(`
       SELECT *, 
         CASE 
@@ -29,8 +45,18 @@ export async function GET(request) {
       ORDER BY 
         CASE WHEN quantity <= reorder_level THEN 0 ELSE 1 END,
         item_name
-    `, [auth.user.store_id]);
-    return NextResponse.json(res.rows);
+    `, [storeId]);
+
+    // 3. Store in cache for 30 seconds
+    try {
+      await redis.set(cacheKey, res.rows, { ex: 30 });
+    } catch (cacheErr) {
+      console.error('[Redis Cache SET Error]:', cacheErr.message);
+    }
+
+    return NextResponse.json(res.rows, {
+      headers: { 'X-Cache': 'MISS' }
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -53,6 +79,13 @@ export async function POST(request) {
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [item_name, quantity || 0, unit || 'units', reorder_level || 10, auth.user.store_id]
     );
+
+    // Invalidate cache
+    try {
+      await redis.del(`store:${auth.user.store_id}:inventory`);
+    } catch (cacheErr) {
+      console.error('[Redis Cache DEL Error]:', cacheErr.message);
+    }
 
     return NextResponse.json(res.rows[0], { status: 201 });
   } catch (error) {
@@ -119,6 +152,13 @@ export async function PUT(request) {
 
     if (res.rows.length === 0) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+    }
+
+    // Invalidate cache
+    try {
+      await redis.del(`store:${auth.user.store_id}:inventory`);
+    } catch (cacheErr) {
+      console.error('[Redis Cache DEL Error]:', cacheErr.message);
     }
 
     return NextResponse.json(res.rows[0]);

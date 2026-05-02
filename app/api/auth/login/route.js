@@ -99,14 +99,22 @@ export async function POST(req) {
               let lockoutUntil = null;
               
               if (newAttempts >= 4) {
-                // Lock for 15 minutes
-                lockoutUntil = new Date(Date.now() + 15 * 60 * 1000);
+                let delayMs = 0;
+                if (newAttempts === 4 || newAttempts === 5) {
+                  delayMs = 15 * 60 * 1000; // 15 mins
+                } else if (newAttempts === 6) {
+                  delayMs = 60 * 60 * 1000; // 1 hour
+                } else {
+                  delayMs = 24 * 60 * 60 * 1000; // 24 hours
+                }
+                lockoutUntil = new Date(Date.now() + delayMs);
               }
 
               await query('UPDATE users SET pin_attempts = $1, pin_locked_until = $2 WHERE id = $3', [newAttempts, lockoutUntil, u.id]);
               
               if (newAttempts >= 4) {
-                return NextResponse.json({ error: 'Too many failed attempts. Account locked for 15 minutes.' }, { status: 403 });
+                const waitTime = newAttempts === 4 || newAttempts === 5 ? '15 minutes' : newAttempts === 6 ? '1 hour' : '24 hours';
+                return NextResponse.json({ error: `Too many failed attempts. Account locked for ${waitTime}.` }, { status: 403 });
               }
             }
           }
