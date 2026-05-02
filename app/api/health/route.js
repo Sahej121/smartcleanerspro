@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db/db';
+import { redis } from '@/lib/redis';
+import { env } from '@/lib/env';
 
 export async function GET() {
   const start = Date.now();
@@ -8,7 +10,10 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     services: {
       database: 'down',
-      razorpay: 'unknown',
+      redis: 'down',
+      inngest: env.INNGEST_EVENT_KEY ? 'configured' : 'missing',
+      glitchtip: env.SENTRY_DSN ? 'configured' : 'missing',
+      razorpay: (env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET) ? 'configured' : 'missing',
     },
     latency: 0,
   };
@@ -22,9 +27,13 @@ export async function GET() {
     status.services.database = 'down';
   }
 
-  // Razorpay check (simple key check)
-  if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-    status.services.razorpay = 'configured';
+  try {
+    // Check Redis
+    await redis.set('health-check', 'ok', { ex: 10 });
+    status.services.redis = 'up';
+  } catch (err) {
+    status.status = 'error';
+    status.services.redis = 'down';
   }
 
   status.latency = Date.now() - start;
