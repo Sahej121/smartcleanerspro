@@ -79,15 +79,20 @@ export async function proxy(request) {
   }
 
   // Atomic check via Database RPC
-  const { data: isAllowed, error: limitError } = await supabase.rpc('check_rate_limit', { 
-    client_ip: ip, 
-    max_hits: limit 
-  });
+  let isAllowed = true;
+  if (!isLocal) {
+    const { data, error: limitError } = await supabase.rpc('check_rate_limit', { 
+      client_ip: ip, 
+      max_hits: limit 
+    });
+    if (limitError) {
+      console.error('[RateLimit Error]:', limitError);
+    } else {
+      isAllowed = data;
+    }
+  }
 
-  if (limitError) {
-    console.error('[RateLimit Error]:', limitError);
-    // Fallback: allow request but log error (don't block legitimate users if DB is slow)
-  } else if (isAllowed === false) {
+  if (isAllowed === false) {
     return new NextResponse('Too Many Requests. Rate limit exceeded.', { 
       status: 429,
       headers: { 'Retry-After': '60' }

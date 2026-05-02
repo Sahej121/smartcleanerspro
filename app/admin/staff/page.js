@@ -14,6 +14,11 @@ export default async function StaffPage() {
     redirect('/login');
   }
 
+  const allowedRoles = ['owner', 'manager', 'superadmin'];
+  if (!allowedRoles.includes(session.role)) {
+    redirect('/');
+  }
+
   // Fetch staff data directly on the server
   const res = await query(`
     SELECT u.id, u.name, u.email, u.phone, u.role, u.created_at, s.store_name

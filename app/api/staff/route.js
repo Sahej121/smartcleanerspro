@@ -14,8 +14,9 @@ function generatePassword(length = 8) {
 
 export async function GET(request) {
   try {
-    const session = await getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireRole(request, ['owner', 'manager']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const session = auth.user;
 
     const { searchParams } = new URL(request.url);
     const role = searchParams.get('role');

@@ -19,13 +19,21 @@ export default function StaffOperations({ user }) {
         fetch('/api/tasks'),
         fetch('/api/system/broadcast/active')
       ]);
-      const wfData = await wfRes.json();
-      const tasksData = await tasksRes.json();
-      const broadcastData = await broadcastRes.json().catch(() => null);
       
-      setWorkflow(wfData);
-      setTasks(Array.isArray(tasksData) ? tasksData : []);
-      setActiveBroadcast(broadcastData);
+      if (wfRes.ok) {
+        const wfData = await wfRes.json();
+        setWorkflow(wfData);
+      }
+      
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json();
+        setTasks(Array.isArray(tasksData) ? tasksData : []);
+      }
+      
+      if (broadcastRes.ok) {
+        const broadcastData = await broadcastRes.json().catch(() => null);
+        setActiveBroadcast(broadcastData);
+      }
     } catch (err) {
       console.error('Failed to fetch data:', err);
     } finally {
@@ -46,13 +54,16 @@ export default function StaffOperations({ user }) {
   };
 
   useEffect(() => {
+    if (!user) return;
+
     fetchData();
     if (['owner', 'manager', 'admin'].includes(user?.role)) {
       fetchDrivers();
     }
+    
     const interval = setInterval(fetchData, 30000); 
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.id, user?.role]);
 
   const handleAdvanceItem = async (itemId) => {
     setUpdatingItem(itemId);

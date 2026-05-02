@@ -118,6 +118,10 @@ export default function BusinessOwner({ user }) {
             <span className="material-symbols-outlined text-lg">add</span>
             {t('nav_new_order')}
           </Link>
+          <Link href="/admin/staff" className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest font-bold text-sm text-on-surface hover:bg-surface-container-low hover:shadow-md transition-all">
+            <span className="material-symbols-outlined text-lg">badge</span>
+            {t('nav_staff')}
+          </Link>
           <Link href="/admin/settings" className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant/20 bg-surface-container-lowest font-bold text-sm text-on-surface hover:bg-surface-container-low hover:shadow-md transition-all">
             <span className="material-symbols-outlined text-lg">settings</span>
             {t('settings')}

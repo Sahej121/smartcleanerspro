@@ -1,20 +1,13 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db/db';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 
-async function getUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('cleanflow_session')?.value;
-  if (!token) return null;
-  return await verifyToken(token);
-}
-
-export async function GET() {
-  const user = await getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export async function GET(request) {
   try {
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const user = auth.user;
+
     let res;
     if (user.role === 'owner' || user.role === 'manager') {
       res = await query(
@@ -33,12 +26,13 @@ export async function GET() {
   }
 }
 
-export async function PUT(req) {
-  const user = await getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+export async function PUT(request) {
   try {
-    const { id, is_completed } = await req.json();
+    const auth = await requireRole(request, ['owner', 'manager', 'frontdesk', 'staff']);
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+    const user = auth.user;
+
+    const { id, is_completed } = await request.json();
     if (user.role === 'owner' || user.role === 'manager') {
       await query(
         'UPDATE staff_tasks SET is_completed = $1 WHERE id = $2 AND store_id = $3',
