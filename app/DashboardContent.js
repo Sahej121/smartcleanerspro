@@ -13,6 +13,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 import ROIEstimator from '@/components/marketing/ROIEstimator';
 import DashboardPreview from '@/components/marketing/DashboardPreview';
+import FAQ from '@/components/marketing/FAQ';
 
 export default function DashboardContent() {
   const { role, user, loading } = useUser();
@@ -166,6 +167,14 @@ export default function DashboardContent() {
             </div>
           </div>
         </section>
+
+        {/* FAQ Section */}
+        <Section
+          title="Common Questions"
+          description="Everything you need to know about the platform."
+        >
+          <FAQ />
+        </Section>
 
         <MarketingFooter />
       </div>

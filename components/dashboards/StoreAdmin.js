@@ -78,9 +78,10 @@ export default function StoreAdmin({ user }) {
         fetch('/api/system/broadcast/active')
       ]);
       if (!statsRes.ok) { console.error('[Dashboard] /api/stats returned', statsRes.status); return; }
-      const statsData = await statsRes.json();
+      const statsData = await statsRes.json().catch(() => null);
       const broadcastData = broadcastRes.ok ? await broadcastRes.json().catch(() => null) : null;
-      setStats(statsData);
+      
+      if (statsData) setStats(statsData);
       setActiveBroadcast(broadcastData);
     } catch (error) {
       console.error('Failed to fetch store dashboard data:', error);

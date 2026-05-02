@@ -46,7 +46,7 @@ export async function POST(request) {
     } else {
       // SaaS Signup flow
       description = "CleanFlow Subscription Activation";
-      if (market && market.toLowerCase() !== 'india') {
+      if (market && typeof market === 'string' && market.toLowerCase() !== 'india') {
         country = market; // e.g. 'us', 'europe', 'latam'
       } else {
         country = 'India';
@@ -97,6 +97,9 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Checkout API Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: error.message || 'Internal Server Error',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }

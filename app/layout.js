@@ -5,19 +5,33 @@ import { BrandingProvider } from '@/lib/BrandingContext';
 import { NotificationProvider } from '@/lib/NotificationContext';
 import MainLayout from '@/components/MainLayout';
 import { getSession } from '@/lib/auth';
+import JsonLd from '@/components/SEO/JsonLd';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
+  metadataBase: new URL('https://smartcleaners.pro'),
   title: {
     default: 'DrycleanersFlow – The Premium Dry Cleaning POS & Management Platform',
     template: '%s | DrycleanersFlow'
   },
   description: 'Elevate your dry cleaning business with DrycleanersFlow. A modern, all-in-one POS and management system designed for premium ateliers, laundry networks, and garment care specialists.',
-  keywords: ['dry cleaner pos', 'laundry management software', 'dry cleaning software', 'garment care pos', 'laundry business automation'],
+  keywords: [
+    'dry cleaner pos', 
+    'laundry management software', 
+    'dry cleaning software', 
+    'garment care pos', 
+    'laundry business automation',
+    'best laundry pos 2024',
+    'cloud dry cleaning management',
+    'automated laundry software'
+  ],
   authors: [{ name: 'DrycleanersFlow Team' }],
   creator: 'DrycleanersFlow',
   publisher: 'DrycleanersFlow',
+  alternates: {
+    canonical: '/',
+  },
   formatDetection: {
     email: false,
     address: false,
@@ -50,6 +64,18 @@ export const metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'DrycleanersFlow',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
@@ -94,6 +120,7 @@ export default async function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body>
+        <JsonLd />
         <UserProvider initialUser={initialUser}>
           <BrandingProvider>
             <LanguageProvider>

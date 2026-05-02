@@ -107,16 +107,16 @@ export async function POST(req) {
 
             await client.query(`
               INSERT INTO auth.users (
-                instance_id, id, email, encrypted_password, email_confirmed_at, 
+                instance_id, id, encrypted_password, email_confirmed_at, 
                 created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, 
                 aud, role, confirmation_token, email_change, email_change_token_new, recovery_token
               ) VALUES (
-                '00000000-0000-0000-0000-000000000000', $1::uuid, $2::text, crypt($3::text, gen_salt('bf')), NOW(),
+                '00000000-0000-0000-0000-000000000000', $1::uuid, crypt($2::text, gen_salt('bf')), NOW(),
                 NOW(), NOW(), '{"provider":"email","providers":["email"]}', 
-                format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, false,
+                format('{"sub":"%s","email":"%s"}', $1::text, $3::text)::jsonb, false,
                 'authenticated', 'authenticated', '', '', '', ''
               )
-            `, [authId, admin_email, tempPassword]);
+            `, [authId, tempPassword, admin_email]);
             
             await client.query(`
               INSERT INTO auth.identities (
@@ -217,16 +217,16 @@ export async function POST(req) {
 
             await client.query(`
               INSERT INTO auth.users (
-                instance_id, id, email, encrypted_password, email_confirmed_at, 
+                instance_id, id, encrypted_password, email_confirmed_at, 
                 created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, 
                 aud, role, confirmation_token, email_change, email_change_token_new, recovery_token
               ) VALUES (
-                '00000000-0000-0000-0000-000000000000', $1::uuid, $2::text, crypt($3::text, gen_salt('bf')), NOW(),
+                '00000000-0000-0000-0000-000000000000', $1::uuid, crypt($2::text, gen_salt('bf')), NOW(),
                 NOW(), NOW(), '{"provider":"email","providers":["email"]}', 
-                format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, false,
+                format('{"sub":"%s","email":"%s"}', $1::text, $3::text)::jsonb, false,
                 'authenticated', 'authenticated', '', '', '', ''
               )
-            `, [magAuthId, manager_email, mProvisionPassword]);
+            `, [magAuthId, mProvisionPassword, manager_email]);
             
             await client.query(`
               INSERT INTO auth.identities (

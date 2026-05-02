@@ -46,6 +46,11 @@ export async function POST(request) {
     const body = await request.json();
     const { name, email, phone, role, pin } = body;
 
+    const checkRes = await query(`SELECT id FROM users WHERE email = $1`, [email]);
+    if (checkRes.rows.length > 0) {
+      return NextResponse.json({ error: 'A user with this email already exists' }, { status: 400 });
+    }
+
     // --- Subscription Tier Enforcement ---
     const storeRes = await query(`SELECT subscription_tier FROM stores WHERE id = $1`, [session.store_id]);
     const tier = normalizeTier(storeRes.rows[0]?.subscription_tier);
@@ -71,22 +76,22 @@ export async function POST(request) {
 
     await query(`
       INSERT INTO auth.users (
-        instance_id, id, email, encrypted_password, email_confirmed_at, 
+        instance_id, id, encrypted_password, email_confirmed_at, 
         created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_sso_user, 
         aud, role
       ) VALUES (
-        '00000000-0000-0000-0000-000000000000', $1::uuid, $2::text, crypt($3::text, gen_salt('bf')), NOW(),
+        '00000000-0000-0000-0000-000000000000', $1::uuid, crypt($2::text, gen_salt('bf')), NOW(),
         NOW(), NOW(), '{"provider":"email","providers":["email"]}', 
-        format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, false,
+        format('{"sub":"%s","email":"%s"}', $1::text, $3::text)::jsonb, false,
         'authenticated', 'authenticated'
       )
-    `, [authId, email, tempPassword]);
+    `, [authId, tempPassword, email]);
     
     await query(`
       INSERT INTO auth.identities (
-        id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at, email
+        id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW(), $2
+        gen_random_uuid(), $1::uuid, format('{"sub":"%s","email":"%s"}', $1::text, $2::text)::jsonb, 'email', $1::text, NOW(), NOW(), NOW()
       )
     `, [authId, email]);
 

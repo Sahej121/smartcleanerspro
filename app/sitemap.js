@@ -6,15 +6,17 @@ export default function sitemap() {
     '',
     '/pricing',
     '/features',
+    '/how-it-works',
     '/contact',
-    '/about',
     '/login',
     '/register',
+    '/policy/privacy',
+    '/policy/terms',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString(),
-    changeFrequency: 'weekly',
-    priority: route === '' ? 1 : 0.8,
+    changeFrequency: route.includes('policy') ? 'monthly' : 'weekly',
+    priority: route === '' ? 1 : route.includes('policy') ? 0.3 : 0.8,
   }));
 
   return routes;

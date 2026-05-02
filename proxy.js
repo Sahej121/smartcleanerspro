@@ -103,7 +103,7 @@ export async function proxy(request) {
     '/', '/features', '/how-it-works', '/pricing', '/contact', 
     '/checkout', '/register', '/policy', '/login', '/suspended',
     '/waiting', '/enterprise-upgrade'
-  ].includes(pathname) || pathname.startsWith('/api/webhooks/') || pathname.startsWith('/checkout/success');
+  ].includes(pathname) || pathname.startsWith('/api/webhooks/') || pathname.startsWith('/checkout/success') || pathname === '/api/payments/checkout';
 
   if (isPublicRoute) {
     response.headers.set('x-user-country', country);
@@ -112,6 +112,9 @@ export async function proxy(request) {
   }
 
   if (!hasSupabaseCookie && !pinToken) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Session expired or unauthorized' }, { status: 401 });
+    }
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -130,6 +133,9 @@ export async function proxy(request) {
   const pinUser = pinToken ? await verifyPinTokenEdge(pinToken) : null;
 
   if (!user && !pinUser) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Session expired or unauthorized' }, { status: 401 });
+    }
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

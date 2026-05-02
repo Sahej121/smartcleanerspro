@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useUser, ROLES as USER_ROLES } from '@/lib/UserContext';
 
 const ROLES = ['owner', 'manager', 'frontdesk', 'staff', 'driver'];
 const ROLE_COLORS = {
@@ -11,6 +12,7 @@ const ROLE_COLORS = {
 
 export default function StaffClient({ initialStaff }) {
   const { t } = useLanguage();
+  const { role: userRole } = useUser();
   const [staff, setStaff] = useState(initialStaff);
   const [showModal, setShowModal] = useState(false);
   const [newStaff, setNewStaff] = useState({ name: '', email: '', phone: '', role: 'staff' });
@@ -82,15 +84,27 @@ export default function StaffClient({ initialStaff }) {
   };
 
   return (
-    <div id="staff-page" className="p-4 lg:p-8 max-w-7xl mx-auto min-h-screen">
-      <div className="page-header">
-        <div>
-          <h1>{t('staff_management')}</h1>
-          <p>{t('staff_management_desc')}</p>
+    <div id="staff-page" className="p-4 lg:p-8 max-w-7xl mx-auto min-h-screen animate-page-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div className="reveal reveal-left">
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight font-outfit mb-2">
+            {t('staff_management')}
+          </h1>
+          <p className="text-slate-500 font-medium text-lg">
+            {t('staff_management_desc')}
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          Add Staff
-        </button>
+        
+        {/* Only show Add Staff button for Owners and Managers */}
+        {[USER_ROLES.OWNER, USER_ROLES.ADMIN, USER_ROLES.SUPERADMIN].includes(userRole) && (
+          <button 
+            className="reveal reveal-right primary-gradient text-white px-10 py-5 rounded-[1.5rem] text-sm font-black shadow-xl shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-3"
+            onClick={() => setShowModal(true)}
+          >
+            <span className="material-symbols-outlined font-bold">person_add</span>
+            {t('add_staff')}
+          </button>
+        )}
       </div>
 
       <div className="stats-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
